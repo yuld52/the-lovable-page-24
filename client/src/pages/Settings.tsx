@@ -24,13 +24,13 @@ export default function Settings() {
 
   const [activeTab, setActiveTab] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get("tab") || "metricas";
+    return params.get("tab") || "integracao";
   });
 
   useEffect(() => {
     const handleLocationChange = () => {
       const params = new URLSearchParams(window.location.search);
-      const tab = params.get("tab") || "metricas";
+      const tab = params.get("tab") || "integracao";
       setActiveTab(tab);
     };
 
@@ -57,7 +57,7 @@ export default function Settings() {
 
   useEffect(() => {
     if (!loadingUser && !isAdmin && activeTab === "usuario") {
-      setLocation("/settings?tab=metricas");
+      setLocation("/settings?tab=integracao");
     }
   }, [isAdmin, loadingUser, activeTab, setLocation]);
 
@@ -253,7 +253,7 @@ export default function Settings() {
     </div>
   );
 
-  const renderMetricas = () => (
+  const renderIntegracao = () => (
     <div className="max-w-4xl animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex items-center gap-2 mb-6 bg-zinc-900/50 p-1 rounded-xl border border-zinc-800/50 w-fit">
         <Button variant="ghost" size="sm" onClick={() => setMetricsSubTab("pixel")} className={cn("h-9 px-4 rounded-lg text-xs font-bold", metricsSubTab === "pixel" ? "bg-purple-600 text-white" : "text-zinc-500")}>
@@ -292,7 +292,7 @@ export default function Settings() {
           <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg max-w-2xl">
             <CardHeader className="border-b border-zinc-800/50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20"><img src={utmifyLogo} alt="UTMify" className="w-8 h-8" /></div>
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20"><img src={utmifyLogo} alt="UTMfy" className="w-8 h-8" /></div>
                 <div><CardTitle className="text-base text-white">UTMfy</CardTitle><CardDescription className="text-xs text-zinc-500">Rastreamento avançado</CardDescription></div>
               </div>
             </CardHeader>
@@ -323,10 +323,10 @@ export default function Settings() {
   );
 
   return (
-    <Layout title={activeTab === "usuario" ? "Gerenciar Usuários" : "Métricas dos Negócios"} subtitle={activeTab === "usuario" ? "Visualize e gerencie usuários" : "Acompanhe a performance"}>
+    <Layout title={activeTab === "usuario" ? "Gerenciar Usuários" : "Integração"} subtitle={activeTab === "usuario" ? "Visualize e gerencie usuários" : "Configure suas integrações"}>
       <div className="flex flex-col gap-6">
         {activeTab === "usuario" && renderUsuario()}
-        {activeTab === "metricas" && renderMetricas()}
+        {activeTab === "integracao" && renderIntegracao()}
       </div>
       <Dialog open={isActivating} onOpenChange={setIsActivating}>
         <DialogContent className="bg-zinc-950 border-zinc-800 text-white">

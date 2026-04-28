@@ -23,7 +23,7 @@ export function Sidebar() {
   const [settingsOpen, setSettingsOpen] = useState(location.startsWith("/settings"));
 
   const searchParams = new URLSearchParams(window.location.search);
-  const currentTab = searchParams.get("tab") || "metricas";
+  const currentTab = searchParams.get("tab") || "integracao";
 
   const { user } = useUser();
 
@@ -38,7 +38,7 @@ export function Sidebar() {
 
   const settingSubItems = [
     ...(isAdmin ? [{ href: "/settings?tab=usuario", label: "Usuários", icon: User }] : []),
-    { href: "/settings?tab=metricas", label: "Métricas", icon: BarChart3 },
+    { href: "/settings?tab=integracao", label: "Integração", icon: BarChart3 },
   ];
 
   const { data: stats } = useStats();
