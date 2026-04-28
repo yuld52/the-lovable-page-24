@@ -307,7 +307,7 @@ importers:
         specifier: ^0.31.8
         version: 0.31.10
       esbuild:
-        specifier: 0.21.5
+        specifier: ^0.21.5
         version: 0.21.5
       postcss:
         specifier: ^8.4.47
@@ -327,10 +327,6 @@ importers:
       vite:
         specifier: ^5.4.11
         version: 5.4.21(@types/node@20.19.27)(lightningcss@1.32.0)
-    optionalDependencies:
-      bufferutil:
-        specifier: ^4.0.8
-        version: 4.1.0
 
 packages:
 
