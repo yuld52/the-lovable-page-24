@@ -21,6 +21,7 @@ import PublicCheckout from "./pages/PublicCheckout";
 import Financeiro from "@/pages/Financeiro";
 import Admin from "@/pages/Admin";
 import AdminLogin from "@/pages/AdminLogin";
+import { ChatSupport } from "@/components/ChatSupport";
 
 function Router() {
   const [params, setLocation] = useRoute("/:any*");
@@ -79,6 +80,7 @@ function App() {
       <TooltipProvider>
         <Router />
         <Toaster />
+        <ChatSupport />
       </TooltipProvider>
     </QueryClientProvider>
   );

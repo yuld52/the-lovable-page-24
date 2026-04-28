@@ -11,12 +11,14 @@ import { adminAuth, adminDb, adminStorage } from "./firebase-admin";
 import { getVapidPublicKey, saveSubscription } from "./services/notification";
 
 import { registerTrackingRoutes } from "./trackingRoutes";
+import { registerChatRoutes } from "./chat";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   registerTrackingRoutes(app, storage as any);
+  registerChatRoutes(app);
 
   // Use memory storage for multer to upload directly to Firebase
   const upload = multer({
