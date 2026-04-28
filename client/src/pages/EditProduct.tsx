@@ -32,7 +32,6 @@ export default function EditProduct() {
     imageUrl: "",
     deliveryFiles: [] as string[],
     noEmailDelivery: false,
-    active: true
   });
 
   useEffect(() => {
@@ -46,7 +45,6 @@ export default function EditProduct() {
         imageUrl: product.imageUrl || "",
         deliveryFiles: product.deliveryFiles || [],
         noEmailDelivery: product.noEmailDelivery || false,
-        active: product.active ?? true
       });
       setImagePreview(product.imageUrl || "");
       if (product.deliveryFiles && product.deliveryFiles.length > 0) {
@@ -59,7 +57,6 @@ export default function EditProduct() {
     setImagePreview(URL.createObjectURL(file));
     const result = await uploadFile(file);
     if (result) {
-      // result.uploadURL já é uma URL pública
       setFormData((prev) => ({ ...prev, imageUrl: result.uploadURL }));
       toast({ title: "Imagem carregada", description: "A imagem foi salva com sucesso!" });
     } else {
@@ -86,7 +83,6 @@ export default function EditProduct() {
         imageUrl: formData.imageUrl,
         deliveryFiles: formData.deliveryFiles,
         noEmailDelivery: formData.noEmailDelivery,
-        active: formData.active
       });
       toast({ title: "Sucesso", description: "Produto atualizado com sucesso!" });
       setLocation("/products");
@@ -119,15 +115,17 @@ export default function EditProduct() {
       </div>
 
       <div className="max-w-2xl mx-auto">
-        <div className="bg-[#18181b] border border-zinc-800/60 rounded-2xl p-8 shadow-xl">
+        <div className="bg-[#18181b] border border-zinc-800/60 shadow-lg rounded-2xl p-8">
           <div className="flex items-center justify-between mb-8 px-2">
             {steps.map((s, i) => (
               <div key={s.id} className="flex items-center flex-1 last:flex-none">
-                <div className="flex flex-col items-center gap-2">
+                <div className={`flex flex-col items-center gap-2`}>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${step >= s.id ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}>
                     {step > s.id ? <Check className="w-4 h-4" /> : s.id}
                   </div>
-                  <span className="text-[10px] text-zinc-500">{s.title}</span>
+                  <span className={`text-[10px] font-medium ${step >= s.id ? 'text-zinc-300' : 'text-zinc-500'}`}>
+                    {s.title}
+                  </span>
                 </div>
                 {i < steps.length - 1 && <div className={`h-[1px] flex-1 mx-4 ${step > s.id ? 'bg-purple-600' : 'bg-zinc-800'}`} />}
               </div>
@@ -235,7 +233,6 @@ export default function EditProduct() {
                                       try {
                                         const parts = file.split('/');
                                         const filenameWithUuid = parts[parts.length - 1];
-                                        // Attempt to remove UUID prefix if present (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx-)
                                         if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}-/.test(filenameWithUuid)) {
                                           return decodeURIComponent(filenameWithUuid.substring(37));
                                         }

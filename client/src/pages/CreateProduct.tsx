@@ -52,7 +52,7 @@ export default function CreateProduct() {
     deliveryUrl: "",
     whatsappUrl: "",
     imageUrl: "",
-    enableCustomSupport: false,
+    deliveryFiles: [] as string[],
     noEmailDelivery: false,
   });
   const [showErrors, setShowErrors] = useState(false);
@@ -61,7 +61,6 @@ export default function CreateProduct() {
     setImagePreview(URL.createObjectURL(file));
     const result = await uploadFile(file);
     if (result) {
-      // result.uploadURL já é uma URL pública
       setNewProduct((prev) => ({ ...prev, imageUrl: result.uploadURL }));
       toast({ title: "Imagem carregada", description: "A imagem foi salva com sucesso!" });
     } else {
@@ -77,7 +76,7 @@ export default function CreateProduct() {
       const hasLink = newProduct.deliveryUrl.trim() !== "";
       const isUrlInvalid =
         hasLink &&
-        !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/.test(
+        !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(
           newProduct.deliveryUrl.trim()
         );
 
@@ -103,7 +102,7 @@ export default function CreateProduct() {
         if (tooLarge) {
           toast({
             title: "Arquivo muito grande",
-            description: `O arquivo “${tooLarge.name}” excede 64MB.`,
+            description: `O arquivo "${tooLarge.name}" excede 64MB.`,
             variant: "destructive",
           });
           return;
@@ -112,7 +111,6 @@ export default function CreateProduct() {
         setIsUploadingDeliveryFiles(true);
         setDeliveryUpload({ total: deliveryFiles.length, done: 0, currentName: deliveryFiles[0]?.name });
         try {
-          // Paralelo com limite de concorrência (mais rápido em internet boa)
           const CONCURRENCY = 3;
 
           const uploadOne = async (file: File) => {
@@ -172,7 +170,6 @@ export default function CreateProduct() {
         imageUrl: newProduct.imageUrl,
         deliveryFiles: deliveryFileUrls,
         noEmailDelivery: newProduct.noEmailDelivery,
-        active: true,
       });
 
       toast({ title: "Sucesso", description: "Produto criado com sucesso!" });
@@ -184,19 +181,16 @@ export default function CreateProduct() {
 
   const isStepValid = () => {
     if (step === 1) {
-      // Descrição é opcional: só exigimos nome e preço para avançar
       return newProduct.name.trim() !== "" && newProduct.price.trim() !== "";
     }
     if (step === 2) {
-      // Validate that either a delivery link is provided OR files are uploaded
       const hasLink = newProduct.deliveryUrl.trim() !== "";
       const hasFiles = deliveryFiles.length > 0;
 
       if (!hasLink && !hasFiles) return false;
 
-      // If a link is provided, it must be valid
       if (hasLink) {
-        const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+        const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/;
         return urlPattern.test(newProduct.deliveryUrl.trim());
       }
 
@@ -212,7 +206,7 @@ export default function CreateProduct() {
       const hasLink = newProduct.deliveryUrl.trim() !== "";
       const isUrlInvalid =
         hasLink &&
-        !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/.test(
+        !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(
           newProduct.deliveryUrl.trim()
         );
 
@@ -241,7 +235,7 @@ export default function CreateProduct() {
     <div className="flex items-center justify-between mb-8 px-2 max-w-2xl mx-auto">
       {steps.map((s, i) => (
         <div key={s.id} className="flex items-center flex-1 last:flex-none">
-          <div className="flex flex-col items-center gap-2">
+          <div className={`flex flex-col items-center gap-2`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${step >= s.id ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
               }`}>
               {step > s.id ? <Check className="w-4 h-4" /> : s.id}
@@ -425,14 +419,14 @@ export default function CreateProduct() {
                       <label className="text-sm font-bold text-zinc-200">Link de Acesso (Opcional se houver arquivos)</label>
                     </div>
                     <Input
-                      className={`bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500 ${showErrors && newProduct.deliveryUrl && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/.test(newProduct.deliveryUrl.trim())
+                      className={`bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500 ${showErrors && newProduct.deliveryUrl && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(newProduct.deliveryUrl.trim())
                         ? 'border-red-500/50 focus-visible:ring-red-500' : ''
                         }`}
                       placeholder="https://exemplo.com/acesso"
                       value={newProduct.deliveryUrl}
                       onChange={e => setNewProduct({ ...newProduct, deliveryUrl: e.target.value })}
                     />
-                    {showErrors && newProduct.deliveryUrl && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/.test(newProduct.deliveryUrl.trim()) && (
+                    {showErrors && newProduct.deliveryUrl && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(newProduct.deliveryUrl.trim()) && (
                       <p className="text-[10px] text-red-500 font-medium ml-1">Insira um link válido com domínio (ex: google.com)</p>
                     )}
                     <p className="text-[11px] text-zinc-500 ml-1 font-medium text-purple-400/80">O cliente receberá este link automaticamente por e-mail.</p>
@@ -523,7 +517,8 @@ export default function CreateProduct() {
                   </div>
                 </div>
               </div>
-            )}            <div className="flex items-center gap-3 pt-6 mt-6">
+            )}
+            <div className="flex items-center gap-3 pt-6 mt-6">
               {step > 1 && (
                 <Button
                   variant="ghost"
