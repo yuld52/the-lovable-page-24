@@ -33,8 +33,10 @@ export default function CreateProduct() {
   const [, setLocation] = useLocation();
   const createProduct = useCreateProduct();
   const { toast } = useToast();
-  const { uploadFile, isUploading: isUploadingImage } = useUpload();
-  const [isUploadingDeliveryFiles, setIsUploadingDeliveryFiles] = useState(false);
+  const { uploadFile: uploadHeroImage, isUploading: isUploadingHero } = useUpload();
+  const { uploadFile: uploadDeliveryFile, isUploading: isUploadingDeliveryFiles } = useUpload();
+  
+  const [isUploadingDelivery, setIsUploadingDelivery] = useState(false);
   const [deliveryUpload, setDeliveryUpload] = useState<{
     total: number;
     done: number;
@@ -59,9 +61,8 @@ export default function CreateProduct() {
 
   const handleImageUpload = async (file: File) => {
     setImagePreview(URL.createObjectURL(file));
-    const result = await uploadFile(file);
+    const result = await uploadHeroImage(file);
     if (result) {
-      // result.uploadURL já é uma URL pública
       setNewProduct((prev) => ({ ...prev, imageUrl: result.uploadURL }));
       toast({ title: "Imagem carregada", description: "A imagem foi salva com sucesso!" });
     } else {
@@ -77,7 +78,7 @@ export default function CreateProduct() {
       const hasLink = newProduct.deliveryUrl.trim() !== "";
       const isUrlInvalid =
         hasLink &&
-        !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/.test(
+        !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(
           newProduct.deliveryUrl.trim()
         );
 
@@ -85,17 +86,16 @@ export default function CreateProduct() {
         title: "Campos obrigatórios",
         description:
           step === 1
-            ? "Por favor, preencha todos os campos obrigatórios."
+            ? "Preencha o nome e o preço do produto para continuar."
             : isUrlInvalid
               ? "Por favor, insira um link válido com domínio."
-              : "Por favor, forneça um link ou adicione arquivos para entrega.",
+              : "Forneça um link ou adicione arquivos para entrega.",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      // Upload real dos arquivos de entrega (gera URLs para download)
       let deliveryFileUrls: string[] = [];
       if (deliveryFiles.length > 0) {
         const MAX_BYTES = 64 * 1024 * 1024; // 64MB
@@ -103,62 +103,30 @@ export default function CreateProduct() {
         if (tooLarge) {
           toast({
             title: "Arquivo muito grande",
-            description: `O arquivo “${tooLarge.name}” excede 64MB.`,
+            description: `O arquivo "${tooLarge.name}" excede 64MB.`,
             variant: "destructive",
           });
           return;
         }
 
-        setIsUploadingDeliveryFiles(true);
+        setIsUploadingDelivery(true);
         setDeliveryUpload({ total: deliveryFiles.length, done: 0, currentName: deliveryFiles[0]?.name });
+
         try {
-          // Paralelo com limite de concorrência (mais rápido em internet boa)
-          const CONCURRENCY = 3;
-
-          const uploadOne = async (file: File) => {
+          for (let i = 0; i < deliveryFiles.length; i++) {
+            const file = deliveryFiles[i];
             setDeliveryUpload((prev) => ({ ...prev, currentName: file.name }));
-
-            const formData = new FormData();
-            formData.append("file", file);
-
-            const response = await fetch("/api/upload", {
-              method: "POST",
-              body: formData,
-            });
-
-            if (!response.ok) {
-              const errorData = await response.json().catch(() => ({}));
-              throw new Error(errorData.message || "Falha no upload");
+            
+            const result = await uploadDeliveryFile(file);
+            if (!result?.uploadURL) {
+              throw new Error(`Falha no upload do arquivo: ${file.name}`);
             }
-
-            const data = await response.json();
-            const publicUrl = data.url;
-
-            if (!publicUrl) throw new Error("Falha ao obter URL pública do arquivo");
-
-            setDeliveryUpload((prev) => ({ ...prev, done: Math.min(prev.done + 1, prev.total) }));
-            return publicUrl;
-          };
-
-          const results: string[] = new Array(deliveryFiles.length);
-          let nextIndex = 0;
-
-          const worker = async () => {
-            while (true) {
-              const idx = nextIndex;
-              nextIndex += 1;
-              if (idx >= deliveryFiles.length) break;
-              results[idx] = await uploadOne(deliveryFiles[idx]);
-            }
-          };
-
-          await Promise.all(
-            Array.from({ length: Math.min(CONCURRENCY, deliveryFiles.length) }, () => worker())
-          );
-
-          deliveryFileUrls = results.filter(Boolean);
+            
+            deliveryFileUrls.push(result.uploadURL);
+            setDeliveryUpload((prev) => ({ ...prev, done: prev.done + 1 }));
+          }
         } finally {
-          setIsUploadingDeliveryFiles(false);
+          setIsUploadingDelivery(false);
           setDeliveryUpload({ total: 0, done: 0, currentName: undefined });
         }
       }
@@ -184,19 +152,16 @@ export default function CreateProduct() {
 
   const isStepValid = () => {
     if (step === 1) {
-      // Descrição é opcional: só exigimos nome e preço para avançar
       return newProduct.name.trim() !== "" && newProduct.price.trim() !== "";
     }
     if (step === 2) {
-      // Validate that either a delivery link is provided OR files are uploaded
       const hasLink = newProduct.deliveryUrl.trim() !== "";
       const hasFiles = deliveryFiles.length > 0;
 
       if (!hasLink && !hasFiles) return false;
 
-      // If a link is provided, it must be valid
       if (hasLink) {
-        const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+        const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/;
         return urlPattern.test(newProduct.deliveryUrl.trim());
       }
 
@@ -212,7 +177,7 @@ export default function CreateProduct() {
       const hasLink = newProduct.deliveryUrl.trim() !== "";
       const isUrlInvalid =
         hasLink &&
-        !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/.test(
+        !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(
           newProduct.deliveryUrl.trim()
         );
 
@@ -251,7 +216,7 @@ export default function CreateProduct() {
             </span>
           </div>
           {i < steps.length - 1 && (
-            <div className={`h-[1px] flex-1 mx-4 ${step > s.id ? 'bg-purple-600' : 'bg-zinc-800'}`} />
+            <div className={`h-[1px] flex-1 mx-4 ${step > s.id ? 'bg-purple-600' : 'bg-zinc-800'`} />
           )}
         </div>
       ))}
@@ -286,10 +251,10 @@ export default function CreateProduct() {
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-zinc-200">Capa do Produto</label>
                   <div
-                    className={`border-2 border-dashed border-zinc-800 rounded-2xl p-0 flex flex-col items-center justify-center transition-colors cursor-pointer group relative overflow-hidden w-[200px] h-[200px] mx-auto ${imagePreview ? 'bg-transparent' : 'bg-zinc-900/40 hover:bg-zinc-900/60'} ${isUploadingImage ? 'pointer-events-none opacity-70' : ''}`}
-                    onClick={() => !isUploadingImage && document.getElementById('image-upload')?.click()}
+                    className={`border-2 border-dashed border-zinc-800 rounded-2xl p-0 flex flex-col items-center justify-center transition-colors cursor-pointer group relative overflow-hidden w-[200px] h-[200px] mx-auto ${imagePreview ? 'bg-transparent' : 'bg-zinc-900/40 hover:bg-zinc-900/60'} ${isUploadingHero ? 'pointer-events-none opacity-70' : ''}`}
+                    onClick={() => !isUploadingHero && document.getElementById('image-upload')?.click()}
                   >
-                    {isUploadingImage && (
+                    {isUploadingHero && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-20">
                         <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
                       </div>
@@ -318,7 +283,7 @@ export default function CreateProduct() {
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      disabled={isUploadingImage}
+                      disabled={isUploadingHero}
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
@@ -393,7 +358,7 @@ export default function CreateProduct() {
                       step="0.01"
                       className={`bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500 ${showErrors && !newProduct.price ? 'border-red-500/50 focus-visible:ring-red-500' : ''}`}
                       value={newProduct.price}
-                      onChange={e => {
+                      onChange={(e) => {
                         const val = e.target.value;
                         if (val === "" || Number(val) >= 0) {
                           setNewProduct({ ...newProduct, price: val });
@@ -425,14 +390,14 @@ export default function CreateProduct() {
                       <label className="text-sm font-bold text-zinc-200">Link de Acesso (Opcional se houver arquivos)</label>
                     </div>
                     <Input
-                      className={`bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500 ${showErrors && newProduct.deliveryUrl && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/.test(newProduct.deliveryUrl.trim())
+                      className={`bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500 ${showErrors && newProduct.deliveryUrl && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(newProduct.deliveryUrl.trim())
                         ? 'border-red-500/50 focus-visible:ring-red-500' : ''
                         }`}
                       placeholder="https://exemplo.com/acesso"
                       value={newProduct.deliveryUrl}
-                      onChange={e => setNewProduct({ ...newProduct, deliveryUrl: e.target.value })}
+                      onChange={(e) => setNewProduct({ ...newProduct, deliveryUrl: e.target.value })}
                     />
-                    {showErrors && newProduct.deliveryUrl && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/.test(newProduct.deliveryUrl.trim()) && (
+                    {showErrors && newProduct.deliveryUrl && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(newProduct.deliveryUrl.trim()) && (
                       <p className="text-[10px] text-red-500 font-medium ml-1">Insira um link válido com domínio (ex: google.com)</p>
                     )}
                     <p className="text-[11px] text-zinc-500 ml-1 font-medium text-purple-400/80">O cliente receberá este link automaticamente por e-mail.</p>
@@ -487,13 +452,13 @@ export default function CreateProduct() {
                             size="sm"
                             className="h-7 text-[10px] text-red-400 hover:bg-red-500/10"
                             onClick={() => setDeliveryFiles([])}
-                            disabled={isUploadingDeliveryFiles}
+                            disabled={isUploadingDelivery}
                           >
                             Remover todos
                           </Button>
                         </div>
 
-                        {isUploadingDeliveryFiles && deliveryUpload.total > 0 && (
+                        {isUploadingDelivery && deliveryUpload.total > 0 && (
                           <div className="space-y-2">
                             <div className="flex items-center justify-between text-[11px] text-zinc-400">
                               <span className="truncate">Enviando: {deliveryUpload.currentName ?? "..."}</span>
@@ -511,7 +476,7 @@ export default function CreateProduct() {
                                 onClick={() =>
                                   setDeliveryFiles((prev) => prev.filter((_, i) => i !== idx))
                                 }
-                                disabled={isUploadingDeliveryFiles}
+                                disabled={isUploadingDelivery}
                               >
                                 <Plus className="w-3.5 h-3.5 text-zinc-500 rotate-45" />
                               </button>
@@ -536,9 +501,9 @@ export default function CreateProduct() {
               <Button
                 className="flex-[2] h-12 bg-purple-600 hover:bg-purple-500 text-white font-bold border-0 shadow-none"
                 onClick={() => (step === 2 ? handleCreate() : handleNext())}
-                disabled={createProduct.isPending || isUploadingDeliveryFiles || isUploadingImage}
+                disabled={createProduct.isPending || isUploadingDelivery || isUploadingHero}
               >
-                {createProduct.isPending || isUploadingDeliveryFiles ? (
+                {createProduct.isPending || isUploadingDelivery ? (
                   <span className="inline-flex items-center gap-2">
                     <Loader2 className="animate-spin w-4 h-4" />
                     Enviando...
