@@ -35,12 +35,18 @@ export async function setupVite(server: Server, app: Express) {
   app.use(vite.middlewares);
 
   // Standard catch-all for SPA routing in development
-  // Express 5 requires named parameters for wildcards
-  app.get("/:path*", async (req, res, next) => {
+  // Using a pathless middleware to avoid path-to-regexp issues in Express 5
+  app.use(async (req, res, next) => {
     const url = req.originalUrl;
 
-    // Skip API and static uploads
-    if (url.startsWith("/api") || url.startsWith("/uploads")) {
+    // Skip API, static uploads, and Vite internal requests
+    if (
+      url.startsWith("/api") || 
+      url.startsWith("/uploads") || 
+      url.startsWith("/@") || 
+      url.startsWith("/node_modules") ||
+      url.includes(".") // Skip files with extensions
+    ) {
       return next();
     }
 
