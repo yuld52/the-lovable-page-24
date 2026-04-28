@@ -17,8 +17,10 @@ import { useState } from "react";
 import { useUser } from "@/hooks/use-user";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
+import { Button } from "@/components/ui/button";
 
 export function Sidebar() {
+  // ... rest of the code remains exactly the same
   const [location, setLocation] = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(location.startsWith("/settings"));
 

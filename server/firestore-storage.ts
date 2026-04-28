@@ -496,4 +496,3 @@ export class FirestoreStorage {
 }
 
 export const firestoreStorage = new FirestoreStorage();
-export type { FirestoreStorage };

@@ -206,9 +206,8 @@ export default function CreateProduct() {
     <div className="flex items-center justify-between mb-8 px-2 max-w-2xl mx-auto">
       {steps.map((s, i) => (
         <div key={s.id} className="flex items-center flex-1 last:flex-none">
-          <div className="flex flex-col items-center gap-2">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${step >= s.id ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
-              }`}>
+          <div className={`flex flex-col items-center gap-2`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${step >= s.id ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500 border border-zinc-700'`}>
               {step > s.id ? <Check className="w-4 h-4" /> : s.id}
             </div>
             <span className={`text-[10px] font-medium whitespace-nowrap ${step >= s.id ? 'text-zinc-300' : 'text-zinc-500'}`}>
@@ -251,8 +250,8 @@ export default function CreateProduct() {
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-zinc-200">Capa do Produto</label>
                   <div
-                    className={`border-2 border-dashed border-zinc-800 rounded-2xl p-0 flex flex-col items-center justify-center transition-colors cursor-pointer group relative overflow-hidden w-[200px] h-[200px] mx-auto ${imagePreview ? 'bg-transparent' : 'bg-zinc-900/40 hover:bg-zinc-900/60'} ${isUploadingHero ? 'pointer-events-none opacity-70' : ''}`}
-                    onClick={() => !isUploadingHero && document.getElementById('image-upload')?.click()}
+                    className={`border-2 border-dashed border-zinc-800 rounded-2xl p-0 flex flex-col items-center justify-center transition-colors cursor-pointer group relative overflow-hidden w-[200px] h-[200px] mx-auto ${imagePreview ? 'bg-transparent' : 'bg-zinc-900/40 hover:bg-zinc-900/60'}`}
+                    onClick={() => { if (!isUploadingHero) document.getElementById('image-upload')?.click(); }}
                   >
                     {isUploadingHero && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-20">
@@ -305,7 +304,7 @@ export default function CreateProduct() {
                     <Input
                       className={`bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500 ${showErrors && !newProduct.name ? 'border-red-500/50 focus-visible:ring-red-500' : ''}`}
                       value={newProduct.name}
-                      onChange={e => setNewProduct({ ...newProduct, name: e.target.value })}
+                      onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
                       placeholder="Ex: Curso completo de Marketing Digital"
                     />
                     {showErrors && !newProduct.name && (
@@ -488,7 +487,8 @@ export default function CreateProduct() {
                   </div>
                 </div>
               </div>
-            )}            <div className="flex items-center gap-3 pt-6 mt-6">
+            )}
+            <div className="flex items-center gap-3 pt-6 mt-6">
               {step > 1 && (
                 <Button
                   variant="ghost"

@@ -145,13 +145,17 @@ export default function EditProduct() {
           <div className="flex items-center justify-between mb-8 px-2">
             {steps.map((s, i) => (
               <div key={s.id} className="flex items-center flex-1 last:flex-none">
-                <div className="flex flex-col items-center gap-2">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${step >= s.id ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}>
+                <div className={`flex flex-col items-center gap-2`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${step >= s.id ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500 border border-zinc-700'`}>
                     {step > s.id ? <Check className="w-4 h-4" /> : s.id}
                   </div>
-                  <span className="text-[10px] text-zinc-500">{s.title}</span>
+                  <span className={`text-[10px] font-medium whitespace-nowrap ${step >= s.id ? 'text-zinc-300' : 'text-zinc-500'}`}>
+                    {s.title}
+                  </span>
                 </div>
-                {i < steps.length - 1 && <div className={`h-[1px] flex-1 mx-4 ${step > s.id ? 'bg-purple-600' : 'bg-zinc-800'`} />}
+                {i < steps.length - 1 && (
+                  <div className={`h-[1px] flex-1 mx-4 ${step > s.id ? 'bg-purple-600' : 'bg-zinc-800'`} />
+                )}
               </div>
             ))}
           </div>
@@ -163,7 +167,7 @@ export default function EditProduct() {
                   <label className="text-sm font-bold text-zinc-200">Capa do Produto</label>
                   <div
                     className={`border-2 border-dashed border-zinc-800 rounded-2xl w-[200px] h-[200px] mx-auto overflow-hidden cursor-pointer relative group ${isUploadingHero ? 'pointer-events-none opacity-70' : ''}`}
-                    onClick={() => !isUploadingHero && document.getElementById('edit-image')?.click()}
+                    onClick={() => { if (!isUploadingHero) document.getElementById('edit-image')?.click(); }}
                   >
                     {isUploadingHero && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-20">
@@ -181,7 +185,7 @@ export default function EditProduct() {
                       className="hidden"
                       accept="image/*"
                       disabled={isUploadingHero}
-                      onChange={e => {
+                      onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) handleImageUpload(file);
                       }}
@@ -192,15 +196,15 @@ export default function EditProduct() {
                 <div className="space-y-4 bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/50">
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-zinc-200">Nome</label>
-                    <Input className="bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                    <Input className="bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-zinc-200">Descrição</label>
-                    <textarea className="w-full bg-black/40 border border-zinc-800 rounded-md p-3 min-h-[120px] text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                    <textarea className="w-full bg-black/40 border border-zinc-800 rounded-md p-3 min-h-[120px] text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-zinc-200">Preço (USD)</label>
-                    <Input type="number" step="0.01" className="bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} />
+                    <Input type="number" step="0.01" className="bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} />
                   </div>
                 </div>
               </div>
@@ -273,7 +277,7 @@ export default function EditProduct() {
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-red-400" onClick={() => {
                                   setNewFiles(files => files.filter((_, i) => i !== idx));
                                 }}>
-                                  <Trash2 className="w-4 h-4" />
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
                             ))}
@@ -317,7 +321,7 @@ export default function EditProduct() {
                                     deliveryFiles: formData.deliveryFiles.filter((_, i) => i !== idx)
                                   });
                                 }}>
-                                  <Plus className="w-4 h-4 rotate-45" />
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
                             ))}
