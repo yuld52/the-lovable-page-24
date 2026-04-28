@@ -18,7 +18,10 @@ import {
     type SupportedCurrencyCode,
 } from "@/lib/currency";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, Lock, ShieldCheck, Star, Timer, CreditCard } from "lucide-react";
+import { CheckCircle2, Lock, ShieldCheck, Star, Timer, CreditCard, Loader2 } from "lucide-react";
+import { PayPalVisual } from "@/components/payments/PayPalVisual";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 const defaultConfig: CheckoutConfig = {
     timerMinutes: 10,
@@ -105,6 +108,7 @@ export default function PublicCheckout() {
     const slug = params?.slug;
     const [orderBumpSelected, setOrderBumpSelected] = useState<number[]>([]);
     const [isPaid, setIsPaid] = useState(false);
+    const { toast } = useToast();
 
     const { data: checkoutData, isLoading: isLoadingCheckout, error: checkoutError } = useQuery<Checkout | null>({
         queryKey: ["public-checkout", slug],
@@ -116,7 +120,7 @@ export default function PublicCheckout() {
             if (querySnapshot.empty) throw new Error("Checkout not found");
             const doc = querySnapshot.docs[0];
             const data = doc.data();
-            return { id: doc.id, productId: data.product_id ?? data.productId ?? 0, name: data.name, slug: data.slug, config: data.config } as any;
+            return { id: doc.id, productId: data.product_id ?? data.productId ?? 0, name: data.name, slug: data.slug, config: data.config, ownerId: data.owner_id ?? data.ownerId } as any;
         },
         retry: false,
     });
@@ -139,6 +143,16 @@ export default function PublicCheckout() {
             const querySnapshot = await getDocs(collection(db, "products"));
             return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
         },
+    });
+
+    const { data: paypalConfig } = useQuery({
+        queryKey: ["paypal-config", slug],
+        enabled: !!slug,
+        queryFn: async () => {
+            const res = await fetch(`/api/paypal/public-config?slug=${slug}`);
+            if (!res.ok) return null;
+            return res.json();
+        }
     });
 
     const config: CheckoutConfig = checkoutData?.config || defaultConfig;
@@ -183,7 +197,47 @@ export default function PublicCheckout() {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    if (isLoadingCheckout || isLoadingProduct) return <div className="min-h-screen bg-[#f9fafb]" />;
+    const handleCreateOrder = async () => {
+        if (!formData.email || !formData.name) {
+            setShowErrors(true);
+            toast({ title: "Erro", description: "Preencha seu nome e e-mail para continuar.", variant: "destructive" });
+            throw new Error("Validation failed");
+        }
+
+        const totalUsdCents = calculateTotal();
+        const totalMinor = convertUsdCentsToCurrencyMinor(totalUsdCents, currency, usdToCurrencyRate);
+
+        const res = await apiRequest("POST", "/api/paypal/create-order", {
+            checkoutId: Number(checkoutData?.id),
+            productId: Number(product?.id),
+            currency,
+            totalUsdCents,
+            totalMinor,
+            orderBumpProductIds: orderBumpSelected,
+            customerData: {
+                email: formData.email,
+                name: formData.name
+            }
+        });
+
+        const data = await res.json();
+        return data.id;
+    };
+
+    const handleApprove = async (orderId: string) => {
+        try {
+            const res = await apiRequest("POST", `/api/paypal/capture-order/${orderId}`);
+            const data = await res.json();
+            if (data.status === "COMPLETED" || data.status === "paid") {
+                setIsPaid(true);
+                toast({ title: "Sucesso", description: "Pagamento realizado com sucesso!" });
+            }
+        } catch (err: any) {
+            toast({ title: "Erro", description: "Falha ao processar pagamento.", variant: "destructive" });
+        }
+    };
+
+    if (isLoadingCheckout || isLoadingProduct) return <div className="min-h-screen bg-[#f9fafb] flex items-center justify-center"><Loader2 className="animate-spin text-purple-600" /></div>;
     if (checkoutError || !checkoutData || !product) return <div className="p-8 text-center">Checkout não encontrado</div>;
 
     const orderBumpProductsData = allProducts?.filter((p) => config.orderBumpProducts.includes(p.id)) || [];
@@ -193,8 +247,8 @@ export default function PublicCheckout() {
             <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center" style={{ backgroundColor: config.backgroundColor, color: config.textColor }}>
                 <div className="max-w-2xl w-full bg-white rounded-2xl p-10 shadow-xl border border-gray-100">
                     <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"><CheckCircle2 className="w-10 h-10 text-green-500" /></div>
-                    <h1 className="text-3xl font-bold mb-4">{t.paymentConfirmed}</h1>
-                    <p className="text-lg opacity-80 mb-8">{t.paymentConfirmedDescription}</p>
+                    <h1 className="text-3xl font-bold mb-4" style={{ color: '#111827' }}>{t.paymentConfirmed}</h1>
+                    <p className="text-lg opacity-80 mb-8" style={{ color: '#4b5563' }}>{t.paymentConfirmedDescription}</p>
                     {product?.deliveryUrl && <Button size="lg" className="w-full bg-green-600 text-white font-bold h-14" onClick={() => window.open(product.deliveryUrl || '', '_blank')}>Acessar Conteúdo Agora</Button>}
                 </div>
             </div>
@@ -253,11 +307,11 @@ export default function PublicCheckout() {
                         <div className="p-4 space-y-4">
                             <div className="space-y-1">
                                 <label className="block text-[11px]">{t.emailLabel}</label>
-                                <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder={t.emailPlaceholder} className="w-full h-11 px-3 rounded-md border border-gray-300 text-sm" style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
+                                <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder={t.emailPlaceholder} className={`w-full h-11 px-3 rounded-md border text-sm focus:outline-none focus:ring-1 ${showErrors && !formData.email ? 'border-red-500' : 'border-gray-300'}`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
                             </div>
                             <div className="space-y-1">
                                 <label className="block text-[11px]">{t.fullNameLabel}</label>
-                                <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder={t.fullNamePlaceholder} className="w-full h-11 px-3 rounded-md border border-gray-300 text-sm" style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
+                                <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder={t.fullNamePlaceholder} className={`w-full h-11 px-3 rounded-md border text-sm focus:outline-none focus:ring-1 ${showErrors && !formData.name ? 'border-red-500' : 'border-gray-300'}`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
                             </div>
                         </div>
                         {orderBumpProductsData.length > 0 && (
@@ -279,7 +333,16 @@ export default function PublicCheckout() {
                             </div>
                         )}
                         <div className="p-4 space-y-3">
-                            <Button className="w-full h-14 text-lg font-bold" style={{ backgroundColor: config.primaryColor }}>{t.buyNow}</Button>
+                            <div className="mb-4">
+                                <PayPalVisual
+                                    clientId={paypalConfig?.clientId}
+                                    currency={currency}
+                                    environment={paypalConfig?.environment}
+                                    createOrder={handleCreateOrder}
+                                    onApprove={handleApprove}
+                                    locale={activeLanguage === 'pt' ? 'pt_BR' : activeLanguage === 'es' ? 'es_ES' : 'en_US'}
+                                />
+                            </div>
                             <div className="pt-4 border-t border-gray-100">
                                 <div className="flex justify-between items-center"><span className="font-bold text-xs">{t.total}</span><span className="font-bold text-lg" style={{ color: config.primaryColor }}>{moneyFromUsdCents(calculateTotal())}</span></div>
                             </div>

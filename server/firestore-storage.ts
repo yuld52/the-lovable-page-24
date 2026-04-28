@@ -286,10 +286,20 @@ export class FirestoreStorage {
   // Settings
   async getSettings(userId: string): Promise<any | undefined> {
     try {
+      // First try by document ID (UID), which is how the frontend saves it
+      const docRef = adminDb.collection("settings").doc(userId);
+      const docSnap = await docRef.get();
+      
+      if (docSnap.exists) {
+        return { id: docSnap.id, ...docSnap.data() };
+      }
+
+      // Fallback to searching by userId field
       const snapshot = await adminDb.collection("settings")
         .where("userId", "==", userId)
         .limit(1)
         .get();
+      
       if (snapshot.empty) return undefined;
       const doc = snapshot.docs[0];
       return { id: doc.id, ...doc.data() };
@@ -313,12 +323,10 @@ export class FirestoreStorage {
 
   async updateSettings(userId: string, updates: any): Promise<any> {
     try {
-      const snapshot = await adminDb.collection("settings")
-        .where("userId", "==", userId)
-        .limit(1)
-        .get();
+      const docRef = adminDb.collection("settings").doc(userId);
+      const docSnap = await docRef.get();
 
-      if (snapshot.empty) {
+      if (!docSnap.exists) {
         const settingsData = {
           userId,
           ...updates,
@@ -330,11 +338,9 @@ export class FirestoreStorage {
           trackCheckout: true,
           trackPurchaseRefund: true
         };
-        const docRef = adminDb.collection("settings").doc();
         await docRef.set(settingsData);
         return { id: docRef.id, ...settingsData };
       } else {
-        const docRef = snapshot.docs[0].ref;
         await docRef.update(updates);
         const updated = await docRef.get();
         return { id: updated.id, ...updated.data() };
