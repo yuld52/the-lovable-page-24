@@ -128,6 +128,11 @@ export const settings = pgTable("settings", {
   utmfyToken: text("utmfy_token"),
   salesNotifications: boolean("sales_notifications").default(false),
   environment: text("environment").default("sandbox"), // sandbox or production
+  metaEnabled: boolean("meta_enabled").default(true),
+  utmfyEnabled: boolean("utmfy_enabled").default(true),
+  trackTopFunnel: boolean("track_top_funnel").default(true),
+  trackCheckout: boolean("track_checkout").default(true),
+  trackPurchaseRefund: boolean("track_purchase_refund").default(true),
 });
 
 export type CheckoutLanguage = "pt" | "en" | "es" | "AUTO";
@@ -171,6 +176,11 @@ export const sales = pgTable("sales", {
   paypalCurrency: text("paypal_currency"),
   paypalAmountMinor: integer("paypal_amount_minor"),
   createdAt: timestamp("created_at").defaultNow(),
+  utmSource: text("utm_source"),
+  utmMedium: text("utm_medium"),
+  utmCampaign: text("utm_campaign"),
+  utmContent: text("utm_content"),
+  utmTerm: text("utm_term"),
 });
 
 export const pushSubscriptions = pgTable("push_subscriptions", {
@@ -235,4 +245,3 @@ export type DashboardStats = {
 
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
-

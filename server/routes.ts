@@ -15,7 +15,7 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  registerTrackingRoutes(app, storage);
+  registerTrackingRoutes(app, storage as any);
 
   // Setup upload directory
   const uploadDir = path.join(process.cwd(), "public", "uploads");
@@ -136,6 +136,16 @@ export async function registerRoutes(
     }
   });
 
+  app.delete(api.checkouts.delete.path, requireAuth, async (req, res) => {
+    try {
+      const userId = String((req as any).user?.id || "");
+      await storage.deleteCheckout(parseInt(req.params.id as string), userId);
+      res.status(204).end();
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Settings
   app.get(api.settings.get.path, requireAuth, async (req, res) => {
     const userId = String((req as any).user?.id || "");
@@ -246,7 +256,8 @@ export async function registerRoutes(
 
   app.delete("/api/users-v2/:uid", requireAuth, async (req, res) => {
     if ((req as any).user?.email !== "juniornegocios015@gmail.com") return res.status(403).json({ message: "Acesso negado." });
-    await adminAuth.deleteUser(req.params.uid);
+    const uid = Array.isArray(req.params.uid) ? req.params.uid[0] : req.params.uid;
+    await adminAuth.deleteUser(uid);
     res.json({ success: true });
   });
 

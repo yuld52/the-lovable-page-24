@@ -64,32 +64,6 @@ const defaultConfig: CheckoutConfig = {
     previewCurrency: "AUTO",
 };
 
-const productSelect = [
-    "id",
-    "name",
-    "description",
-    "price",
-    "imageUrl:image_url",
-    "deliveryUrl:delivery_url",
-    "whatsappUrl:whatsapp_url",
-    "deliveryFiles:delivery_files",
-    "noEmailDelivery:no_email_delivery",
-    "active",
-    "createdAt:created_at",
-].join(",");
-
-const checkoutSelect = [
-    "id",
-    "productId:product_id",
-    "name",
-    "slug",
-    "publicUrl:public_url",
-    "views",
-    "active",
-    "createdAt:created_at",
-    "config",
-].join(",");
-
 // Helper function to generate a soft, light pastel version of a color
 function getSoftBackgroundColor(color: string): string {
     let r = 0, g = 0, b = 0;
@@ -172,7 +146,7 @@ function getSoftBackgroundColor(color: string): string {
         return hex.length === 1 ? '0' + hex : hex;
     };
 
-    return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
+    return `#${toHex(newR)}${toHex(newG)}${newB ? toHex(newB) : '00'}`;
 }
 
 export default function PublicCheckout() {
@@ -239,31 +213,22 @@ export default function PublicCheckout() {
         [getUtm, sessionId, slug],
     );
 
-    // Mock data removed for absolute real mode
-
     const { data: checkoutData, isLoading: isLoadingCheckout, error: checkoutError } = useQuery<Checkout | null>({
         queryKey: ["public-checkout", slug],
         enabled: !!slug,
         queryFn: async () => {
-            console.log("[PublicCheckout] Fetching checkout with slug:", slug);
             try {
                 const checkoutsRef = collection(db, "checkouts");
                 const q = query(checkoutsRef, where("slug", "==", slug), limit(1));
                 const querySnapshot = await getDocs(q);
 
-                console.log("[PublicCheckout] Query result - empty:", querySnapshot.empty);
-
                 if (querySnapshot.empty) {
-                    console.log("[PublicCheckout] Checkout not found for slug:", slug);
                     throw new Error("Checkout not found");
                 }
 
                 const doc = querySnapshot.docs[0];
                 const data = doc.data();
 
-                console.log("[PublicCheckout] Checkout data:", { id: doc.id, ...data });
-
-                // Support both snake_case (new) and camelCase (old) field names
                 return {
                     id: doc.id,
                     productId: data.product_id ?? data.productId ?? 0,
@@ -287,18 +252,14 @@ export default function PublicCheckout() {
         queryKey: ["public-checkout-product", checkoutData?.productId],
         enabled: !!checkoutData?.productId,
         queryFn: async () => {
-            console.log("[PublicCheckout] Fetching product with ID:", checkoutData!.productId);
             const docRef = doc(db, "products", String(checkoutData!.productId));
             const docSnap = await getDoc(docRef);
 
             if (!docSnap.exists()) {
-                console.log("[PublicCheckout] Product not found for ID:", checkoutData!.productId);
                 return null;
             }
 
             const data = docSnap.data();
-            console.log("[PublicCheckout] Product data:", { id: docSnap.id, ...data });
-            // Support both snake_case (new) and camelCase (old) field names
             return {
                 id: docSnap.id,
                 name: data.name,
@@ -315,7 +276,6 @@ export default function PublicCheckout() {
         },
     });
 
-    // Use product from Firestore directly (no demo product fallback)
     const displayProduct = product;
 
     useEffect(() => {
@@ -324,11 +284,6 @@ export default function PublicCheckout() {
     }, [product?.id, track]);
 
     useEffect(() => {
-        console.log("Meteorfy Checkout Version: 21:05 (Sharp Corners & Local Upload)");
-    }, []);
-
-    useEffect(() => {
-        // Only set title if product name is available, preventing intermediate titles
         if (product?.name) {
             document.title = product.name;
         }
@@ -369,9 +324,7 @@ export default function PublicCheckout() {
         enabled: !!slug,
         queryFn: async () => {
             const res = await fetch(`/api/paypal/public-config?slug=${encodeURIComponent(String(slug))}`);
-            // Allow 503 response - PayPal not configured is not a fatal error
             if (res.status === 503) {
-                console.log("[PayPal] PayPal not configured, allowing checkout to proceed");
                 return { clientId: null, environment: "sandbox" };
             }
             if (!res.ok) {
@@ -383,24 +336,19 @@ export default function PublicCheckout() {
         staleTime: 0,
         refetchOnWindowFocus: true,
         retry: false,
-        retryDelay: 1000,
     });
 
     const isLoading = isLoadingCheckout || isLoadingProduct || isLoadingPaypal;
-    // Only consider PayPal error as fatal if there's no clientId configured
     const isPaypalConfigured = paypalPublicConfig?.clientId != null;
     const error = checkoutError || productError || (!isPaypalConfigured ? null : (paypalError as any));
 
-    // fire once per session when slug is known
     useEffect(() => {
         if (!slug) return;
         track("PageView");
     }, [slug, track]);
 
     const [timerSeconds, setTimerSeconds] = useState(config.timerMinutes * 60);
-
     const { data: autoLanguage } = useAutoLanguage();
-
     const [localLanguage, setLocalLanguage] = useState<CheckoutLanguage | null>(null);
 
     const activeLanguage = localLanguage || (config?.checkoutLanguage === "AUTO" ? (autoLanguage || "pt") : (config?.checkoutLanguage as CheckoutLanguage || "en"));
@@ -457,69 +405,27 @@ export default function PublicCheckout() {
 
     const validateForm = () => {
         const newErrors: Record<string, string> = {};
-
-        console.log("🔍 [Validando] Dados atuais:", formData);
-
         if (!formData.email) newErrors.email = t.requiredField;
         else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = t.invalidEmail;
-
         if (!formData.confirmEmail) newErrors.confirmEmail = t.requiredField;
         else if (formData.email !== formData.confirmEmail) newErrors.confirmEmail = t.emailsDoNotMatch;
-
         if (!formData.name) newErrors.name = t.requiredField;
-
         if (config.showSurname && !formData.surname) newErrors.surname = t.requiredField;
         if (config.showCpf && !formData.cpf) newErrors.cpf = t.requiredField;
         if (config.showCnpj && !formData.cnpj) newErrors.cnpj = t.requiredField;
         if (config.showPhone && !formData.phone) newErrors.phone = t.requiredField;
-
         if (config.showAddress) {
             if (!formData.zip) newErrors.zip = t.requiredField;
             if (!formData.street) newErrors.street = t.requiredField;
             if (!formData.number) newErrors.number = t.requiredField;
         }
-
-        const isValid = Object.keys(newErrors).length === 0;
-        console.log(isValid ? "✅ Formulário válido!" : "❌ Formulário inválido. Erros:", newErrors);
-
         setErrors(newErrors);
-        return isValid;
+        return Object.keys(newErrors).length === 0;
     };
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
-
-    // Auto-clear errors when field becomes valid
-    useEffect(() => {
-        if (!showErrors) return;
-
-        setErrors(prev => {
-            const next = { ...prev };
-            let changed = false;
-
-            if (formData.email && /\S+@\S+\.\S+/.test(formData.email)) {
-                if (next.email) { delete next.email; changed = true; }
-            }
-            if (formData.confirmEmail && formData.email === formData.confirmEmail) {
-                if (next.confirmEmail) { delete next.confirmEmail; changed = true; }
-            }
-            if (formData.name) {
-                if (next.name) { delete next.name; changed = true; }
-            }
-            if (formData.surname) {
-                if (next.surname) { delete next.surname; changed = true; }
-            }
-            if (formData.phone) {
-                if (next.phone) { delete next.phone; changed = true; }
-            }
-            if (formData.cpf) {
-                if (next.cpf) { delete next.cpf; changed = true; }
-            }
-
-            return changed ? next : prev;
-        });
-    }, [formData, showErrors]);
 
     const calculateTotal = () => {
         let total = product?.price ?? 0;
@@ -532,10 +438,8 @@ export default function PublicCheckout() {
 
     const createOrder = async () => {
         if (!checkoutData || !product) throw new Error("Missing checkout/product");
-
         const totalUsdCents = calculateTotal();
         const totalMinor = convertUsdCentsToCurrencyMinor(totalUsdCents, currency, usdToCurrencyRate);
-
         const res = await fetch("/api/paypal/create-order", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -547,29 +451,11 @@ export default function PublicCheckout() {
                 totalUsdCents,
                 totalMinor,
                 orderBumpProductIds: orderBumpSelected,
-                environment: config.environment, // Pass environment from config
+                environment: config.environment,
             }),
         });
-
-        const text = await res.text();
-        let data: any = null;
-        if (text) {
-            try {
-                data = JSON.parse(text);
-            } catch {
-                // keep as null
-            }
-        }
-
-        if (!res.ok) {
-            throw new Error(
-                (data && (data.message || data.error)) ||
-                (typeof text === "string" && text.trim()) ||
-                `Erro ao criar pedido (HTTP ${res.status})`,
-            );
-        }
-
-        if (!data?.id) throw new Error("Resposta inválida ao criar pedido (sem id)");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Erro ao criar pedido");
         return String(data.id);
     };
 
@@ -586,36 +472,16 @@ export default function PublicCheckout() {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    if (isLoading) {
-        return <div className="min-h-screen bg-[#f9fafb]" />;
-    }
+    if (isLoading) return <div className="min-h-screen bg-[#f9fafb]" />;
     if (error || !checkoutData || !checkoutData.active || !product) {
         return (
-            <div
-                className="min-h-screen flex flex-col items-center justify-center p-4 text-center"
-                style={{ backgroundColor: config.backgroundColor, color: config.textColor }}
-            >
-                <div className="bg-red-50 p-6 rounded-full mb-4">
-                    <ShieldCheck className="w-12 h-12 text-red-500" />
-                </div>
+            <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center" style={{ backgroundColor: config.backgroundColor, color: config.textColor }}>
+                <div className="bg-red-50 p-6 rounded-full mb-4"><ShieldCheck className="w-12 h-12 text-red-500" /></div>
                 <h1 className="text-2xl font-bold mb-2 text-gray-900">{t.invalidLink}</h1>
                 <p className="text-gray-500 max-w-md">{t.invalidLinkDescription}</p>
-                {/* Debug info - only show in development */}
-                {process.env.NODE_ENV === 'development' && (
-                    <div className="mt-4 p-3 bg-gray-100 rounded text-xs text-left">
-                        <p>Slug: {slug}</p>
-                        <p>Checkout: {checkoutData ? 'found' : 'not found'}</p>
-                        <p>Checkout ID: {checkoutData?.id}</p>
-                        <p>ProductId no checkout: {checkoutData?.productId}</p>
-                        <p>Active: {checkoutData?.active ? 'yes' : 'no'}</p>
-                        <p>Product: {product ? 'found' : 'not found'}</p>
-                        <p>Error: {error?.message || 'none'}</p>
-                    </div>
-                )}
             </div>
         );
     }
-
 
     const upsellProducts = allProducts?.filter((p) => config.upsellProducts.includes(p.id)) || [];
     const orderBumpProductsData = allProducts?.filter((p) => config.orderBumpProducts.includes(p.id)) || [];
@@ -624,145 +490,39 @@ export default function PublicCheckout() {
     if (isPaid) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center" style={{ backgroundColor: config.backgroundColor, color: config.textColor }}>
-
                 <div className="max-w-2xl w-full bg-white rounded-2xl p-10 shadow-xl border border-gray-100">
-                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <CheckCircle2 className="w-10 h-10 text-green-500" />
-                    </div>
+                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"><CheckCircle2 className="w-10 h-10 text-green-500" /></div>
                     <h1 className="text-3xl font-bold mb-4">{t.paymentConfirmed}</h1>
                     <p className="text-lg opacity-80 mb-8">{t.paymentConfirmedDescription}</p>
-
-                    {/* Botão de Acesso ao Produto Principal */}
                     <div className="mb-10 p-6 bg-green-50 rounded-xl border border-green-100">
                         <h3 className="font-bold text-green-800 mb-2">Seu acesso está liberado!</h3>
-                        <p className="text-sm text-green-700 mb-4">Clique abaixo para acessar seu conteúdo imediatamente.</p>
-
-                        {product?.deliveryUrl && (
-                            <Button
-                                size="lg"
-                                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-lg h-14 shadow-lg shadow-green-900/10 mb-3"
-                                onClick={() => displayProduct?.deliveryUrl && window.open(displayProduct.deliveryUrl, '_blank')}
-                            >
-                                Acessar Conteúdo Agora
-                            </Button>
-                        )}
-
-                        {displayProduct?.deliveryFiles && displayProduct.deliveryFiles.length > 0 && (
-                            <div className="space-y-3 mt-3">
-                                {displayProduct.deliveryFiles.map((file, idx) => (
-                                    <Button
-                                        key={idx}
-                                        variant="outline"
-                                        className="w-full justify-start h-auto py-3 px-4 border-green-200 hover:bg-green-100 text-green-800"
-                                        onClick={() => window.open(file, '_blank')}
-                                    >
-                                        <div className="bg-green-200 p-2 rounded mr-3">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><path d="M12 18v-6" /><path d="m9 15 3 3 3-3" /></svg>
-                                        </div>
-                                        <div className="flex flex-col items-start truncate">
-                                            <span className="font-bold truncate w-full text-left">
-                                                {(() => {
-                                                    try {
-                                                        const parts = file.split('/');
-                                                        const filenameWithUuid = parts[parts.length - 1];
-                                                        if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}-/.test(filenameWithUuid)) {
-                                                            return decodeURIComponent(filenameWithUuid.substring(37));
-                                                        }
-                                                        return decodeURIComponent(filenameWithUuid);
-                                                    } catch {
-                                                        return `Arquivo ${idx + 1}`;
-                                                    }
-                                                })()}
-                                            </span>
-                                            <span className="text-xs opacity-70">Clique para baixar</span>
-                                        </div>
-                                    </Button>
-                                ))}
-                            </div>
-                        )}
+                        {product?.deliveryUrl && <Button size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-lg h-14 shadow-lg mb-3" onClick={() => window.open(product.deliveryUrl || '', '_blank')}>Acessar Conteúdo Agora</Button>}
                     </div>
-
-                    {upsellProducts.length > 0 && (
-                        <div className="mt-8 pt-8 border-t border-gray-100 text-left">
-                            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                                <Zap className="w-6 h-6 text-yellow-500 fill-yellow-500" />
-                                {upsellProducts.length > 1 ? t.exclusiveOfferPlural : t.exclusiveOffer}
-                            </h2>
-                            <div className="grid grid-cols-1 gap-4">
-                                {upsellProducts.map(p => (
-                                    <div key={p.id} className="flex gap-4 p-4 rounded-xl border-2 border-dashed border-gray-200 hover:border-primary/50 transition-colors group">
-                                        {p.imageUrl ? (
-                                            <img src={p.imageUrl} alt="" className="w-24 h-24 object-cover rounded-lg" />
-                                        ) : (
-                                            <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center font-bold text-xl text-gray-400">
-                                                {p.name.charAt(0)}
-                                            </div>
-                                        )}
-                                        <div className="flex-1 flex flex-col justify-between">
-                                            <div>
-                                                <h3 className="font-bold text-lg group-hover:text-primary transition-colors">{p.name}</h3>
-                                                <p className="text-sm opacity-70 line-clamp-2">{p.description}</p>
-                                            </div>
-                                            <div className="flex items-center justify-between mt-2">
-                                                <span className="text-xl font-bold text-primary">{moneyFromUsdCents(p.price)}</span>
-                                                <Button size="sm" onClick={() => window.open(p.deliveryUrl || '#', '_blank')}>
-                                                    {t.buyNow}
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-
                 </div>
             </div>
         );
     }
 
+    if (!displayProduct) return null;
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="min-h-screen font-sans"
-            style={{ backgroundColor: config.backgroundColor, color: config.textColor }}
-        >
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="min-h-screen font-sans" style={{ backgroundColor: config.backgroundColor, color: config.textColor }}>
             {config.showTimer && (
                 <div className="py-2 px-4" style={{ backgroundColor: config.backgroundColor }}>
                     <div className="max-w-5xl mx-auto flex flex-col items-center justify-center">
-                        <div
-                            className="w-full max-w-3xl py-4 px-6 text-center text-white flex items-center justify-center gap-6 rounded-none shadow-md"
-                            style={{ backgroundColor: config.timerColor }}
-                            data-testid="timer-bar"
-                        >
-                            <span className="font-sans tabular-nums text-[48px] font-medium leading-none tracking-tighter" style={{ fontFeatureSettings: '"zero" 0' }} data-testid="timer-countdown">
-                                {formatTime(timerSeconds)}
-                            </span>
-                            <Timer className={`${(typeof window !== 'undefined' && window.innerWidth < 768) ? "w-12 h-12" : "w-10 h-10"} animate-pulse shrink-0`} />
-                            <span className={`tracking-tight font-medium leading-tight ${(typeof window !== 'undefined' && window.innerWidth < 768) ? "text-[14px]" : "text-[19px]"}`} data-testid="timer-text">{config.timerText}</span>
+                        <div className="w-full max-w-3xl py-4 px-6 text-center text-white flex items-center justify-center gap-6 rounded-none shadow-md" style={{ backgroundColor: config.timerColor }}>
+                            <span className="font-sans tabular-nums text-[48px] font-medium leading-none tracking-tighter">{formatTime(timerSeconds)}</span>
+                            <Timer className="w-10 h-10 animate-pulse shrink-0" />
+                            <span className="tracking-tight font-medium leading-tight text-[19px]">{config.timerText}</span>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* The rest of the component content... matches exactly line 603 onwards of original file roughly */}
-
             {config.heroImageUrl && (
                 <div className="py-2 px-4" style={{ backgroundColor: config.backgroundColor }}>
                     <div className="max-w-5xl mx-auto flex flex-col items-center justify-center">
-                        <div
-                            className="w-full max-w-3xl overflow-hidden rounded-lg shadow-md"
-                        >
-                            <img
-                                src={config.heroImageUrl}
-                                alt=""
-                                className="w-full h-auto object-contain block rounded-lg transition-opacity duration-300"
-                            />
-                        </div>
+                        <div className="w-full max-w-3xl overflow-hidden rounded-lg shadow-md"><img src={config.heroImageUrl} alt="" className="w-full h-auto object-contain block rounded-lg" /></div>
                     </div>
                 </div>
             )}
@@ -775,13 +535,7 @@ export default function PublicCheckout() {
                                 <Select value={activeLanguage} onValueChange={(val: any) => setLocalLanguage(val)}>
                                     <SelectTrigger className="w-fit bg-transparent border-0 h-8 text-xs gap-2 focus:ring-0 shadow-none hover:bg-black/5 rounded-full px-3 transition-colors" style={{ color: config.textColor }}>
                                         <div className="flex items-center gap-2">
-                                            {activeLanguage === 'en' ? (
-                                                <img src="https://flagcdn.com/w20/us.png" width="16" alt="USA" className="rounded-sm" />
-                                            ) : activeLanguage === 'es' ? (
-                                                <img src="https://flagcdn.com/w20/es.png" width="16" alt="Spain" className="rounded-sm" />
-                                            ) : (
-                                                <img src="https://flagcdn.com/w20/br.png" width="16" alt="Brazil" className="rounded-sm" />
-                                            )}
+                                            {activeLanguage === 'en' ? <img src="https://flagcdn.com/w20/us.png" width="16" alt="USA" className="rounded-sm" /> : activeLanguage === 'es' ? <img src="https://flagcdn.com/w20/es.png" width="16" alt="Spain" className="rounded-sm" /> : <img src="https://flagcdn.com/w20/br.png" width="16" alt="Brazil" className="rounded-sm" />}
                                             <SelectValue />
                                         </div>
                                     </SelectTrigger>
@@ -796,18 +550,10 @@ export default function PublicCheckout() {
                         )}
                         <div className="p-4">
                             <div className="flex items-center gap-4">
-                                {displayProduct.imageUrl ? (
-                                    <img src={displayProduct.imageUrl} alt={displayProduct.name} className="w-20 h-20 object-contain shadow-sm rounded-sm" />
-                                ) : (
-                                    <div className="w-20 h-20 rounded-sm flex items-center justify-center font-bold" style={{ backgroundColor: config.backgroundColor, color: config.textColor }}>
-                                        {displayProduct.name.charAt(0)}
-                                    </div>
-                                )}
+                                {displayProduct.imageUrl ? <img src={displayProduct.imageUrl} alt={displayProduct.name} className="w-20 h-20 object-contain shadow-sm rounded-sm" /> : <div className="w-20 h-20 rounded-sm flex items-center justify-center font-bold" style={{ backgroundColor: config.backgroundColor, color: config.textColor }}>{displayProduct.name.charAt(0)}</div>}
                                 <div className="flex-1 space-y-1">
-                                    <h2 className="font-bold text-[17px]" style={{ color: config.textColor }} data-testid="product-name">{displayProduct.name}</h2>
-                                    <div className="text-lg font-bold" style={{ color: config.primaryColor }} data-testid="product-price">
-                                        {moneyFromUsdCents(displayProduct.price)}
-                                    </div>
+                                    <h2 className="font-bold text-[17px]" style={{ color: config.textColor }}>{displayProduct.name}</h2>
+                                    <div className="text-lg font-bold" style={{ color: config.primaryColor }}>{moneyFromUsdCents(displayProduct.price)}</div>
                                 </div>
                             </div>
                         </div>
@@ -815,433 +561,73 @@ export default function PublicCheckout() {
                         <div className="p-4 space-y-4">
                             <div className="space-y-1">
                                 <label className="block text-[11px] tracking-tight font-normal" style={{ color: config.textColor }}>{t.emailLabel}</label>
-                                <input
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={(e) => handleInputChange("email", e.target.value)}
-                                    placeholder={t.emailPlaceholder}
-                                    className={`w-full h-11 px-3 rounded-md border ${(showErrors && errors.email) ? 'border-red-500' : 'border-gray-300'} flex items-center text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-gray-400`}
-                                    style={{
-                                        backgroundColor: config.backgroundColor,
-                                        color: config.textColor,
-                                        borderColor: (showErrors && errors.email) ? '#ef4444' : '#d1d5db',
-                                        // @ts-ignore
-                                        '--tw-ring-color': config.primaryColor,
-                                    } as React.CSSProperties}
-                                    data-testid="input-email"
-                                />
+                                <input type="email" value={formData.email} onChange={(e) => handleInputChange("email", e.target.value)} placeholder={t.emailPlaceholder} className={`w-full h-11 px-3 rounded-md border ${(showErrors && errors.email) ? 'border-red-500' : 'border-gray-300'} flex items-center text-sm focus:outline-none focus:ring-1 transition-all`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
                                 {(showErrors && errors.email) && <span className="text-[10px] text-red-500">{errors.email}</span>}
                             </div>
                             <div className="space-y-1">
                                 <label className="block text-[11px] tracking-tight font-normal" style={{ color: config.textColor }}>{t.confirmEmailLabel}</label>
-                                <input
-                                    type="email"
-                                    value={formData.confirmEmail}
-                                    onChange={(e) => handleInputChange("confirmEmail", e.target.value)}
-                                    placeholder={t.confirmEmailPlaceholder}
-                                    className={`w-full h-11 px-3 rounded-md border ${(showErrors && errors.confirmEmail) ? 'border-red-500' : 'border-gray-300'} flex items-center text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-gray-400`}
-                                    style={{
-                                        backgroundColor: config.backgroundColor,
-                                        color: config.textColor,
-                                        borderColor: (showErrors && errors.confirmEmail) ? '#ef4444' : '#d1d5db',
-                                        // @ts-ignore
-                                        '--tw-ring-color': config.primaryColor,
-                                    } as React.CSSProperties}
-                                    data-testid="input-confirm-email"
-                                />
+                                <input type="email" value={formData.confirmEmail} onChange={(e) => handleInputChange("confirmEmail", e.target.value)} placeholder={t.confirmEmailPlaceholder} className={`w-full h-11 px-3 rounded-md border ${(showErrors && errors.confirmEmail) ? 'border-red-500' : 'border-gray-300'} flex items-center text-sm focus:outline-none focus:ring-1 transition-all`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
                                 {(showErrors && errors.confirmEmail) && <span className="text-[10px] text-red-500">{errors.confirmEmail}</span>}
                             </div>
                             <div className="space-y-1">
                                 <label className="block text-[11px] tracking-tight font-normal" style={{ color: config.textColor }}>{config.showSurname ? t.nameLabel : t.fullNameLabel}</label>
-                                <input
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={(e) => handleInputChange("name", e.target.value)}
-                                    placeholder={config.showSurname ? t.namePlaceholder : t.fullNamePlaceholder}
-                                    className={`w-full h-11 px-3 rounded-md border ${(showErrors && errors.name) ? 'border-red-500' : 'border-gray-300'} flex items-center text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-gray-400`}
-                                    style={{
-                                        backgroundColor: config.backgroundColor,
-                                        color: config.textColor,
-                                        borderColor: (showErrors && errors.name) ? '#ef4444' : '#d1d5db',
-                                        // @ts-ignore
-                                        '--tw-ring-color': config.primaryColor,
-                                    } as React.CSSProperties}
-                                    data-testid="input-name"
-                                />
+                                <input type="text" value={formData.name} onChange={(e) => handleInputChange("name", e.target.value)} placeholder={config.showSurname ? t.namePlaceholder : t.fullNamePlaceholder} className={`w-full h-11 px-3 rounded-md border ${(showErrors && errors.name) ? 'border-red-500' : 'border-gray-300'} flex items-center text-sm focus:outline-none focus:ring-1 transition-all`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
                                 {(showErrors && errors.name) && <span className="text-[10px] text-red-500">{errors.name}</span>}
                             </div>
                             {config.showSurname && (
                                 <div className="space-y-1">
                                     <label className="block text-[11px] tracking-tight font-normal" style={{ color: config.textColor }}>{t.surnameLabel}</label>
-                                    <input
-                                        type="text"
-                                        value={formData.surname}
-                                        onChange={(e) => handleInputChange("surname", e.target.value)}
-                                        placeholder={t.surnamePlaceholder}
-                                        className={`w-full h-11 px-3 rounded-md border ${(showErrors && errors.surname) ? 'border-red-500' : 'border-gray-300'} flex items-center text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-gray-400`}
-                                        style={{
-                                            backgroundColor: config.backgroundColor,
-                                            color: config.textColor,
-                                            borderColor: (showErrors && errors.surname) ? '#ef4444' : '#d1d5db',
-                                            // @ts-ignore
-                                            '--tw-ring-color': config.primaryColor,
-                                        } as React.CSSProperties}
-                                        data-testid="input-surname"
-                                    />
+                                    <input type="text" value={formData.surname} onChange={(e) => handleInputChange("surname", e.target.value)} placeholder={t.surnamePlaceholder} className={`w-full h-11 px-3 rounded-md border ${(showErrors && errors.surname) ? 'border-red-500' : 'border-gray-300'} flex items-center text-sm focus:outline-none focus:ring-1 transition-all`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
                                     {(showErrors && errors.surname) && <span className="text-[10px] text-red-500">{errors.surname}</span>}
                                 </div>
                             )}
                             {config.showCpf && (
                                 <div className="space-y-1">
                                     <label className="block text-[11px] tracking-tight font-normal" style={{ color: config.textColor }}>{t.cpfLabel}</label>
-                                    <input
-                                        type="text"
-                                        value={formData.cpf}
-                                        onChange={(e) => handleInputChange("cpf", e.target.value)}
-                                        placeholder={t.cpfPlaceholder}
-                                        className={`w-full h-11 px-3 rounded-md border ${(showErrors && errors.cpf) ? 'border-red-500' : 'border-gray-300'} flex items-center text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-gray-400`}
-                                        style={{
-                                            backgroundColor: config.backgroundColor,
-                                            color: config.textColor,
-                                            borderColor: (showErrors && errors.cpf) ? '#ef4444' : '#d1d5db',
-                                            // @ts-ignore
-                                            '--tw-ring-color': config.primaryColor,
-                                        } as React.CSSProperties}
-                                        data-testid="input-cpf"
-                                    />
+                                    <input type="text" value={formData.cpf} onChange={(e) => handleInputChange("cpf", e.target.value)} placeholder={t.cpfPlaceholder} className={`w-full h-11 px-3 rounded-md border ${(showErrors && errors.cpf) ? 'border-red-500' : 'border-gray-300'} flex items-center text-sm focus:outline-none focus:ring-1 transition-all`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
                                     {(showErrors && errors.cpf) && <span className="text-[10px] text-red-500">{errors.cpf}</span>}
-                                </div>
-                            )}
-                            {config.showCnpj && (
-                                <div className="space-y-1">
-                                    <label className="block text-[11px] tracking-tight font-normal" style={{ color: config.textColor }}>{t.cnpjLabel}</label>
-                                    <input
-                                        type="text"
-                                        value={formData.cnpj}
-                                        onChange={(e) => handleInputChange("cnpj", e.target.value)}
-                                        placeholder={t.cnpjPlaceholder}
-                                        className={`w-full h-11 px-3 rounded-md border ${(showErrors && errors.cnpj) ? 'border-red-500' : 'border-gray-300'} flex items-center text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-gray-400`}
-                                        style={{
-                                            backgroundColor: config.backgroundColor,
-                                            color: config.textColor,
-                                            borderColor: (showErrors && errors.cnpj) ? '#ef4444' : '#d1d5db',
-                                            // @ts-ignore
-                                            '--tw-ring-color': config.primaryColor,
-                                        } as React.CSSProperties}
-                                        data-testid="input-cnpj"
-                                    />
-                                    {(showErrors && errors.cnpj) && <span className="text-[10px] text-red-500">{errors.cnpj}</span>}
                                 </div>
                             )}
                             {config.showPhone && (
                                 <div className="space-y-1">
                                     <label className="block text-[11px] tracking-tight font-normal" style={{ color: config.textColor }}>{t.phoneLabel}</label>
-                                    <PhoneInput
-                                        country={'br'}
-                                        enableSearch={true}
-                                        value={formData.phone}
-                                        onChange={(val) => handleInputChange("phone", val)}
-                                        inputStyle={{
-                                            width: '100%',
-                                            height: '44px',
-                                            backgroundColor: config.backgroundColor,
-                                            color: config.textColor,
-                                            borderColor: (showErrors && errors.phone) ? '#ef4444' : '#d1d5db',
-                                            fontSize: '14px'
-                                        }}
-                                        containerStyle={{
-                                            width: '100%'
-                                        }}
-                                        buttonStyle={{
-                                            backgroundColor: config.backgroundColor,
-                                            borderColor: (showErrors && errors.phone) ? '#ef4444' : '#d1d5db'
-                                        }}
-                                        dropdownStyle={{
-                                            backgroundColor: '#ffffff',
-                                            color: '#000000'
-                                        }}
-                                        placeholder="(00) 00000-0000"
-                                    />
+                                    <PhoneInput country={'br'} value={formData.phone} onChange={(val) => handleInputChange("phone", val)} inputStyle={{ width: '100%', height: '44px', backgroundColor: config.backgroundColor, color: config.textColor }} containerStyle={{ width: '100%' }} />
                                     {(showErrors && errors.phone) && <span className="text-[10px] text-red-500">{errors.phone}</span>}
                                 </div>
-                            )}
-                            {config.showAddress && (
-                                <>
-                                    <div className="space-y-1">
-                                        <label className="block text-[11px] tracking-tight font-normal" style={{ color: config.textColor }}>{t.zipLabel}</label>
-                                        <input
-                                            type="text"
-                                            value={formData.zip}
-                                            onChange={(e) => handleInputChange("zip", e.target.value)}
-                                            placeholder={t.zipPlaceholder}
-                                            className={`w-full h-11 px-3 rounded-md border ${(showErrors && errors.zip) ? 'border-red-500' : 'border-gray-300'} flex items-center text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-gray-400`}
-                                            style={{
-                                                backgroundColor: config.backgroundColor,
-                                                color: config.textColor,
-                                                borderColor: (showErrors && errors.zip) ? '#ef4444' : '#d1d5db',
-                                                // @ts-ignore
-                                                '--tw-ring-color': config.primaryColor,
-                                            } as React.CSSProperties}
-                                            data-testid="input-zip"
-                                        />
-                                        {(showErrors && errors.zip) && <span className="text-[10px] text-red-500">{errors.zip}</span>}
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <div className="col-span-2 space-y-1">
-                                            <label className="block text-[11px] tracking-tight font-normal" style={{ color: config.textColor }}>{t.streetLabel}</label>
-                                            <input
-                                                type="text"
-                                                value={formData.street}
-                                                onChange={(e) => handleInputChange("street", e.target.value)}
-                                                placeholder={t.streetPlaceholder}
-                                                className={`w-full h-11 px-3 rounded-md border ${(showErrors && errors.street) ? 'border-red-500' : 'border-gray-300'} flex items-center text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-gray-400`}
-                                                style={{
-                                                    backgroundColor: config.backgroundColor,
-                                                    color: config.textColor,
-                                                    borderColor: (showErrors && errors.street) ? '#ef4444' : '#d1d5db',
-                                                    // @ts-ignore
-                                                    '--tw-ring-color': config.primaryColor,
-                                                } as React.CSSProperties}
-                                                data-testid="input-street"
-                                            />
-                                            {(showErrors && errors.street) && <span className="text-[10px] text-red-500">{errors.street}</span>}
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="block text-[11px] tracking-tight font-normal" style={{ color: config.textColor }}>{t.numberLabel}</label>
-                                            <input
-                                                type="text"
-                                                value={formData.number}
-                                                onChange={(e) => handleInputChange("number", e.target.value)}
-                                                placeholder={t.numberPlaceholder}
-                                                className={`w-full h-11 px-3 rounded-md border ${(showErrors && errors.number) ? 'border-red-500' : 'border-gray-300'} flex items-center text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-gray-400`}
-                                                style={{
-                                                    backgroundColor: config.backgroundColor,
-                                                    color: config.textColor,
-                                                    borderColor: (showErrors && errors.number) ? '#ef4444' : '#d1d5db',
-                                                    // @ts-ignore
-                                                    '--tw-ring-color': config.primaryColor,
-                                                } as React.CSSProperties}
-                                                data-testid="input-number"
-                                            />
-                                            {(showErrors && errors.number) && <span className="text-[10px] text-red-500">{errors.number}</span>}
-                                        </div>
-                                    </div>
-                                </>
                             )}
                         </div>
 
                         {orderBumpProductsData.length > 0 && (
                             <div className="p-4 space-y-4">
-                                <div className="flex items-center gap-2">
-                                    <Star className="w-4 h-4" style={{ fill: config.primaryColor, color: config.primaryColor }} />
-                                    <span className="font-bold text-sm" style={{ color: config.textColor }}>
-                                        {orderBumpProductsData.length > 1 ? t.exclusiveOfferPlural : t.exclusiveOffer}:
-                                    </span>
-                                </div>
-                                {orderBumpProductsData.map(p => {
-                                    const isSelected = orderBumpSelected.includes(p.id);
-                                    const toggleSelection = () => {
-                                        if (isSelected) {
-                                            setOrderBumpSelected(orderBumpSelected.filter(id => id !== p.id));
-                                        } else {
-                                            setOrderBumpSelected([...orderBumpSelected, p.id]);
-                                        }
-                                    };
-                                    return (
-                                        <div key={p.id} className="rounded-lg overflow-hidden border-2 border-dashed" style={{ borderColor: config.primaryColor, backgroundColor: 'transparent' }}>
-                                            <div className="flex items-start gap-3 p-3">
-                                                {p.imageUrl ? (
-                                                    <img src={p.imageUrl} alt="" className="w-20 h-20 object-cover rounded" />
-                                                ) : (
-                                                    <div className="w-20 h-20 bg-gray-900 rounded flex items-center justify-center text-white font-bold text-lg">
-                                                        {p.name.charAt(0)}
-                                                    </div>
-                                                )}
-                                                <div className="flex-1">
-                                                    <h4 className="text-[17px] font-medium" style={{ color: config.textColor }}>{p.name}</h4>
-                                                    <p className="mt-0.5 whitespace-normal break-words text-[13px]" style={{ color: `${config.textColor}99` }}>
-                                                        {p.description?.trim() ? p.description : ""}
-                                                    </p>
-                                                    <div className="mt-1 font-bold text-sm" style={{ color: config.primaryColor }}>
-                                                        + {moneyFromUsdCents(p.price)}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div
-                                                className="flex items-center gap-2 p-3 cursor-pointer rounded-b-lg"
-                                                style={{ backgroundColor: getSoftBackgroundColor(config.primaryColor), borderTop: `1px solid ${config.primaryColor}30` }}
-                                                onClick={toggleSelection}
-                                                data-testid={`order-bump-toggle-${p.id}`}
-                                            >
-                                                <Checkbox
-                                                    id={`order-bump-checkbox-${p.id}`}
-                                                    checked={isSelected}
-                                                    onCheckedChange={() => { }}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="data-[state=checked]:bg-[var(--primary-color)] data-[state=checked]:border-[var(--primary-color)] border-[var(--primary-color)]"
-                                                    style={{ '--primary-color': config.primaryColor } as React.CSSProperties}
-                                                    data-testid={`checkbox-order-bump-${p.id}`}
-                                                />
-                                                <span className="text-sm font-medium" style={{ color: "#000000" }}>{t.addToOrder}</span>
+                                <div className="flex items-center gap-2"><Star className="w-4 h-4" style={{ fill: config.primaryColor, color: config.primaryColor }} /><span className="font-bold text-sm" style={{ color: config.textColor }}>{orderBumpProductsData.length > 1 ? t.exclusiveOfferPlural : t.exclusiveOffer}:</span></div>
+                                {orderBumpProductsData.map(p => (
+                                    <div key={p.id} className="rounded-lg overflow-hidden border-2 border-dashed" style={{ borderColor: config.primaryColor }}>
+                                        <div className="flex items-start gap-3 p-3">
+                                            {p.imageUrl ? <img src={p.imageUrl} alt="" className="w-20 h-20 object-cover rounded" /> : <div className="w-20 h-20 bg-gray-900 rounded flex items-center justify-center text-white font-bold text-lg">{p.name.charAt(0)}</div>}
+                                            <div className="flex-1">
+                                                <h4 className="text-[17px] font-medium" style={{ color: config.textColor }}>{p.name}</h4>
+                                                <div className="mt-1 font-bold text-sm" style={{ color: config.primaryColor }}>+ {moneyFromUsdCents(p.price)}</div>
                                             </div>
                                         </div>
-                                    );
-                                })}
+                                        <div className="flex items-center gap-2 p-3 cursor-pointer rounded-b-lg" style={{ backgroundColor: getSoftBackgroundColor(config.primaryColor) }} onClick={() => orderBumpSelected.includes(p.id) ? setOrderBumpSelected(orderBumpSelected.filter(id => id !== p.id)) : setOrderBumpSelected([...orderBumpSelected, p.id])}>
+                                            <Checkbox checked={orderBumpSelected.includes(p.id)} onCheckedChange={() => { }} />
+                                            <span className="text-sm font-medium" style={{ color: "#000000" }}>{t.addToOrder}</span>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         )}
 
                         <div className="p-4 space-y-3">
-                            <PayPalVisual
-                                clientId={paypalPublicConfig?.clientId ?? null}
-                                currency={currency}
-                                buyerCountry={currency === "USD" ? "US" : undefined}
-                                enableFunding={currency === "USD" ? "venmo,card" : "card"}
-                                environment={(paypalPublicConfig?.environment || "production") as any}
-                                locale={locale}
-                                messageAmount={calculateTotal() / 100}
-                                onBeforePay={() => {
-                                    console.log("🛎️ [PayPal] Iniciando onBeforePay...");
-                                    setShowErrors(true);
-                                    const isValid = validateForm();
-                                    if (!isValid) {
-                                        console.log("⚠️ [PayPal] Validação falhou, subindo para o formulário...");
-                                        document.getElementById('checkout-form-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                    } else {
-                                        console.log("✨ [PayPal] Validação OK! Prosseguindo para o pagamento...");
-                                    }
-                                    return isValid;
-                                }}
-                                onPayStart={() => {
-                                    console.log("🚀 [PAGAR] Usuário clicou em PAGAR!");
-                                    const extra = { email: formData.email, amount: calculateTotal() };
-                                    track("checkout", extra);
-                                    track("payment_pending", extra);
-                                }}
-                                createOrder={createOrder}
-                                onApprove={captureOrder}
-                            />
-
+                            <PayPalVisual clientId={paypalPublicConfig?.clientId ?? null} currency={currency} environment={(paypalPublicConfig?.environment || "production") as any} locale={locale} createOrder={createOrder} onApprove={captureOrder} onBeforePay={validateForm} />
                             <div className="pt-4">
-                                <div className="flex justify-between items-center text-xs mb-2">
-                                    <span style={{ color: `${config.textColor}99` }}>{displayProduct.name}</span>
-                                    <span className="font-medium" style={{ color: config.textColor }}>
-                                        {moneyFromUsdCents(displayProduct.price)}
-                                    </span>
-                                </div>
-                                {orderBumpSelected.map((id) => {
-                                    const p = allProducts?.find((x) => x.id === id);
-                                    if (!p) return null;
-                                    return (
-                                        <div key={p.id} className="flex justify-between items-center text-xs mb-2">
-                                            <span style={{ color: `${config.textColor}99` }}>{p.name}</span>
-                                            <span className="font-medium" style={{ color: config.textColor }}>
-                                                {moneyFromUsdCents(p.price)}
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                                <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-                                    <span className="font-bold text-xs" style={{ color: config.textColor }}>
-                                        {t.total}
-                                    </span>
-                                    <span
-                                        className="font-bold text-lg"
-                                        style={{ color: config.primaryColor }}
-                                        data-testid="total-price"
-                                    >
-                                        {moneyFromUsdCents(calculateTotal())}
-                                    </span>
-                                </div>
+                                <div className="flex justify-between items-center text-xs mb-2"><span style={{ color: `${config.textColor}99` }}>{displayProduct.name}</span><span className="font-medium" style={{ color: config.textColor }}>{moneyFromUsdCents(displayProduct.price)}</span></div>
+                                <div className="flex justify-between items-center pt-2 border-t border-gray-100"><span className="font-bold text-xs" style={{ color: config.textColor }}>{t.total}</span><span className="font-bold text-lg" style={{ color: config.primaryColor }}>{moneyFromUsdCents(calculateTotal())}</span></div>
                             </div>
-                            <Button
-                                className="w-full h-12 text-base font-bold mt-4"
-                                style={{ backgroundColor: config.primaryColor }}
-                                data-testid="button-buy-now"
-                                onClick={() => {
-                                    console.log("🛒 [BOTÃO] Clicou em 'Comprar Agora'");
-                                    setShowErrors(true);
-                                    const isValid = validateForm();
-
-                                    if (isValid) {
-                                        console.log("✅ [BOTÃO] Formulário válido, enviando evento payment_pending");
-                                        const extra = { email: formData.email, amount: calculateTotal() };
-                                        track("checkout", extra);
-                                        track("payment_pending", extra);
-
-                                        // Scroll até os botões do PayPal
-                                        setTimeout(() => {
-                                            const paypalButtons = document.querySelector('[data-testid="paypal-buttons"]');
-                                            if (paypalButtons) {
-                                                paypalButtons.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                            }
-                                        }, 100);
-                                    } else {
-                                        console.log("❌ [BOTÃO] Formulário inválido, corrija os erros");
-                                        // Scroll to form so user can see errors
-                                        document.getElementById('checkout-form-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                    }
-                                }}
-                            >
-                                {(!config.payButtonText || config.payButtonText === "Buy now" || config.payButtonText === "Comprar Agora") ? t.buyNow : config.payButtonText}
-                            </Button>
                         </div>
                     </div>
-
-                    {testimonials.length > 0 && (
-                        <div className="space-y-3">
-                            {testimonials.map((testi) => (
-                                <div key={testi.id} className="rounded-xl border border-gray-200 p-6 shadow-sm" style={{ backgroundColor: config.backgroundColor || '#ffffff' }}>
-                                    <div className="flex flex-col items-center text-center">
-                                        <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-white shadow-md" style={{ backgroundColor: config.backgroundColor }}>
-                                            {testi.imageUrl ? (
-                                                <img src={testi.imageUrl} alt="" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center font-bold text-xl" style={{ color: `${config.textColor}66` }}>
-                                                    {testi.name.charAt(0)}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <h4 className="font-bold text-lg mb-1" style={{ color: config.textColor }} data-testid={`testimonial-name-${testi.id}`}>{testi.name}</h4>
-                                        <div className="flex gap-1 mb-4">
-                                            {[...Array(testi.rating)].map((_, i) => (
-                                                <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                                            ))}
-                                        </div>
-                                        <p className="text-sm font-medium leading-relaxed italic" style={{ color: `${config.textColor}cc` }} data-testid={`testimonial-text-${testi.id}`}>
-                                            "{testi.text.replace(/^["']|["']$/g, '')}"
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
                 </div>
             </div>
-
-            <footer className="py-10 text-center space-y-6 px-4">
-                <div className="flex flex-wrap justify-center gap-6 text-[12px] font-medium" style={{ color: config.textColor }}>
-                    <div className="flex items-center gap-1.5">
-                        <ShieldCheck className="w-4 h-4 text-gray-500" />
-                        <span>{t.securePayment}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <Lock className="w-4 h-4 text-gray-500" />
-                        <span>{t.safeSite}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <CreditCard className="w-4 h-4 text-gray-500" />
-                        <span>{t.variousPaymentMethods}</span>
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <p className="text-[13px] max-w-3xl mx-auto leading-relaxed opacity-70" style={{ color: config.textColor }}>
-                        {t.secureCheckoutTechnology}
-                    </p>
-                    <p className="text-[13px] font-semibold opacity-70" style={{ color: config.textColor }} data-testid="footer-text">
-                        {t.allRightsReserved}
-                    </p>
-                </div>
-            </footer>
         </motion.div>
     );
 }

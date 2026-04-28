@@ -70,7 +70,6 @@ export class FirestoreStorage {
     try {
       let q: any = adminDb.collection("products");
       if (userId) {
-        // Try both field names for compatibility
         const snapshot = await q.get();
         return snapshot.docs
           .map((doc: any) => normalizeProductData(doc.id, doc.data()))
@@ -104,7 +103,7 @@ export class FirestoreStorage {
         owner_id: product.userId || product.ownerId,
         created_at: Timestamp.now()
       };
-      delete productData.userId; // Clean up
+      delete productData.userId;
       
       await adminDb.collection("products").doc(String(id)).set({ ...productData, id: String(id) });
       return { id, ...productData, createdAt: toDate(productData.created_at) };
@@ -117,7 +116,6 @@ export class FirestoreStorage {
   async updateProduct(id: number, updates: any): Promise<any> {
     try {
       const docRef = adminDb.collection("products").doc(String(id));
-      // Map camelCase to snake_case for updates
       const firestoreUpdates: any = { ...updates };
       if (updates.imageUrl) firestoreUpdates.image_url = updates.imageUrl;
       if (updates.deliveryUrl) firestoreUpdates.delivery_url = updates.deliveryUrl;
@@ -246,6 +244,22 @@ export class FirestoreStorage {
     }
   }
 
+  async deleteCheckout(id: number, userId: string): Promise<void> {
+    try {
+      const docRef = adminDb.collection("checkouts").doc(String(id));
+      const docSnap = await docRef.get();
+      if (docSnap.exists) {
+        const data = docSnap.data();
+        if (data?.owner_id === userId || data?.ownerId === userId) {
+          await docRef.delete();
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting checkout:", error);
+      throw error;
+    }
+  }
+
   // Settings
   async getSettings(userId: string): Promise<any | undefined> {
     try {
@@ -365,7 +379,7 @@ export class FirestoreStorage {
         const data = doc.data();
         return {
           id: doc.id,
-          ...data,
+          amount: data.amount || 0,
           createdAt: toDate(data.createdAt || data.created_at)
         };
       });

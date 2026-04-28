@@ -27,7 +27,6 @@ try {
 
 // Memory fallback to prevent 500 errors when DB is unreachable
 const memorySubscriptions: any[] = [];
-const memoryNotifications: any[] = [];
 const memorySettings: Record<string, any> = {};
 
 // Initialize VAPID
@@ -174,7 +173,7 @@ export async function sendNotification({ userId, type, title, body, metadata }: 
 
         const sendPromises = subs.map(async (sub) => {
             try {
-                const subscription = sub.subscription as webpush.PushSubscription;
+                const subscription = sub.subscription;
                 // If the subscription object is a string, parse it
                 const finalSub = typeof subscription === 'string' ? JSON.parse(subscription) : subscription;
                 await webpush.sendNotification(finalSub, payload);
