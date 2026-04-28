@@ -10,6 +10,7 @@ import {
   ChevronDown,
   User,
   BarChart3,
+  DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStats } from "@/hooks/use-stats";
@@ -32,6 +33,7 @@ export function Sidebar() {
     { href: "/products", label: "Produtos", icon: Package },
     { href: "/checkouts", label: "Checkouts", icon: ShoppingCart },
     { href: "/sales", label: "Vendas", icon: Receipt },
+    { href: "/financeiro", label: "Financeiro", icon: DollarSign },
   ];
 
   const isAdmin = user?.email === "juniornegocios015@gmail.com";
@@ -171,19 +173,19 @@ export function Sidebar() {
             )}
           </div>
         </nav>
+      </div>
 
-        <div className="p-4 border-t border-border/50">
-          <div className="px-2">
-            <p className="text-xs text-muted-foreground truncate mb-2">{user?.email || ""}</p>
-            <button 
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-foreground bg-secondary hover:bg-accent rounded-md transition-colors border border-border"
-            >
-              <LogOut size={16} />
-              Sair
-            </button>
-            <p className="text-[10px] text-muted-foreground text-center mt-3">© 2026 Meteorfy Inc.</p>
-          </div>
+      <div className="p-4 border-t border-border/50">
+        <div className="px-2">
+          <p className="text-xs text-muted-foreground truncate mb-2">{user?.email || ""}</p>
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-foreground bg-secondary hover:bg-accent rounded-md transition-colors border border-border"
+          >
+            <LogOut size={16} />
+            Sair
+          </button>
+          <p className="text-[10px] text-muted-foreground text-center mt-3">© 2026 Meteorfy Inc.</p>
         </div>
       </div>
     </div>
