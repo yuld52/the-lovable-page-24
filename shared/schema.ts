@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -24,7 +24,7 @@ export const products = pgTable("products", {
 
 export const checkouts = pgTable("checkouts", {
   id: serial("id").primaryKey(),
-  ownerId: uuid("owner_id"), // auth user id (uuid)
+  ownerId: integer("owner_id"), // Changed from uuid to integer
   productId: integer("product_id").notNull(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
@@ -113,13 +113,13 @@ export type CheckoutConfig = {
   showCnpj: boolean;
   showAddress: boolean;
   checkoutLanguage: CheckoutLanguage | "AUTO";
-  checkoutCurrency?: CheckoutCurrency; // fallback no checkout público quando AUTO falhar
-  previewCurrency?: CheckoutCurrency; // usado apenas no editor (o checkout público ignora)
+  checkoutCurrency?: CheckoutCurrency;
+  previewCurrency?: CheckoutCurrency;
 };
 
 export const settings = pgTable("settings", {
   id: serial("id").primaryKey(),
-  userId: uuid("user_id"), // auth user id (uuid)
+  userId: integer("user_id"), // Changed from uuid to integer
   paypalClientId: text("paypal_client_id"),
   paypalClientSecret: text("paypal_client_secret"),
   paypalWebhookId: text("paypal_webhook_id"),
@@ -127,7 +127,7 @@ export const settings = pgTable("settings", {
   facebookAccessToken: text("facebook_access_token"),
   utmfyToken: text("utmfy_token"),
   salesNotifications: boolean("sales_notifications").default(false),
-  environment: text("environment").default("sandbox"), // sandbox or production
+  environment: text("environment").default("sandbox"),
   metaEnabled: boolean("meta_enabled").default(true),
   utmfyEnabled: boolean("utmfy_enabled").default(true),
   trackTopFunnel: boolean("track_top_funnel").default(true),
@@ -169,7 +169,7 @@ export const sales = pgTable("sales", {
   checkoutId: integer("checkout_id"),
   productId: integer("product_id"),
   amount: integer("amount").notNull(),
-  status: text("status").notNull(), // pending, paid, failed, captured, refunded
+  status: text("status").notNull(),
   customerEmail: text("customer_email"),
   paypalOrderId: text("paypal_order_id"),
   paypalCaptureId: text("paypal_capture_id"),
@@ -185,16 +185,16 @@ export const sales = pgTable("sales", {
 
 export const pushSubscriptions = pgTable("push_subscriptions", {
   id: serial("id").primaryKey(),
-  userId: uuid("user_id"), // auth user id
+  userId: integer("user_id"), // Changed from uuid to integer
   subscription: jsonb("subscription").notNull(),
-  endpoint: text("endpoint").unique().notNull(), // to prevent duplicates
+  endpoint: text("endpoint").unique().notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
-  userId: uuid("user_id"), // auth user id
-  type: text("type").notNull(), // PURCHASE_APPROVED, NEW_LESSON, etc
+  userId: integer("user_id"), // Changed from uuid to integer
+  type: text("type").notNull(),
   title: text("title").notNull(),
   body: text("body").notNull(),
   read: boolean("read").default(false),
@@ -205,46 +205,31 @@ export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
-// Schemas
 export const insertProductSchema = createInsertSchema(products).omit({ id: true, createdAt: true });
-// Permite ownerId como opcional para que o servidor possa injetá-lo sem erro de tipo
-export const insertCheckoutSchema = createInsertSchema(checkouts, {
-  ownerId: z.string().uuid().optional(),
-}).omit({ id: true, createdAt: true, views: true });
+export const insertCheckoutSchema = createInsertSchema(checkouts).omit({ id: true, createdAt: true, views: true });
 export const insertSettingsSchema = createInsertSchema(settings).omit({ id: true, userId: true });
 export const insertSaleSchema = createInsertSchema(sales).omit({ id: true, createdAt: true });
 
-// Types
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
-
 export type Checkout = typeof checkouts.$inferSelect;
 export type InsertCheckout = z.infer<typeof insertCheckoutSchema>;
-
 export type Settings = typeof settings.$inferSelect;
 export type InsertSettings = z.infer<typeof insertSettingsSchema>;
-
 export type Sale = typeof sales.$inferSelect;
 export type InsertSale = z.infer<typeof insertSaleSchema>;
-
-// Request Types
 export type CreateProductRequest = InsertProduct;
 export type UpdateProductRequest = Partial<InsertProduct>;
-
 export type CreateCheckoutRequest = InsertCheckout;
 export type UpdateCheckoutRequest = Partial<CreateCheckoutRequest>;
-
 export type UpdateSettingsRequest = Partial<InsertSettings>;
-
-// Dashboard Stats Type
 export type DashboardStats = {
   salesToday: number;
   revenuePaid: number;
   salesApproved: number;
-  revenueTarget: number; // For the progress bar
+  revenueTarget: number;
   revenueCurrent: number;
   chartData: { name: string; sales: number }[];
 };
-
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;

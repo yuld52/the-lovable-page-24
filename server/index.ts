@@ -17,34 +17,29 @@ app.use("/uploads", express.static(path.join(process.cwd(), "public", "uploads")
 async function initializeData() {
   console.log("🛠️ [SETUP] Verificando dados iniciais...");
   
-  // 1. Garantir usuário admin
   const adminEmail = "juniornegocios015@gmail.com";
-  const existingAdmin = await storage.getUserByUsername(adminEmail);
+  let admin = await storage.getUserByUsername(adminEmail);
   
-  if (!existingAdmin) {
+  if (!admin) {
     console.log("👤 [SETUP] Criando usuário administrador padrão...");
     const hashedPassword = await bcrypt.hash("admin123", 10);
-    await storage.createUser({
+    admin = await storage.createUser({
       username: adminEmail,
       password: hashedPassword
     });
     console.log("✅ [SETUP] Administrador criado: " + adminEmail + " / admin123");
   }
 
-  // 2. Garantir configurações iniciais
   const existingSettings = await storage.getAnySettings();
-  if (!existingSettings) {
+  if (!existingSettings && admin) {
     console.log("⚙️ [SETUP] Inicializando tabela de configurações...");
-    // Criamos um registro vazio vinculado ao admin (ou apenas global)
-    const admin = await storage.getUserByUsername(adminEmail);
-    if (admin) {
-      await storage.updateSettings(String(admin.id), {
-        environment: "sandbox",
-        salesNotifications: false,
-        metaEnabled: true,
-        utmfyEnabled: true
-      });
-    }
+    await storage.updateSettings(String(admin.id), {
+      environment: "sandbox",
+      salesNotifications: false,
+      metaEnabled: true,
+      utmfyEnabled: true
+    });
+    console.log("✅ [SETUP] Configurações iniciais criadas.");
   }
 }
 
@@ -70,10 +65,8 @@ async function initializeData() {
   });
 
   if (process.env.NODE_ENV === "production") {
-    console.log("📦 [SERVER] Servindo arquivos estáticos (Produção)");
     serveStatic(app);
   } else {
-    console.log("⚡ [SERVER] Configurando Vite (Desenvolvimento)");
     const { setupVite } = await import("./vite");
     await setupVite(httpServer, app);
   }
