@@ -207,7 +207,10 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 
 // Schemas
 export const insertProductSchema = createInsertSchema(products).omit({ id: true, createdAt: true });
-export const insertCheckoutSchema = createInsertSchema(checkouts).omit({ id: true, ownerId: true, createdAt: true, views: true });
+// Permite ownerId como opcional para que o servidor possa injetá-lo sem erro de tipo
+export const insertCheckoutSchema = createInsertSchema(checkouts, {
+  ownerId: z.string().uuid().optional(),
+}).omit({ id: true, createdAt: true, views: true });
 export const insertSettingsSchema = createInsertSchema(settings).omit({ id: true, userId: true });
 export const insertSaleSchema = createInsertSchema(sales).omit({ id: true, createdAt: true });
 
@@ -229,7 +232,7 @@ export type CreateProductRequest = InsertProduct;
 export type UpdateProductRequest = Partial<InsertProduct>;
 
 export type CreateCheckoutRequest = InsertCheckout;
-export type UpdateCheckoutRequest = Partial<InsertCheckout>;
+export type UpdateCheckoutRequest = Partial<CreateCheckoutRequest>;
 
 export type UpdateSettingsRequest = Partial<InsertSettings>;
 
