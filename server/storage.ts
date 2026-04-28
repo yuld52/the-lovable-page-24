@@ -5,7 +5,7 @@ import {
   type Product, type InsertProduct, type UpdateProductRequest,
   type Checkout, type InsertCheckout, type UpdateCheckoutRequest,
   type Sale, type InsertSale, type UpdateSettingsRequest,
-  type DashboardStats, type Settings
+  type DashboardStats, type Settings, type CheckoutConfig
 } from "@shared/schema";
 import { eq, sql, and, gte, lt } from "drizzle-orm";
 
@@ -225,7 +225,7 @@ export class MemoryStorage implements IStorage {
       imageUrl: product.imageUrl ?? null,
       deliveryUrl: product.deliveryUrl ?? null,
       whatsappUrl: product.whatsappUrl ?? null,
-      deliveryFiles: product.deliveryFiles ?? [],
+      deliveryFiles: (product.deliveryFiles as string[]) ?? [],
       noEmailDelivery: product.noEmailDelivery ?? false,
       active: product.active ?? true
     };
@@ -256,7 +256,7 @@ export class MemoryStorage implements IStorage {
       views: 0,
       active: true,
       publicUrl: (checkout as any).publicUrl ?? null,
-      config: checkout.config ?? null
+      config: (checkout.config as CheckoutConfig) ?? null
     };
     this.checkouts.set(id, newCheckout);
     return newCheckout;
