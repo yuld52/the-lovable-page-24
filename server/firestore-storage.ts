@@ -39,6 +39,29 @@ function normalizeProductData(docId: string, data: any): any {
   };
 }
 
+// Helper function to normalize sale data from Firestore
+function normalizeSaleData(docId: string, data: any): any {
+  if (!data) return null;
+  return {
+    id: isNaN(parseInt(docId)) ? docId : parseInt(docId),
+    checkoutId: data.checkout_id ?? data.checkoutId ?? null,
+    productId: data.product_id ?? data.productId ?? null,
+    amount: data.amount ?? 0,
+    status: data.status ?? 'pending',
+    customerEmail: data.customer_email ?? data.customerEmail ?? null,
+    paypalOrderId: data.paypal_order_id ?? data.paypalOrderId ?? null,
+    paypalCaptureId: data.paypal_capture_id ?? data.paypalCaptureId ?? null,
+    paypalCurrency: data.paypal_currency ?? data.paypalCurrency ?? null,
+    paypalAmountMinor: data.paypal_amount_minor ?? data.paypalAmountMinor ?? null,
+    createdAt: toDate(data.created_at ?? data.createdAt),
+    utmSource: data.utm_source ?? data.utmSource ?? null,
+    utmMedium: data.utm_medium ?? data.utmMedium ?? null,
+    utmCampaign: data.utm_campaign ?? data.utmCampaign ?? null,
+    utmContent: data.utm_content ?? data.utmContent ?? null,
+    utmTerm: data.utm_term ?? data.utmTerm ?? null,
+  };
+}
+
 // Counter for auto-incrementing IDs
 async function getNextId(collectionName: string): Promise<number> {
   try {
@@ -323,6 +346,20 @@ export class FirestoreStorage {
   }
 
   // Sales
+  async getSales(userId: string): Promise<any[]> {
+    try {
+      const snapshot = await adminDb.collection("sales")
+        .where("user_id", "==", userId)
+        .get();
+      return snapshot.docs
+        .map(doc => normalizeSaleData(doc.id, doc.data()))
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } catch (error) {
+      console.error("Error getting sales:", error);
+      return [];
+    }
+  }
+
   async getSaleByPaypalOrderId(orderId: string): Promise<any | undefined> {
     try {
       const snapshot = await adminDb.collection("sales")
@@ -331,11 +368,7 @@ export class FirestoreStorage {
         .get();
       if (snapshot.empty) return undefined;
       const doc = snapshot.docs[0];
-      return {
-        id: isNaN(parseInt(doc.id)) ? doc.id : parseInt(doc.id),
-        ...doc.data(),
-        createdAt: toDate(doc.data().createdAt)
-      };
+      return normalizeSaleData(doc.id, doc.data());
     } catch (error) {
       console.error("Error getting sale by PayPal order ID:", error);
       return undefined;
@@ -357,11 +390,11 @@ export class FirestoreStorage {
       const saleData = {
         ...sale,
         user_id: sale.user_id || sale.userId,
-        createdAt: Timestamp.now()
+        created_at: Timestamp.now()
       };
       delete saleData.userId;
       await adminDb.collection("sales").doc(String(id)).set({ ...saleData, id: String(id) });
-      return { id, ...saleData, createdAt: toDate(saleData.createdAt) };
+      return { id, ...saleData, createdAt: toDate(saleData.created_at) };
     } catch (error) {
       console.error("Error creating sale:", error);
       throw error;

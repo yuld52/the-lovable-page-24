@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Package,
   ShoppingCart,
+  Receipt,
   Settings,
   LogOut,
   Trophy,
@@ -30,6 +31,7 @@ export function Sidebar() {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/products", label: "Produtos", icon: Package },
     { href: "/checkouts", label: "Checkouts", icon: ShoppingCart },
+    { href: "/sales", label: "Vendas", icon: Receipt },
   ];
 
   const isAdmin = user?.email === "juniornegocios015@gmail.com";

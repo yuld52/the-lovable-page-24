@@ -101,6 +101,15 @@ export const api = {
       },
     },
   },
+  sales: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/sales',
+      responses: {
+        200: z.array(z.custom<typeof sales.$inferSelect>()),
+      },
+    },
+  },
   settings: {
     get: {
       method: 'GET' as const,

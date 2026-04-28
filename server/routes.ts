@@ -146,6 +146,12 @@ export async function registerRoutes(
     }
   });
 
+  // Sales
+  app.get(api.sales.list.path, requireAuth, async (req, res) => {
+    const userId = String((req as any).user?.id || "");
+    res.json(await storage.getSales(userId));
+  });
+
   // Settings
   app.get(api.settings.get.path, requireAuth, async (req, res) => {
     const userId = String((req as any).user?.id || "");

@@ -13,6 +13,7 @@ import Dashboard from "@/pages/Dashboard";
 import Products from "@/pages/Products";
 import EditProduct from "@/pages/EditProduct";
 import Checkouts from "@/pages/Checkouts";
+import Sales from "@/pages/Sales";
 import Settings from "@/pages/Settings";
 import CreateProduct from "@/pages/CreateProduct";
 import CheckoutEditor from "@/pages/CheckoutEditor";
@@ -32,12 +33,6 @@ function Router() {
       // Redireciona para o app principal se tentar acessar dashboard/login pelo domínio de pagamento
       window.location.href = "https://app.meteorfy.online";
     }
-
-    // Se estiver no domínio do app (app.) e tentar acessar checkout, pode redirecionar para o domínio de pagamento (opcional/avançado)
-    // Mas o usuário pediu para dividir, então o ideal é o checkout viver em pay.
-    // if (isAppDomain && path.startsWith("/checkout")) {
-    //   window.location.href = `https://pay.meteorfy.online${path}`;
-    // }
 
     // Define o título padrão para as páginas do app (Login, Dashboard, etc.)
     if (!path.startsWith("/checkout")) {
@@ -61,6 +56,7 @@ function Router() {
       <Route path="/checkouts/new" component={CheckoutEditor} />
       <Route path="/checkouts/edit/:id" component={CheckoutEditor} />
       <Route path="/checkout/:slug" component={PublicCheckout} />
+      <Route path="/sales" component={Sales} />
       <Route path="/settings" component={Settings} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
