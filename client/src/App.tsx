@@ -19,6 +19,7 @@ import CreateProduct from "@/pages/CreateProduct";
 import CheckoutEditor from "@/pages/CheckoutEditor";
 import PublicCheckout from "./pages/PublicCheckout";
 import Financeiro from "@/pages/Financeiro";
+import Admin from "@/pages/Admin";
 
 function Router() {
   const [params, setLocation] = useRoute("/:any*");
@@ -60,6 +61,7 @@ function Router() {
       <Route path="/sales" component={Sales} />
       <Route path="/financeiro" component={Financeiro} />
       <Route path="/settings" component={Settings} />
+      <Route path="/admin" component={Admin} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
