@@ -19,6 +19,8 @@ import { useUser } from "@/hooks/use-user";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 
+const ADMIN_EMAIL = "juniornegocios015@gmail.com";
+
 export function Sidebar() {
   const [location, setLocation] = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(location.startsWith("/settings"));
@@ -27,6 +29,7 @@ export function Sidebar() {
   const currentTab = searchParams.get("tab") || "integracao";
 
   const { user } = useUser();
+  const isAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL;
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -37,7 +40,7 @@ export function Sidebar() {
   ];
 
   const settingSubItems = [
-    { href: "/settings?tab=usuario", label: "Usuários", icon: User },
+    { href: "/settings?tab=usuario", label: "Usuários", icon: User, adminOnly: true },
     { href: "/settings?tab=integracao", label: "Integração", icon: BarChart3 },
   ];
 
@@ -149,6 +152,9 @@ export function Sidebar() {
             {settingsOpen && (
               <div className="space-y-1 ml-4 border-l border-border pl-2">
                 {settingSubItems.map((item) => {
+                  // Only show "Usuários" to admin
+                  if (item.adminOnly && !isAdmin) return null;
+                  
                   const Icon = item.icon;
                   const itemTab = new URLSearchParams(item.href.split("?")[1]).get("tab");
                   const isActive = location === "/settings" && currentTab === itemTab;
