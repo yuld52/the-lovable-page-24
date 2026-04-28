@@ -5,12 +5,13 @@ import { getStorage } from "firebase/storage";
 
 // Firebase configuration - prefer environment variables, fallback to hardcoded values
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCyn6AeXgLQ6rhWc141X2p2ItH3xAB8JHg",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "meteorfy-11bff.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "meteorfy-11bff",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "meteorfy-11bff.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "782512470436",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:782512470436:web:bce327c3134a730fe0e931"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyD_DUO1UFAhh6bNOBWZScrVnXj3Z4GowPU",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "meteorfy1.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "meteorfy1",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "meteorfy1.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "94841260635",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:94841260635:web:6b0742b301256f644c0d7e",
+  measurementId: "G-NQQG8M32VH"
 };
 
 // Initialize Firebase

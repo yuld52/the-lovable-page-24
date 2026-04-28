@@ -5,12 +5,12 @@ import { randomUUID } from "crypto";
 
 // Firebase client configuration
 const firebaseClientConfig = {
-  apiKey: "AIzaSyD-j82onZcnjbqrxZ8l6O-SzWLlF2GqGk",
-  authDomain: "meteorfy-11bff.firebaseapp.com",
-  projectId: "meteorfy-11bff",
-  storageBucket: "meteorfy-11bff.firebasestorage.app",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef123456"
+  apiKey: "AIzaSyD_DUO1UFAhh6bNOBWZScrVnXj3Z4GowPU",
+  authDomain: "meteorfy1.firebaseapp.com",
+  projectId: "meteorfy1",
+  storageBucket: "meteorfy1.firebasestorage.app",
+  messagingSenderId: "94841260635",
+  appId: "1:94841260635:web:6b0742b301256f644c0d7e"
 };
 
 // Initialize Firebase app for client SDK
@@ -31,7 +31,7 @@ export class ObjectNotFoundError extends Error {
 }
 
 export class ObjectStorageService {
-  private bucketName = "meteorfy-11bff.firebasestorage.app";
+  private bucketName = "meteorfy1.firebasestorage.app";
 
   constructor() { }
 

@@ -29,8 +29,8 @@ try {
 
 // Firebase Admin configuration
 const firebaseConfig = {
-  projectId: "meteorfy-11bff",
-  storageBucket: "meteorfy-11bff.firebasestorage.app",
+  projectId: "meteorfy1",
+  storageBucket: "meteorfy1.firebasestorage.app",
 };
 
 // Get credentials from environment - needed for Firestore operations
