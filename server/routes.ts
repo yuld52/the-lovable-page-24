@@ -382,9 +382,10 @@ export async function registerRoutes(
   // Stats
   app.get(api.stats.get.path, requireAuth, async (req, res) => {
     try {
+      const userId = String((req as any).user?.id || "");
       const period = req.query.period as string;
       const productId = req.query.productId as string;
-      const stats = await storage.getDashboardStats(period, productId);
+      const stats = await storage.getDashboardStats(userId, period, productId);
       res.json(stats);
     } catch (err: any) {
       console.error("GET /api/stats error:", err);
@@ -569,6 +570,7 @@ export async function registerRoutes(
       await storage.createSale({
         checkoutId: body.checkoutId,
         productId: body.productId,
+        user_id: checkout.ownerId, // Save the owner ID for dashboard filtering
         amount: body.totalUsdCents,
         status: "pending",
         customerEmail: body.customerData?.email || null,
@@ -1161,4 +1163,3 @@ async function ensureCoreTables() {
 }
 
 // Firebase Firestore Migration: PostgreSQL disabled
-

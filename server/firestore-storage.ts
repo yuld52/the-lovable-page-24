@@ -104,6 +104,7 @@ export interface FirestoreSale {
   id: string;
   checkoutId: number | null;
   productId: number | null;
+  user_id: string | null;
   amount: number;
   status: string;
   customerEmail: string | null;
@@ -170,6 +171,7 @@ function toDate(timestamp: any): Date {
   if (!timestamp) return new Date();
   if (timestamp.toDate) return timestamp.toDate();
   if (timestamp.seconds) return new Date(timestamp.seconds * 1000);
+  if (typeof timestamp === 'string') return new Date(timestamp);
   return new Date();
 }
 
@@ -480,67 +482,119 @@ export class FirestoreStorage {
   }
 
   // Dashboard stats
-  async getDashboardStats(period?: string, productId?: string): Promise<any> {
+  async getDashboardStats(userId: string, period?: string, productId?: string): Promise<any> {
     try {
-      const snapshot = await adminDb.collection("sales").orderBy("createdAt", "desc").get();
+      console.log(`[STATS] Fetching stats for user: ${userId}, period: ${period}, product: ${productId}`);
+      
+      const salesRef = adminDb.collection("sales");
+      let q = salesRef.where("user_id", "==", userId).where("status", "==", "paid");
+      
+      const snapshot = await q.get();
+      console.log(`[STATS] Found ${snapshot.size} paid sales for user`);
 
-      const sales = snapshot.docs.map(doc => ({
-        id: parseInt(doc.id),
-        ...doc.data(),
-        createdAt: toDate(doc.data().createdAt)
-      }));
+      const sales = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: parseInt(doc.id),
+          ...data,
+          createdAt: toDate(data.createdAt || data.created_at)
+        };
+      });
 
       // Filter by period
-      let filteredSales = sales;
-      if (period) {
-        const now = new Date();
-        let startDate = new Date();
+      const now = new Date();
+      now.setHours(23, 59, 59, 999);
+      
+      let startDate = new Date();
+      startDate.setHours(0, 0, 0, 0);
 
-        switch (period) {
-          case "7d":
-            startDate.setDate(now.getDate() - 7);
-            break;
-          case "30d":
-            startDate.setDate(now.getDate() - 30);
-            break;
-          case "90d":
-            startDate.setDate(now.getDate() - 90);
-            break;
-          default:
-            startDate = new Date(0);
-        }
-
-        filteredSales = sales.filter((s: any) => s.createdAt >= startDate);
+      if (period === "0") { // Hoje
+        // startDate is already today 00:00
+      } else if (period === "1") { // Ontem
+        startDate.setDate(now.getDate() - 1);
+        const yesterdayEnd = new Date(startDate);
+        yesterdayEnd.setHours(23, 59, 59, 999);
+        // Special case for yesterday: we need to filter between startDate and yesterdayEnd
+      } else if (period === "7") {
+        startDate.setDate(now.getDate() - 7);
+      } else if (period === "90") {
+        startDate.setDate(now.getDate() - 90);
+      } else { // Default 30 days
+        startDate.setDate(now.getDate() - 30);
       }
+
+      let filteredSales = sales.filter((s: any) => {
+        const d = s.createdAt;
+        if (period === "1") {
+          const yEnd = new Date(startDate);
+          yEnd.setHours(23, 59, 59, 999);
+          return d >= startDate && d <= yEnd;
+        }
+        return d >= startDate && d <= now;
+      });
 
       // Filter by product
-      if (productId) {
-        filteredSales = filteredSales.filter((s: any) => s.productId === parseInt(productId));
+      if (productId && productId !== "all") {
+        filteredSales = filteredSales.filter((s: any) => String(s.productId || s.product_id) === String(productId));
       }
 
-      const totalSales = filteredSales.length;
-      const totalRevenue = filteredSales.reduce((sum: number, s: any) => sum + (s.amount || 0), 0);
-      const totalPending = filteredSales.filter((s: any) => s.status === "pending").length;
-      const totalPaid = filteredSales.filter((s: any) => s.status === "paid").length;
-      const totalRefunded = filteredSales.filter((s: any) => s.status === "refunded").length;
+      const totalRevenue = filteredSales.reduce((sum: number, s: any) => sum + (Number(s.amount) || 0), 0);
+      const totalPaidCount = filteredSales.length;
+
+      // Generate Chart Data
+      const chartData: { name: string; sales: number }[] = [];
+      const isHourly = period === "0" || period === "1";
+
+      if (isHourly) {
+        const buckets = Array.from({ length: 24 }, () => 0);
+        for (const s of filteredSales) {
+          const h = s.createdAt.getHours();
+          buckets[h] += Number(s.amount) || 0;
+        }
+        for (let i = 0; i < 24; i++) {
+          chartData.push({
+            name: `${String(i).padStart(2, "0")}:00`,
+            sales: buckets[i] / 100,
+          });
+        }
+      } else {
+        const daysCount = period === "7" ? 7 : (period === "90" ? 90 : 30);
+        const totalsByDay = new Map<string, number>();
+        
+        for (const s of filteredSales) {
+          const d = s.createdAt;
+          const key = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+          totalsByDay.set(key, (totalsByDay.get(key) ?? 0) + (Number(s.amount) || 0));
+        }
+
+        for (let i = daysCount; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(now.getDate() - i);
+          const key = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+          chartData.push({
+            name: key,
+            sales: (totalsByDay.get(key) ?? 0) / 100,
+          });
+        }
+      }
 
       return {
-        totalSales,
-        totalRevenue,
-        totalPending,
-        totalPaid,
-        totalRefunded,
-        recentSales: filteredSales.slice(0, 10)
+        salesToday: totalRevenue / 100,
+        revenuePaid: totalRevenue / 100,
+        salesApproved: totalPaidCount,
+        revenueTarget: 10000,
+        revenueCurrent: totalRevenue / 100,
+        chartData,
       };
     } catch (error) {
       console.error("Error getting dashboard stats:", error);
       return {
-        totalSales: 0,
-        totalRevenue: 0,
-        totalPending: 0,
-        totalPaid: 0,
-        totalRefunded: 0,
-        recentSales: []
+        salesToday: 0,
+        revenuePaid: 0,
+        salesApproved: 0,
+        revenueTarget: 10000,
+        revenueCurrent: 0,
+        chartData: []
       };
     }
   }
