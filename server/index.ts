@@ -1,4 +1,4 @@
-import "./db"; // Importar db primeiro para garantir carregamento do .env
+import { testConnection } from "./db"; // Importar db primeiro
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
@@ -38,7 +38,6 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
-// Basic healthcheck (no DB) to confirm API server is reachable
 app.get("/api/health/basic", (_req, res) => {
   res.json({ ok: true });
 });
@@ -61,7 +60,6 @@ app.use((req, res, next) => {
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
-
       log(logLine);
     }
   });
@@ -70,22 +68,20 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Testar conexão antes de registrar rotas
+  const dbOk = await testConnection();
+
   try {
     await registerRoutes(httpServer, app);
   } catch (err) {
-    console.error("registerRoutes failed (server will still start):", err);
+    console.error("registerRoutes failed:", err);
   }
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
     console.error("Internal Server Error:", err);
-
-    if (res.headersSent) {
-      return next(err);
-    }
-
+    if (res.headersSent) return next(err);
     res.status(status).json({ message });
   });
 
@@ -100,23 +96,24 @@ app.use((req, res, next) => {
       const { setupVite } = await import("./vite");
       await setupVite(httpServer, app);
     } catch (err) {
-      console.error("setupVite failed (API will still run):", err);
+      console.error("setupVite failed:", err);
     }
   }
 
   const port = parseInt(process.env.PORT || "5000", 10);
   httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-    },
+    { port, host: "0.0.0.0" },
     () => {
       console.log("\n\n" + "=".repeat(50));
       console.log("🚀 METEORFY SERVER UPDATED & RUNNING!");
       
-      // Log explícito do motor de armazenamento
       const storageType = storage.constructor.name === 'DatabaseStorage' ? 'NEON POSTGRESQL' : 'TEMPORARY MEMORY (NOT SAVING)';
       console.log(`✅ STORAGE ENGINE: ${storageType}`);
+      
+      if (storageType.includes('MEMORY')) {
+        console.log("⚠️  AVISO: Seus dados serão perdidos ao reiniciar o servidor.");
+        console.log("👉 Verifique se a DATABASE_URL está configurada corretamente.");
+      }
       
       console.log("=".repeat(50) + "\n\n");
       log(`serving on port ${port}`);

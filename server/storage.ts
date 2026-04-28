@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db, isPostgresEnabled } from "./db";
 import {
   users, products, checkouts, sales, settings,
   type User, type InsertUser,
@@ -10,39 +10,28 @@ import {
 import { eq, sql, and, gte } from "drizzle-orm";
 
 export interface IStorage {
-  // Users
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   deleteUser(id: number): Promise<void>;
   deleteUserByUsername(username: string): Promise<void>;
-
-  // Products
   getProducts(): Promise<Product[]>;
   getProduct(id: number): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, updates: UpdateProductRequest): Promise<Product>;
   deleteProduct(id: number): Promise<void>;
-
-  // Checkouts
   getCheckouts(userId: string): Promise<Checkout[]>;
   getCheckout(id: number, userId: string): Promise<Checkout | undefined>;
   getCheckoutPublic(id: number): Promise<Checkout | undefined>;
   createCheckout(checkout: InsertCheckout): Promise<Checkout>;
   updateCheckout(id: number, userId: string, updates: UpdateCheckoutRequest): Promise<Checkout>;
   deleteCheckout(id: number, userId: string): Promise<void>;
-
-  // Settings
   getSettings(userId: string): Promise<Settings | undefined>;
   getAnySettings(): Promise<Settings | undefined>;
   updateSettings(userId: string, updates: UpdateSettingsRequest): Promise<Settings>;
-
-  // Extra methods
   getCheckoutBySlug(slug: string): Promise<Checkout | undefined>;
   incrementCheckoutViews(id: number): Promise<void>;
-
-  // Stats
   getDashboardStats(userId: string, period?: string, productId?: string): Promise<DashboardStats>;
   getSaleByPaypalOrderId(orderId: string): Promise<Sale | undefined>;
   updateSaleStatus(id: number, status: string): Promise<void>;
@@ -65,8 +54,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(user: InsertUser): Promise<User> {
-    const [newUser] = await db.insert(users).values(user).returning();
-    return newUser;
+    try {
+      const [newUser] = await db.insert(users).values(user).returning();
+      return newUser;
+    } catch (err) {
+      console.error("[Storage] Erro ao criar usuário:", err);
+      throw err;
+    }
   }
 
   async deleteUser(id: number): Promise<void> {
@@ -87,8 +81,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {
-    const [newProduct] = await db.insert(products).values(product as any).returning();
-    return newProduct;
+    try {
+      const [newProduct] = await db.insert(products).values(product as any).returning();
+      return newProduct;
+    } catch (err) {
+      console.error("[Storage] Erro ao criar produto:", err);
+      throw err;
+    }
   }
 
   async updateProduct(id: number, updates: UpdateProductRequest): Promise<Product> {
@@ -125,8 +124,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCheckout(checkout: InsertCheckout): Promise<Checkout> {
-    const [newCheckout] = await db.insert(checkouts).values(checkout as any).returning();
-    return newCheckout;
+    try {
+      const [newCheckout] = await db.insert(checkouts).values(checkout as any).returning();
+      return newCheckout;
+    } catch (err) {
+      console.error("[Storage] Erro ao criar checkout:", err);
+      throw err;
+    }
   }
 
   async updateCheckout(id: number, userId: string, updates: UpdateCheckoutRequest): Promise<Checkout> {
@@ -140,8 +144,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createSale(sale: InsertSale): Promise<Sale> {
-    const [newSale] = await db.insert(sales).values(sale as any).returning();
-    return newSale;
+    try {
+      const [newSale] = await db.insert(sales).values(sale as any).returning();
+      return newSale;
+    } catch (err) {
+      console.error("[Storage] Erro ao criar venda:", err);
+      throw err;
+    }
   }
 
   async getSaleByPaypalOrderId(orderId: string): Promise<Sale | undefined> {
@@ -164,13 +173,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateSettings(userId: string, updates: UpdateSettingsRequest): Promise<Settings> {
-    const existing = await this.getSettings(userId);
-    if (!existing) {
-      const [newSettings] = await db.insert(settings).values({ ...updates, userId: userId as any } as any).returning();
-      return newSettings;
+    try {
+      const existing = await this.getSettings(userId);
+      if (!existing) {
+        const [newSettings] = await db.insert(settings).values({ ...updates, userId: userId as any } as any).returning();
+        return newSettings;
+      }
+      const [updated] = await db.update(settings).set(updates as any).where(eq(settings.userId, userId as any)).returning();
+      return updated;
+    } catch (err) {
+      console.error("[Storage] Erro ao atualizar configurações:", err);
+      throw err;
     }
-    const [updated] = await db.update(settings).set(updates as any).where(eq(settings.userId, userId as any)).returning();
-    return updated;
   }
 
   async getDashboardStats(userId: string, period?: string, productId?: string): Promise<DashboardStats> {
@@ -212,23 +226,11 @@ export class MemoryStorage implements IStorage {
   async createUser(user: InsertUser) { const id = this.currentId.users++; const newUser = { ...user, id }; this.users.set(id, newUser); return newUser; }
   async deleteUser(id: number) { this.users.delete(id); }
   async deleteUserByUsername(username: string) { const user = await this.getUserByUsername(username); if (user) this.users.delete(user.id); }
-
   async getProducts() { return Array.from(this.products.values()); }
   async getProduct(id: number) { return this.products.get(id); }
   async createProduct(product: InsertProduct) {
     const id = this.currentId.products++;
-    const newProduct: Product = {
-      ...product,
-      id,
-      createdAt: new Date(),
-      description: product.description ?? null,
-      imageUrl: product.imageUrl ?? null,
-      deliveryUrl: product.deliveryUrl ?? null,
-      whatsappUrl: product.whatsappUrl ?? null,
-      deliveryFiles: product.deliveryFiles ?? [],
-      noEmailDelivery: product.noEmailDelivery ?? false,
-      active: product.active ?? true
-    };
+    const newProduct: Product = { ...product, id, createdAt: new Date(), description: product.description ?? null, imageUrl: product.imageUrl ?? null, deliveryUrl: product.deliveryUrl ?? null, whatsappUrl: product.whatsappUrl ?? null, deliveryFiles: product.deliveryFiles ?? [], noEmailDelivery: product.noEmailDelivery ?? false, active: product.active ?? true };
     this.products.set(id, newProduct);
     return newProduct;
   }
@@ -240,7 +242,6 @@ export class MemoryStorage implements IStorage {
     return updated as Product;
   }
   async deleteProduct(id: number) { this.products.delete(id); }
-
   async getCheckouts(userId: string) { return Array.from(this.checkouts.values()).filter(c => c.ownerId === userId); }
   async getCheckout(id: number, userId: string) { const c = this.checkouts.get(id); return c?.ownerId === userId ? c : undefined; }
   async getCheckoutPublic(id: number) { return this.checkouts.get(id); }
@@ -248,16 +249,7 @@ export class MemoryStorage implements IStorage {
   async incrementCheckoutViews(id: number) { const c = this.checkouts.get(id); if (c) c.views = (c.views || 0) + 1; }
   async createCheckout(checkout: InsertCheckout) {
     const id = this.currentId.checkouts++;
-    const newCheckout: Checkout = {
-      ...checkout,
-      id,
-      ownerId: (checkout as any).ownerId ?? null,
-      createdAt: new Date(),
-      views: 0,
-      active: true,
-      publicUrl: (checkout as any).publicUrl ?? null,
-      config: checkout.config ?? null
-    };
+    const newCheckout: Checkout = { ...checkout, id, ownerId: (checkout as any).ownerId ?? null, createdAt: new Date(), views: 0, active: true, publicUrl: (checkout as any).publicUrl ?? null, config: checkout.config ?? null };
     this.checkouts.set(id, newCheckout);
     return newCheckout;
   }
@@ -269,29 +261,13 @@ export class MemoryStorage implements IStorage {
     return updated as Checkout;
   }
   async deleteCheckout(id: number, userId: string) { const c = await this.getCheckout(id, userId); if (c) this.checkouts.delete(id); }
-
   async getSettings(userId: string) { return Array.from(this.settings.values()).find(s => s.userId === userId); }
   async getAnySettings() { return Array.from(this.settings.values())[0]; }
   async updateSettings(userId: string, updates: UpdateSettingsRequest) {
     const s = await this.getSettings(userId);
     if (!s) {
       const id = this.currentId.settings++;
-      const ns: Settings = {
-        id, userId,
-        paypalClientId: updates.paypalClientId ?? null,
-        paypalClientSecret: updates.paypalClientSecret ?? null,
-        paypalWebhookId: updates.paypalWebhookId ?? null,
-        facebookPixelId: updates.facebookPixelId ?? null,
-        facebookAccessToken: updates.facebookAccessToken ?? null,
-        utmfyToken: updates.utmfyToken ?? null,
-        salesNotifications: updates.salesNotifications ?? false,
-        environment: updates.environment ?? "sandbox",
-        metaEnabled: updates.metaEnabled ?? true,
-        utmfyEnabled: updates.utmfyEnabled ?? true,
-        trackTopFunnel: updates.trackTopFunnel ?? true,
-        trackCheckout: updates.trackCheckout ?? true,
-        trackPurchaseRefund: updates.trackPurchaseRefund ?? true
-      };
+      const ns: Settings = { id, userId, paypalClientId: updates.paypalClientId ?? null, paypalClientSecret: updates.paypalClientSecret ?? null, paypalWebhookId: updates.paypalWebhookId ?? null, facebookPixelId: updates.facebookPixelId ?? null, facebookAccessToken: updates.facebookAccessToken ?? null, utmfyToken: updates.utmfyToken ?? null, salesNotifications: updates.salesNotifications ?? false, environment: updates.environment ?? "sandbox", metaEnabled: updates.metaEnabled ?? true, utmfyEnabled: updates.utmfyEnabled ?? true, trackTopFunnel: updates.trackTopFunnel ?? true, trackCheckout: updates.trackCheckout ?? true, trackPurchaseRefund: updates.trackPurchaseRefund ?? true };
       this.settings.set(id, ns);
       return ns;
     }
@@ -299,27 +275,9 @@ export class MemoryStorage implements IStorage {
     this.settings.set(s.id, updated as Settings);
     return updated as Settings;
   }
-
   async createSale(sale: InsertSale) {
     const id = this.currentId.sales++;
-    const ns: Sale = {
-      id,
-      amount: sale.amount,
-      status: sale.status,
-      checkoutId: sale.checkoutId ?? null,
-      productId: sale.productId ?? null,
-      customerEmail: sale.customerEmail ?? null,
-      paypalOrderId: sale.paypalOrderId ?? null,
-      paypalCaptureId: (sale as any).paypalCaptureId ?? null,
-      paypalCurrency: (sale as any).paypalCurrency ?? null,
-      paypalAmountMinor: (sale as any).paypalAmountMinor ?? null,
-      utmSource: (sale as any).utmSource ?? null,
-      utmMedium: (sale as any).utmMedium ?? null,
-      utmCampaign: (sale as any).utmCampaign ?? null,
-      utmContent: (sale as any).utmContent ?? null,
-      utmTerm: (sale as any).utmTerm ?? null,
-      createdAt: new Date()
-    };
+    const ns: Sale = { id, amount: sale.amount, status: sale.status, checkoutId: sale.checkoutId ?? null, productId: sale.productId ?? null, customerEmail: sale.customerEmail ?? null, paypalOrderId: sale.paypalOrderId ?? null, paypalCaptureId: (sale as any).paypalCaptureId ?? null, paypalCurrency: (sale as any).paypalCurrency ?? null, paypalAmountMinor: (sale as any).paypalAmountMinor ?? null, utmSource: (sale as any).utmSource ?? null, utmMedium: (sale as any).utmMedium ?? null, utmCampaign: (sale as any).utmCampaign ?? null, utmContent: (sale as any).utmContent ?? null, utmTerm: (sale as any).utmTerm ?? null, createdAt: new Date() };
     this.sales.set(id, ns);
     return ns;
   }
@@ -328,5 +286,4 @@ export class MemoryStorage implements IStorage {
   async getDashboardStats(userId: string) { return { salesToday: 0, revenuePaid: 0, salesApproved: 0, revenueTarget: 10000, revenueCurrent: 0, chartData: [] }; }
 }
 
-// Verificação direta para garantir que o DatabaseStorage seja usado se a URL existir
-export const storage = process.env.DATABASE_URL ? new DatabaseStorage() : new MemoryStorage();
+export const storage = isPostgresEnabled ? new DatabaseStorage() : new MemoryStorage();
