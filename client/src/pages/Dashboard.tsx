@@ -32,10 +32,15 @@ import {
 } from "@/components/ui/popover";
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
+import { useAutoCurrency, useUsdRates } from "@/hooks/use-currency";
+import { convertUsdCentsToCurrencyMinor, formatMoney, type SupportedCurrencyCode } from "@/lib/currency";
+import { useSettings } from "@/hooks/use-settings";
 
 export default function Dashboard() {
+  const [, setLocation] = useLocation();
   const [selectedPeriod, setSelectedPeriod] = useState("0");
   const [selectedProduct, setSelectedProduct] = useState("all");
+  const [selectedCurrency, setSelectedCurrency] = useState<string>("AUTO");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   
   // Prepare query params for custom range
@@ -61,7 +66,37 @@ export default function Dashboard() {
   const [showSales, setShowSales] = useState(true);
   const [showQty, setShowQty] = useState(true);
 
-  const chartData = useMemo(() => stats?.chartData || [], [stats]);
+  const { data: autoCurrency } = useAutoCurrency();
+  const { data: usdRates } = useUsdRates();
+  const { data: settings } = useSettings();
+
+  const resolvedCurrency: SupportedCurrencyCode = useMemo(() => {
+    if (selectedCurrency === "AUTO") {
+      return (autoCurrency || "USD") as SupportedCurrencyCode;
+    }
+    return selectedCurrency as SupportedCurrencyCode;
+  }, [selectedCurrency, autoCurrency]);
+
+  const usdToCurrencyRate = usdRates?.[resolvedCurrency] ?? 1;
+
+  const convertUsdCents = (usdCents: number) => {
+    return convertUsdCentsToCurrencyMinor(usdCents, resolvedCurrency, usdToCurrencyRate);
+  };
+
+  const formatCurrency = (usdCents: number) => {
+    return formatMoney(
+      { currency: resolvedCurrency, minor: convertUsdCents(usdCents) },
+      typeof navigator !== "undefined" ? navigator.language : undefined
+    );
+  };
+
+  const chartData = useMemo(() => {
+    if (!stats?.chartData) return [];
+    return stats.chartData.map((item: any) => ({
+      ...item,
+      sales: item.sales ? item.sales * (usdToCurrencyRate || 1) : 0
+    }));
+  }, [stats, usdToCurrencyRate]);
 
   const formatXAxisTick = useMemo(() => {
     const isHourly = selectedPeriod === "0" || selectedPeriod === "1";
@@ -91,10 +126,10 @@ export default function Dashboard() {
     if (!active || !payload || payload.length === 0) return null;
 
     const value = Number(payload[0].value ?? 0);
-    const valueText = new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
+    const valueText = formatMoney(
+      { currency: resolvedCurrency, minor: value },
+      typeof navigator !== "undefined" ? navigator.language : undefined
+    );
 
     return (
       <div className="rounded-xl border border-border/60 bg-card px-3 py-2 shadow-xl">
@@ -130,6 +165,27 @@ export default function Dashboard() {
                   {p.name}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="w-full sm:w-48">
+          <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+            <SelectTrigger className="bg-card border-border text-muted-foreground h-10">
+              <SelectValue placeholder="Moeda" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border text-popover-foreground max-h-[300px]">
+              <SelectItem value="AUTO">Automático ({autoCurrency || 'USD'})</SelectItem>
+              <SelectItem value="USD">USD - Dólar Americano</SelectItem>
+              <SelectItem value="BRL">BRL - Real Brasileiro</SelectItem>
+              <SelectItem value="EUR">EUR - Euro</SelectItem>
+              <SelectItem value="GBP">GBP - Libra Esterlina</SelectItem>
+              <SelectItem value="CAD">CAD - Dólar Canadense</SelectItem>
+              <SelectItem value="AUD">AUD - Dólar Australiano</SelectItem>
+              <SelectItem value="JPY">JPY - Iene Japonês</SelectItem>
+              <SelectItem value="MXN">MXN - Peso Mexicano</SelectItem>
+              <SelectItem value="ARS">ARS - Peso Argentino</SelectItem>
+              <SelectItem value="CLP">CLP - Peso Chileno</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -218,7 +274,7 @@ export default function Dashboard() {
           <CardContent className="pb-4">
             <div className="text-xl font-bold text-foreground mb-0.5">
               {showSales
-                ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(stats?.salesToday || 0)
+                ? formatCurrency(stats?.salesToday || 0)
                 : "••••••"}
             </div>
           </CardContent>
@@ -245,7 +301,7 @@ export default function Dashboard() {
 
       <Card className="bg-card border-border/60 shadow-lg">
         <CardHeader className="border-b border-border/50 pb-4">
-          <CardTitle className="text-base font-bold text-foreground tracking-tight">Faturamento do Período</CardTitle>
+          <CardTitle className="text-base font-bold text-foreground tracking-tight">Faturamento do Período ({resolvedCurrency})</CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
           <div className="h-[300px] w-full">
@@ -277,7 +333,13 @@ export default function Dashboard() {
                   tick={{ fill: "#71717a", fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
-                  tickFormatter={(value) => `R$${value.toFixed(0)}`}
+                  tickFormatter={(value) => {
+                    const minor = Number(value);
+                    return formatMoney(
+                      { currency: resolvedCurrency, minor },
+                      typeof navigator !== "undefined" ? navigator.language : undefined
+                    );
+                  }}
                   dx={-10}
                 />
                 <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#a855f7", strokeWidth: 1 }} />
