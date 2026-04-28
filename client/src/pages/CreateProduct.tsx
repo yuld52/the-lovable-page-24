@@ -15,6 +15,8 @@ import {
   Layout as LayoutIcon,
   MessageCircle,
   ArrowLeft,
+  CreditCard,
+  Wallet,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
@@ -54,6 +56,7 @@ export default function CreateProduct() {
     imageUrl: "",
     deliveryFiles: [] as string[],
     noEmailDelivery: false,
+    paymentMethods: ["paypal"] as string[],
   });
   const [showErrors, setShowErrors] = useState(false);
 
@@ -85,6 +88,8 @@ export default function CreateProduct() {
         description:
           step === 1
             ? "Por favor, preencha todos os campos obrigatórios."
+            : step === 2
+            ? "Selecione pelo menos um método de pagamento."
             : isUrlInvalid
               ? "Por favor, insira um link válido com domínio."
               : "Por favor, forneça um link ou adicione arquivos para entrega.",
@@ -170,6 +175,7 @@ export default function CreateProduct() {
         imageUrl: newProduct.imageUrl,
         deliveryFiles: deliveryFileUrls,
         noEmailDelivery: newProduct.noEmailDelivery,
+        paymentMethods: newProduct.paymentMethods,
       });
 
       toast({ title: "Sucesso", description: "Produto criado com sucesso!" });
@@ -184,6 +190,9 @@ export default function CreateProduct() {
       return newProduct.name.trim() !== "" && newProduct.price.trim() !== "";
     }
     if (step === 2) {
+      return newProduct.paymentMethods.length > 0;
+    }
+    if (step === 3) {
       const hasLink = newProduct.deliveryUrl.trim() !== "";
       const hasFiles = deliveryFiles.length > 0;
 
@@ -215,9 +224,11 @@ export default function CreateProduct() {
         description:
           step === 1
             ? "Preencha o nome e o preço do produto para continuar."
-            : isUrlInvalid
-              ? "Por favor, insira um link válido com domínio."
-              : "Forneça um link de acesso ou adicione arquivos para a entrega.",
+            : step === 2
+              ? "Selecione pelo menos um método de pagamento."
+              : isUrlInvalid
+                ? "Por favor, insira um link válido com domínio."
+                : "Forneça um link de acesso ou adicione arquivos para a entrega.",
         variant: "destructive",
       });
       return;
@@ -228,7 +239,8 @@ export default function CreateProduct() {
 
   const steps = [
     { id: 1, title: "Informações básicas" },
-    { id: 2, title: "Método de entrega" }
+    { id: 2, title: "Métodos de Pagamento" },
+    { id: 3, title: "Método de entrega" }
   ];
 
   const renderStepIndicator = () => (
@@ -251,6 +263,19 @@ export default function CreateProduct() {
       ))}
     </div>
   );
+
+  const togglePaymentMethod = (method: string) => {
+    const current = newProduct.paymentMethods;
+    if (current.includes(method)) {
+      if (current.length === 1) {
+        toast({ title: "Atenção", description: "Pelo menos um método deve estar selecionado", variant: "destructive" });
+        return;
+      }
+      setNewProduct({ ...newProduct, paymentMethods: current.filter(m => m !== method) });
+    } else {
+      setNewProduct({ ...newProduct, paymentMethods: [...current, method] });
+    }
+  };
 
   return (
     <Layout title="Criar Novo Produto" subtitle="Siga as etapas para cadastrar seu produto">
@@ -334,7 +359,7 @@ export default function CreateProduct() {
                     <Input
                       className={`bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500 ${showErrors && !newProduct.name ? 'border-red-500/50 focus-visible:ring-red-500' : ''}`}
                       value={newProduct.name}
-                      onChange={e => setNewProduct({ ...newProduct, name: e.target.value })}
+                      onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
                       placeholder="Ex: Curso completo de Marketing Digital"
                     />
                     {showErrors && !newProduct.name && (
@@ -351,7 +376,7 @@ export default function CreateProduct() {
                       <label className="text-sm font-bold text-zinc-200">Descrição (opcional)</label>
                     </div>
                     <textarea
-                      className="w-full bg-black/40 border border-zinc-800 rounded-md min-h-[150px] p-3 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 text-white placeholder:text-zinc-600 resize-none"
+                      className="w-full bg-black/40 border border-zinc-800 rounded-md min-h-[150px] p-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-zinc-600 resize-none"
                       value={newProduct.description}
                       onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
                       placeholder="Descreva detalhadamente o que seu cliente receberá ao comprar este produto..."
@@ -387,7 +412,7 @@ export default function CreateProduct() {
                       step="0.01"
                       className={`bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500 ${showErrors && !newProduct.price ? 'border-red-500/50 focus-visible:ring-red-500' : ''}`}
                       value={newProduct.price}
-                      onChange={e => {
+                      onChange={(e) => {
                         const val = e.target.value;
                         if (val === "" || Number(val) >= 0) {
                           setNewProduct({ ...newProduct, price: val });
@@ -406,6 +431,101 @@ export default function CreateProduct() {
             {step === 2 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="flex items-center gap-2 text-zinc-300 font-medium pb-2 border-b border-zinc-800/50">
+                  <CreditCard className="w-4 h-4 text-purple-500" />
+                  Métodos de Pagamento
+                </div>
+
+                <p className="text-sm text-zinc-400">Selecione os métodos de pagamento que estarão disponíveis para este produto:</p>
+
+                <div className="space-y-3">
+                  <div
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      newProduct.paymentMethods.includes('paypal')
+                        ? 'border-purple-500 bg-purple-500/10'
+                        : 'border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60'
+                    }`}
+                    onClick={() => togglePaymentMethod('paypal')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                        newProduct.paymentMethods.includes('paypal')
+                          ? 'bg-purple-600 border-purple-600'
+                          : 'border-zinc-600'
+                      }`}>
+                        {newProduct.paymentMethods.includes('paypal') && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-white">PayPal</p>
+                        <p className="text-xs text-zinc-500">Pagamentos via PayPal e Cartão de Crédito</p>
+                      </div>
+                      <div className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded">Ativo</div>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      newProduct.paymentMethods.includes('stripe')
+                        ? 'border-purple-500 bg-purple-500/10'
+                        : 'border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60'
+                    }`}
+                    onClick={() => togglePaymentMethod('stripe')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                        newProduct.paymentMethods.includes('stripe')
+                          ? 'bg-purple-600 border-purple-600'
+                          : 'border-zinc-600'
+                      }`}>
+                        {newProduct.paymentMethods.includes('stripe') && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-white">Stripe</p>
+                        <p className="text-xs text-zinc-500">Pagamentos via Cartão de Crédito e Pix (Em breve)</p>
+                      </div>
+                      <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      newProduct.paymentMethods.includes('pix')
+                        ? 'border-purple-500 bg-purple-500/10'
+                        : 'border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60'
+                    }`}
+                    onClick={() => togglePaymentMethod('pix')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                        newProduct.paymentMethods.includes('pix')
+                          ? 'bg-purple-600 border-purple-600'
+                          : 'border-zinc-600'
+                      }`}>
+                        {newProduct.paymentMethods.includes('pix') && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-white">Pix</p>
+                        <p className="text-xs text-zinc-500">Pagamento instantâneo via Pix (Em breve)</p>
+                      </div>
+                      <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
+                    </div>
+                  </div>
+                </div>
+
+                {showErrors && newProduct.paymentMethods.length === 0 && (
+                  <p className="text-[10px] text-red-500 font-medium ml-1">Selecione pelo menos um método de pagamento</p>
+                )}
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex items-center gap-2 text-zinc-300 font-medium pb-2 border-b border-zinc-800/50">
                   <Send className="w-4 h-4 text-purple-500" />
                   Entrega do Produto
                 </div>
@@ -420,11 +540,12 @@ export default function CreateProduct() {
                     </div>
                     <Input
                       className={`bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500 ${showErrors && newProduct.deliveryUrl && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(newProduct.deliveryUrl.trim())
-                        ? 'border-red-500/50 focus-visible:ring-red-500' : ''
+                        ? 'border-red-500/50 focus-visible:ring-red-500'
+                        : ''
                         }`}
                       placeholder="https://exemplo.com/acesso"
                       value={newProduct.deliveryUrl}
-                      onChange={e => setNewProduct({ ...newProduct, deliveryUrl: e.target.value })}
+                      onChange={(e) => setNewProduct({ ...newProduct, deliveryUrl: e.target.value })}
                     />
                     {showErrors && newProduct.deliveryUrl && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(newProduct.deliveryUrl.trim()) && (
                       <p className="text-[10px] text-red-500 font-medium ml-1">Insira um link válido com domínio (ex: google.com)</p>
@@ -518,7 +639,7 @@ export default function CreateProduct() {
                 </div>
               </div>
             )}
-            <div className="flex items-center gap-3 pt-6 mt-6">
+            <div className="flex items-center gap-3 pt-6 mt-6 border-t border-zinc-800/50">
               {step > 1 && (
                 <Button
                   variant="ghost"
@@ -530,7 +651,7 @@ export default function CreateProduct() {
               )}
               <Button
                 className="flex-[2] h-12 bg-purple-600 hover:bg-purple-500 text-white font-bold border-0 shadow-none"
-                onClick={() => (step === 2 ? handleCreate() : handleNext())}
+                onClick={() => (step === 3 ? handleCreate() : handleNext())}
                 disabled={createProduct.isPending || isUploadingDeliveryFiles || isUploadingImage}
               >
                 {createProduct.isPending || isUploadingDeliveryFiles ? (
@@ -538,7 +659,7 @@ export default function CreateProduct() {
                     <Loader2 className="animate-spin w-4 h-4" />
                     Enviando...
                   </span>
-                ) : step === 2 ? (
+                ) : step === 3 ? (
                   "Finalizar e Criar Produto"
                 ) : (
                   "Próximo passo"

@@ -3,7 +3,7 @@ import { Layout } from "@/components/Layout";
 import { useProduct, useUpdateProduct } from "@/hooks/use-products";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Check, Send, Image as ImageIcon, Globe, FileText, Layout as LayoutIcon, MessageCircle, ArrowLeft, Plus } from "lucide-react";
+import { Loader2, Check, Send, Image as ImageIcon, Globe, FileText, Layout as LayoutIcon, MessageCircle, ArrowLeft, Plus, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -32,6 +32,7 @@ export default function EditProduct() {
     imageUrl: "",
     deliveryFiles: [] as string[],
     noEmailDelivery: false,
+    paymentMethods: ["paypal"] as string[],
   });
 
   useEffect(() => {
@@ -45,6 +46,7 @@ export default function EditProduct() {
         imageUrl: product.imageUrl || "",
         deliveryFiles: product.deliveryFiles || [],
         noEmailDelivery: product.noEmailDelivery || false,
+        paymentMethods: product.paymentMethods || ["paypal"],
       });
       setImagePreview(product.imageUrl || "");
       if (product.deliveryFiles && product.deliveryFiles.length > 0) {
@@ -83,11 +85,25 @@ export default function EditProduct() {
         imageUrl: formData.imageUrl,
         deliveryFiles: formData.deliveryFiles,
         noEmailDelivery: formData.noEmailDelivery,
+        paymentMethods: formData.paymentMethods,
       });
       toast({ title: "Sucesso", description: "Produto atualizado com sucesso!" });
       setLocation("/products");
     } catch (error: any) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const togglePaymentMethod = (method: string) => {
+    const current = formData.paymentMethods;
+    if (current.includes(method)) {
+      if (current.length === 1) {
+        toast({ title: "Atenção", description: "Pelo menos um método deve estar selecionado", variant: "destructive" });
+        return;
+      }
+      setFormData({ ...formData, paymentMethods: current.filter(m => m !== method) });
+    } else {
+      setFormData({ ...formData, paymentMethods: [...current, method] });
     }
   };
 
@@ -103,7 +119,8 @@ export default function EditProduct() {
 
   const steps = [
     { id: 1, title: "Informações básicas" },
-    { id: 2, title: "Método de entrega" }
+    { id: 2, title: "Métodos de Pagamento" },
+    { id: 3, title: "Método de entrega" }
   ];
 
   return (
@@ -120,14 +137,14 @@ export default function EditProduct() {
             {steps.map((s, i) => (
               <div key={s.id} className="flex items-center flex-1 last:flex-none">
                 <div className={`flex flex-col items-center gap-2`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${step >= s.id ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${step >= s.id ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500'`}>
                     {step > s.id ? <Check className="w-4 h-4" /> : s.id}
                   </div>
-                  <span className={`text-[10px] font-medium ${step >= s.id ? 'text-zinc-300' : 'text-zinc-500'}`}>
+                  <span className={`text-[10px] font-medium ${step >= s.id ? 'text-zinc-300' : 'text-zinc-500'`}>
                     {s.title}
                   </span>
                 </div>
-                {i < steps.length - 1 && <div className={`h-[1px] flex-1 mx-4 ${step > s.id ? 'bg-purple-600' : 'bg-zinc-800'}`} />}
+                {i < steps.length - 1 && <div className={`h-[1px] flex-1 mx-4 ${step > s.id ? 'bg-purple-600' : 'bg-zinc-800'`} />}
               </div>
             ))}
           </div>
@@ -180,8 +197,97 @@ export default function EditProduct() {
                   </div>
                 </div>
               </div>
+            ) : step === 2 ? (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="flex items-center gap-2 text-zinc-300 font-medium pb-2 border-b border-zinc-800/50">
+                  <CreditCard className="w-4 h-4 text-purple-500" />
+                  Métodos de Pagamento
+                </div>
+
+                <p className="text-sm text-zinc-400">Selecione os métodos de pagamento que estarão disponíveis para este produto:</p>
+
+                <div className="space-y-3">
+                  <div
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      formData.paymentMethods.includes('paypal')
+                        ? 'border-purple-500 bg-purple-500/10'
+                        : 'border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60'
+                    }`}
+                    onClick={() => togglePaymentMethod('paypal')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                        formData.paymentMethods.includes('paypal')
+                          ? 'bg-purple-600 border-purple-600'
+                          : 'border-zinc-600'
+                      }`}>
+                        {formData.paymentMethods.includes('paypal') && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-white">PayPal</p>
+                        <p className="text-xs text-zinc-500">Pagamentos via PayPal e Cartão de Crédito</p>
+                      </div>
+                      <div className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded">Ativo</div>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      formData.paymentMethods.includes('stripe')
+                        ? 'border-purple-500 bg-purple-500/10'
+                        : 'border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60'
+                    }`}
+                    onClick={() => togglePaymentMethod('stripe')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                        formData.paymentMethods.includes('stripe')
+                          ? 'bg-purple-600 border-purple-600'
+                          : 'border-zinc-600'
+                      }`}>
+                        {formData.paymentMethods.includes('stripe') && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-white">Stripe</p>
+                        <p className="text-xs text-zinc-500">Pagamentos via Cartão de Crédito e Pix (Em breve)</p>
+                      </div>
+                      <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      formData.paymentMethods.includes('pix')
+                        ? 'border-purple-500 bg-purple-500/10'
+                        : 'border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60'
+                    }`}
+                    onClick={() => togglePaymentMethod('pix')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                        formData.paymentMethods.includes('pix')
+                          ? 'bg-purple-600 border-purple-600'
+                          : 'border-zinc-600'
+                      }`}>
+                        {formData.paymentMethods.includes('pix') && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-white">Pix</p>
+                        <p className="text-xs text-zinc-500">Pagamento instantâneo via Pix (Em breve)</p>
+                      </div>
+                      <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : (
-              <div className="space-y-6 animate-in fade-in">
+              <div className="space-y-6 animate-in fade-in duration-300">
                 <div className="flex gap-2">
                   <Button variant="outline" className={`flex-1 h-11 ${deliveryMethod === "link" ? "border-purple-500 text-purple-400" : ""}`} onClick={() => setDeliveryMethod("link")}>Link</Button>
                   <Button variant="outline" className={`flex-1 h-11 ${deliveryMethod === "file" ? "border-purple-500 text-purple-400" : ""}`} onClick={() => setDeliveryMethod("file")}>Arquivo</Button>
@@ -199,7 +305,7 @@ export default function EditProduct() {
                         className="bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500"
                         placeholder="https://exemplo.com/acesso"
                         value={formData.deliveryUrl}
-                        onChange={e => setFormData({ ...formData, deliveryUrl: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, deliveryUrl: e.target.value })}
                       />
                       <p className="text-[11px] text-zinc-500 ml-1 font-medium text-purple-400/80">Este é o link que o cliente receberá automaticamente no e-mail de entrega assim que o pagamento for aprovado.</p>
                     </div>
@@ -264,8 +370,8 @@ export default function EditProduct() {
 
             <div className="flex gap-3 pt-6 border-t border-zinc-800/50">
               {step > 1 && <Button variant="ghost" className="flex-1" onClick={() => setStep(step - 1)}>Voltar</Button>}
-              <Button className="flex-[2] bg-purple-600 hover:bg-purple-500 h-12" onClick={() => step === 2 ? handleUpdate() : setStep(2)}>
-                {updateProduct.isPending ? <Loader2 className="animate-spin" /> : step === 2 ? "Salvar Alterações" : "Próximo"}
+              <Button className="flex-[2] bg-purple-600 hover:bg-purple-500 h-12" onClick={() => step === 3 ? handleUpdate() : setStep(2)}>
+                {updateProduct.isPending ? <Loader2 className="animate-spin" /> : step === 3 ? "Salvar Alterações" : "Próximo"}
               </Button>
             </div>
           </div>

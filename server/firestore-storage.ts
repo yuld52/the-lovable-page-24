@@ -16,6 +16,7 @@ function normalizeProductData(docId: string, data: any): any {
     whatsappUrl: data.whatsapp_url ?? data.whatsappUrl ?? null,
     deliveryFiles: data.delivery_files ?? data.deliveryFiles ?? [],
     noEmailDelivery: data.no_email_delivery ?? data.noEmailDelivery ?? false,
+    paymentMethods: data.payment_methods ?? data.paymentMethods ?? ["paypal"],
     status: data.status ?? 'pending', // pending, approved, rejected
     createdAt: toDate(data.created_at ?? data.createdAt)
   };
@@ -130,10 +131,12 @@ export class FirestoreStorage {
       const productData = {
         ...product,
         owner_id: product.userId || product.ownerId,
+        payment_methods: product.paymentMethods || ["paypal"],
         status: 'pending', // All new products start as pending
         created_at: Timestamp.now()
       };
       delete productData.userId;
+      delete productData.paymentMethods;
       
       await adminDb.collection("products").doc(String(id)).set({ ...productData, id: String(id) });
       return { id, ...productData, createdAt: toDate(productData.created_at) };
@@ -150,6 +153,7 @@ export class FirestoreStorage {
       if (updates.imageUrl) firestoreUpdates.image_url = updates.imageUrl;
       if (updates.deliveryUrl) firestoreUpdates.delivery_url = updates.deliveryUrl;
       if (updates.status) firestoreUpdates.status = updates.status;
+      if (updates.paymentMethods) firestoreUpdates.payment_methods = updates.paymentMethods;
       
       await docRef.update(firestoreUpdates);
       return this.getProduct(id);

@@ -18,6 +18,7 @@ export const products = pgTable("products", {
   whatsappUrl: text("whatsapp_url"),
   deliveryFiles: jsonb("delivery_files").$type<string[]>().default([]),
   noEmailDelivery: boolean("no_email_delivery").default(false),
+  paymentMethods: jsonb("payment_methods").$type<string[]>().default(["paypal"]),
   status: text("status").notNull().default("pending"), // pending, approved, rejected
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -113,8 +114,8 @@ export type CheckoutConfig = {
   showCnpj: boolean;
   showAddress: boolean;
   checkoutLanguage: CheckoutLanguage | "AUTO";
-  checkoutCurrency?: CheckoutCurrency; // fallback no checkout público quando AUTO falhar
-  previewCurrency?: CheckoutCurrency; // usado apenas no editor (o checkout público ignora)
+  checkoutCurrency?: CheckoutCurrency;
+  previewCurrency?: CheckoutCurrency;
 };
 
 export const settings = pgTable("settings", {
@@ -194,7 +195,7 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: uuid("user_id"), // auth user id
-  type: text("type").notNull(), // PURCHASE_APPROVED, NEW_LESSON, etc
+  type: text("type").notNull(), // PURCHASE_APPROVED, NEW_LESSON, etc.
   title: text("title").notNull(),
   body: text("body").notNull(),
   read: boolean("read").default(false),
