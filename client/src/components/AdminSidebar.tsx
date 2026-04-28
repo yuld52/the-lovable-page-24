@@ -24,13 +24,6 @@ export function AdminSidebar() {
 
   const isAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL;
 
-  const navItems = [
-    { href: "/admin", label: "Visão Geral", icon: LayoutDashboard },
-    { href: "/admin/products", label: "Aprovação de Produtos", icon: Package },
-    { href: "/admin/users", label: "Gerenciar Usuários", icon: Users },
-    { href: "/admin/settings", label: "Configurações", icon: Settings },
-  ];
-
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -56,23 +49,61 @@ export function AdminSidebar() {
 
       <div className="flex-1 overflow-y-auto">
         <nav className="px-4 py-2 space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location === item.href;
-            return (
-              <Link key={item.href} href={item.href}>
-                <button
-                  className={cn(
-                    "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-                    isActive ? "bg-red-600 text-white shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
-                  )}
-                >
-                  <Icon size={18} strokeWidth={2.5} />
-                  {item.label}
-                </button>
-              </Link>
-            );
-          })}
+          <Link to="/admin">
+            <button
+              className={cn(
+                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+                location === "/admin"
+                  ? "bg-red-600 text-white shadow-lg"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              )}
+            >
+              <LayoutDashboard size={18} strokeWidth={2.5} />
+              Visão Geral
+            </button>
+          </Link>
+
+          <Link to="/admin/products">
+            <button
+              className={cn(
+                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+                location === "/admin/products"
+                  ? "bg-red-600 text-white shadow-lg"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              )}
+            >
+              <Package size={18} strokeWidth={2.5} />
+              Aprovação de Produtos
+            </button>
+          </Link>
+
+          <Link to="/admin/users">
+            <button
+              className={cn(
+                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+                location === "/admin/users"
+                  ? "bg-red-600 text-white shadow-lg"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              )}
+            >
+              <Users size={18} strokeWidth={2.5} />
+              Gerenciar Usuários
+            </button>
+          </Link>
+
+          <Link to="/admin/settings">
+            <button
+              className={cn(
+                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+                location === "/admin/settings"
+                  ? "bg-red-600 text-white shadow-lg"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              )}
+            >
+              <Settings size={18} strokeWidth={2.5} />
+              Configurações
+            </button>
+          </Link>
         </nav>
       </div>
 
