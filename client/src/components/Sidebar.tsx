@@ -17,10 +17,8 @@ import { useState } from "react";
 import { useUser } from "@/hooks/use-user";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
-import { Button } from "@/components/ui/button";
 
 export function Sidebar() {
-  // ... rest of the code remains exactly the same
   const [location, setLocation] = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(location.startsWith("/settings"));
 
@@ -173,30 +171,19 @@ export function Sidebar() {
             )}
           </div>
         </nav>
-      </div>
 
-      <div className="p-4 border-t border-border/50">
-        <div className="px-2">
-          <p className="text-xs text-muted-foreground truncate mb-2">{user?.email || ""}</p>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex-1 text-xs h-8"
-              onClick={() => setLocation("/profile")}
-            >
-              <User size={14} className="mr-2" />
-              Perfil
-            </Button>
-            <Button 
+        <div className="p-4 border-t border-border/50">
+          <div className="px-2">
+            <p className="text-xs text-muted-foreground truncate mb-2">{user?.email || ""}</p>
+            <button 
               onClick={handleLogout}
-              className="flex-1 h-8 text-xs bg-secondary hover:bg-accent"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-foreground bg-secondary hover:bg-accent rounded-md transition-colors border border-border"
             >
-              <LogOut size={14} className="mr-2" />
+              <LogOut size={16} />
               Sair
-            </Button>
+            </button>
+            <p className="text-[10px] text-muted-foreground text-center mt-3">© 2026 Meteorfy Inc.</p>
           </div>
-          <p className="text-[10px] text-muted-foreground text-center mt-3">© 2026 Meteorfy Inc.</p>
         </div>
       </div>
     </div>
