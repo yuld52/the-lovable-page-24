@@ -27,6 +27,11 @@ export const pool = new Pool({
 
 export const db = drizzle(pool, { schema });
 
+// Função para garantir que o pool existe (satisfaz legados de código)
+export const ensurePool = () => {
+  return pool;
+};
+
 // Função para testar se o banco responde e se as tabelas existem
 export async function testConnection() {
   if (!databaseUrl) return false;
