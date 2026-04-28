@@ -77,35 +77,41 @@ export function Sidebar() {
 
       <div className="flex-1 overflow-y-auto">
         <div className="px-4 py-2">
-          <div className="bg-card/50 rounded-lg p-2 border-2 border-purple-500/30 relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="relative flex items-center gap-2">
-              <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-primary/10 rounded-lg shadow-lg border border-primary/20 overflow-hidden">
-                <img src="/icon-192.png" alt="Logo" className="w-6 h-6 object-contain" />
+          <div className="bg-card/50 rounded-xl p-3 border border-purple-500/20 relative overflow-hidden group shadow-2xl shadow-purple-500/5">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative flex items-center gap-3">
+              <div className="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-primary/10 rounded-xl shadow-inner border border-primary/20 overflow-hidden">
+                <img src="/icon-192.png" alt="Logo" className="w-7 h-7 object-contain" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="text-[10px] font-normal text-white block">Faturamento</span>
-                <div className="flex items-center gap-1 mb-1">
-                  <span className="text-xs font-bold text-foreground whitespace-nowrap">
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block mb-0.5">Faturamento Total</span>
+                <div className="flex items-baseline gap-1 mb-2">
+                  <span className="text-sm font-black text-foreground whitespace-nowrap">
                     {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(currentRevenue)}
                   </span>
-                  <span className="text-xs font-bold text-foreground whitespace-nowrap">/ R$ {currentGoal.label}</span>
+                  <span className="text-[10px] font-medium text-zinc-500 whitespace-nowrap">/ R$ {currentGoal.label}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-muted/50 rounded-full h-1.5 overflow-hidden border border-border/50 relative">
-                    <div 
-                      className="h-full rounded-full transition-all duration-1000 ease-out relative"
-                      style={{ 
-                        width: `${Math.max(progress, 1)}%`,
-                        background: `linear-gradient(90deg, #a855f7 0%, #a855f7 80%, #c084fc 90%, #e9d5ff 100%)`
-                      }}
-                    >
+                
+                <div className="relative pt-1">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-zinc-800/50 rounded-full h-2 relative border border-white/5">
+                      {/* Progress Fill */}
                       <div 
-                        className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-purple-300 shadow-[0_0_8px_3px_rgba(192,132,252,0.7)]"
-                      />
+                        className="h-full rounded-full transition-all duration-1000 ease-out relative"
+                        style={{ 
+                          width: `${Math.max(progress, 2)}%`,
+                          background: `linear-gradient(90deg, #7c3aed 0%, #a855f7 100%)`,
+                          boxShadow: '0 0 15px rgba(168, 85, 247, 0.3)'
+                        }}
+                      >
+                        {/* Glow Tip */}
+                        <div 
+                          className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow-[0_0_12px_4px_rgba(192,132,252,0.8)] animate-pulse"
+                        />
+                      </div>
                     </div>
+                    <span className="text-[10px] font-black text-purple-400 tabular-nums w-8 text-right">{Math.floor(progress)}%</span>
                   </div>
-                  <span className="text-[10px] font-bold text-white tabular-nums">{Math.floor(progress)}%</span>
                 </div>
               </div>
             </div>
@@ -121,7 +127,7 @@ export function Sidebar() {
                 <button
                   className={cn(
                     "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-                    isActive ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+                    isActive ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-muted-foreground hover:text-foreground hover:bg-accent",
                   )}
                 >
                   <Icon size={18} strokeWidth={2.5} />
@@ -136,7 +142,7 @@ export function Sidebar() {
               onClick={() => setSettingsOpen(!settingsOpen)}
               className={cn(
                 "w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-                location.startsWith("/settings") ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+                location.startsWith("/settings") ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-muted-foreground hover:text-foreground hover:bg-accent",
               )}
             >
               <div className="flex items-center gap-4">
