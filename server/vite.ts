@@ -27,12 +27,18 @@ export async function setupVite(server: Server, app: Express) {
 
   app.use(vite.middlewares);
 
-  // SPA routing middleware
-  app.use("*", async (req, res, next) => {
+  // SPA routing middleware - Pathless to avoid Express 5 path-to-regexp issues
+  app.use(async (req, res, next) => {
     const url = req.originalUrl;
 
     // Se for uma rota de API ou de uploads, deixa passar para os outros handlers
     if (url.startsWith("/api") || url.startsWith("/uploads")) {
+      return next();
+    }
+
+    // Ignorar requisições que parecem ser arquivos (contêm ponto no final do path)
+    // mas que o vite.middlewares não pegou
+    if (url.includes('.') && !url.endsWith('.html')) {
       return next();
     }
 
