@@ -303,7 +303,13 @@ export class MemoryStorage implements IStorage {
   async createSale(sale: InsertSale) {
     const id = this.currentId.sales++;
     const ns: Sale = {
-      ...sale, id, createdAt: new Date(),
+      id,
+      amount: sale.amount,
+      status: sale.status,
+      checkoutId: sale.checkoutId ?? null,
+      productId: sale.productId ?? null,
+      customerEmail: sale.customerEmail ?? null,
+      paypalOrderId: sale.paypalOrderId ?? null,
       paypalCaptureId: (sale as any).paypalCaptureId ?? null,
       paypalCurrency: (sale as any).paypalCurrency ?? null,
       paypalAmountMinor: (sale as any).paypalAmountMinor ?? null,
@@ -311,7 +317,8 @@ export class MemoryStorage implements IStorage {
       utmMedium: (sale as any).utmMedium ?? null,
       utmCampaign: (sale as any).utmCampaign ?? null,
       utmContent: (sale as any).utmContent ?? null,
-      utmTerm: (sale as any).utmTerm ?? null
+      utmTerm: (sale as any).utmTerm ?? null,
+      createdAt: new Date()
     };
     this.sales.set(id, ns);
     return ns;
