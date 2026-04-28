@@ -1,4 +1,4 @@
-import { db, pool, ensurePool } from "./db";
+import { db, isPostgresEnabled } from "./db";
 import {
   users, products, checkouts, sales, settings,
   type User, type InsertUser,
@@ -7,7 +7,7 @@ import {
   type Sale, type InsertSale, type UpdateSettingsRequest,
   type DashboardStats, type Settings
 } from "@shared/schema";
-import { eq, sql, and, gte, lt } from "drizzle-orm";
+import { eq, sql, and, gte } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -328,4 +328,4 @@ export class MemoryStorage implements IStorage {
   async getDashboardStats(userId: string) { return { salesToday: 0, revenuePaid: 0, salesApproved: 0, revenueTarget: 10000, revenueCurrent: 0, chartData: [] }; }
 }
 
-export const storage = process.env.DATABASE_URL ? new DatabaseStorage() : new MemoryStorage();
+export const storage = isPostgresEnabled ? new DatabaseStorage() : new MemoryStorage();
