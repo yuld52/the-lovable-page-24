@@ -8,6 +8,7 @@ import path from "path";
 import fs from "fs";
 import { requireAuth } from "./middleware/auth";
 import { adminAuth, adminDb, adminStorage } from "./firebase-admin";
+import { getVapidPublicKey, saveSubscription } from "./services/notification";
 
 import { registerTrackingRoutes } from "./trackingRoutes";
 
@@ -23,39 +24,27 @@ export async function registerRoutes(
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   });
 
-  app.post("/api/upload", requireAuth, (req, res) => {
-    upload.single("file")(req, res, async (err: any) => {
-      if (err) {
-        console.error("Multer error:", err);
-        return res.status(400).json({ 
-          message: err?.code === "LIMIT_FILE_SIZE" ? "O arquivo excede o limite de 10MB." : "Falha no processamento do arquivo" 
-        });
+  // PWA Push Notification Routes
+  app.get("/api/push/public-key", (req, res) => {
+    const publicKey = getVapidPublicKey();
+    if (!publicKey) {
+      return res.status(500).json({ message: "VAPID keys not configured" });
+    }
+    res.json({ publicKey });
+  });
+
+  app.post("/api/push/subscribe", requireAuth, async (req, res) => {
+    try {
+      const { subscription, userId } = req.body;
+      if (!subscription || !userId) {
+        return res.status(400).json({ message: "Missing subscription or userId" });
       }
-      
-      const file = (req as any).file;
-      if (!file) return res.status(400).json({ message: "Nenhum arquivo enviado" });
-
-      try {
-        const bucket = adminStorage.bucket();
-        const filename = `uploads/${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
-        const fileRef = bucket.file(filename);
-
-        // Upload to Firebase Storage
-        await fileRef.save(file.buffer, {
-          metadata: { contentType: file.mimetype },
-          public: true,
-          resumable: false
-        });
-
-        // Construct the public URL
-        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
-        
-        res.json({ url: publicUrl });
-      } catch (uploadErr: any) {
-        console.error("Firebase Storage upload error:", uploadErr);
-        res.status(500).json({ message: "Erro ao salvar no Firebase Storage" });
-      }
-    });
+      await saveSubscription(userId, subscription);
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error("Push subscription error:", err);
+      res.status(500).json({ message: err.message || "Failed to save subscription" });
+    }
   });
 
   app.post("/api/auth/check-email", async (req, res) => {
