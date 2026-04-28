@@ -402,7 +402,7 @@ export class FirestoreStorage {
   }
 
   // Dashboard stats
-  async getDashboardStats(userId: string, period?: string, productId?: string): Promise<any> {
+  async getDashboardStats(userId: string, period?: string, productId?: string, startDateStr?: string, endDateStr?: string): Promise<any> {
     try {
       const salesRef = adminDb.collection("sales");
       let q = salesRef.where("user_id", "==", userId).where("status", "==", "paid");
@@ -413,6 +413,7 @@ export class FirestoreStorage {
         return {
           id: doc.id,
           amount: data.amount || 0,
+          productId: data.product_id ?? data.productId,
           createdAt: toDate(data.createdAt || data.created_at)
         };
       });
@@ -420,21 +421,28 @@ export class FirestoreStorage {
       const now = new Date();
       let startDate = new Date();
       startDate.setHours(0, 0, 0, 0);
+      let endDate = new Date();
+      endDate.setHours(23, 59, 59, 999);
 
-      if (period === "1") { // Ontem
+      if (period === "custom" && startDateStr && endDateStr) {
+        startDate = new Date(startDateStr);
+        endDate = new Date(endDateStr);
+      } else if (period === "1") { // Ontem
         startDate.setDate(now.getDate() - 1);
-        const yesterdayEnd = new Date(startDate);
-        yesterdayEnd.setHours(23, 59, 59, 999);
-        var filteredSales = sales.filter((s: any) => s.createdAt >= startDate && s.createdAt <= yesterdayEnd);
-      } else {
-        if (period === "7") startDate.setDate(now.getDate() - 7);
-        else if (period === "90") startDate.setDate(now.getDate() - 90);
-        else if (period === "30" || !period) startDate.setDate(now.getDate() - 30);
-        var filteredSales = sales.filter((s: any) => s.createdAt >= startDate);
+        endDate = new Date(startDate);
+        endDate.setHours(23, 59, 59, 999);
+      } else if (period === "7") {
+        startDate.setDate(now.getDate() - 7);
+      } else if (period === "90") {
+        startDate.setDate(now.getDate() - 90);
+      } else if (period === "30" || !period) {
+        startDate.setDate(now.getDate() - 30);
       }
 
+      let filteredSales = sales.filter((s: any) => s.createdAt >= startDate && s.createdAt <= endDate);
+
       if (productId && productId !== "all") {
-        filteredSales = filteredSales.filter((s: any) => String(s.productId || s.product_id) === String(productId));
+        filteredSales = filteredSales.filter((s: any) => String(s.productId) === String(productId));
       }
 
       const totalRevenue = filteredSales.reduce((sum: number, s: any) => sum + (Number(s.amount) || 0), 0);
@@ -448,15 +456,19 @@ export class FirestoreStorage {
         for (const s of filteredSales) buckets[s.createdAt.getHours()] += Number(s.amount) || 0;
         for (let i = 0; i < 24; i++) chartData.push({ name: `${String(i).padStart(2, "0")}:00`, sales: buckets[i] / 100 });
       } else {
-        const daysCount = period === "7" ? 7 : (period === "90" ? 90 : 30);
         const totalsByDay = new Map<string, number>();
         for (const s of filteredSales) {
           const key = `${String(s.createdAt.getDate()).padStart(2, "0")}/${String(s.createdAt.getMonth() + 1).padStart(2, "0")}`;
           totalsByDay.set(key, (totalsByDay.get(key) ?? 0) + (Number(s.amount) || 0));
         }
-        for (let i = daysCount; i >= 0; i--) {
-          const d = new Date();
-          d.setDate(now.getDate() - i);
+        
+        // Calculate number of days to show in chart
+        const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        for (let i = diffDays; i >= 0; i--) {
+          const d = new Date(endDate);
+          d.setDate(endDate.getDate() - i);
           const key = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
           chartData.push({ name: key, sales: (totalsByDay.get(key) ?? 0) / 100 });
         }

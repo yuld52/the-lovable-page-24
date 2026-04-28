@@ -172,7 +172,13 @@ export async function registerRoutes(
   // Stats
   app.get(api.stats.get.path, requireAuth, async (req, res) => {
     const userId = String((req as any).user?.id || "");
-    res.json(await storage.getDashboardStats(userId, req.query.period as string, req.query.productId as string));
+    res.json(await storage.getDashboardStats(
+      userId, 
+      req.query.period as string, 
+      req.query.productId as string,
+      req.query.startDate as string,
+      req.query.endDate as string
+    ));
   });
 
   // PayPal
