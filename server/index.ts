@@ -40,7 +40,12 @@ app.use("/uploads", express.static(path.join(process.cwd(), "public", "uploads")
     await setupVite(httpServer, app);
   }
 
-  const port = parseInt(process.env.PORT || "5000", 10);
+  // Captura a porta do argumento --port ou da variável de ambiente PORT
+  const args = process.argv.slice(2);
+  const portIndex = args.indexOf("--port");
+  const argPort = portIndex !== -1 ? parseInt(args[portIndex + 1], 10) : null;
+  const port = argPort || parseInt(process.env.PORT || "5000", 10);
+
   httpServer.listen({ port, host: "0.0.0.0" }, () => {
     console.log(`\n🚀 METEORFY RODANDO NA PORTA ${port}!`);
   });
