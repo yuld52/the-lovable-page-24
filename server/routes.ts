@@ -17,29 +17,44 @@ export async function registerRoutes(
 ): Promise<Server> {
   registerTrackingRoutes(app, storage as any);
 
-  // Setup upload directory
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
-  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-  const storage_multer = multer.diskStorage({
-    destination: uploadDir,
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      cb(null, uniqueSuffix + path.extname(file.originalname));
-    },
-  });
-
+  // Use memory storage for multer to upload directly to Firebase
   const upload = multer({
-    storage: storage_multer,
-    limits: { fileSize: 10 * 1024 * 1024 },
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   });
 
-  app.post("/api/upload", (req, res) => {
-    upload.single("file")(req, res, (err: any) => {
-      if (err) return res.status(400).json({ message: err?.code === "LIMIT_FILE_SIZE" ? "O arquivo excede o limite de 10MB." : "Falha no upload" });
+  app.post("/api/upload", requireAuth, (req, res) => {
+    upload.single("file")(req, res, async (err: any) => {
+      if (err) {
+        console.error("Multer error:", err);
+        return res.status(400).json({ 
+          message: err?.code === "LIMIT_FILE_SIZE" ? "O arquivo excede o limite de 10MB." : "Falha no processamento do arquivo" 
+        });
+      }
+      
       const file = (req as any).file;
       if (!file) return res.status(400).json({ message: "Nenhum arquivo enviado" });
-      res.json({ url: `/uploads/${file.filename}` });
+
+      try {
+        const bucket = adminStorage.bucket();
+        const filename = `uploads/${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
+        const fileRef = bucket.file(filename);
+
+        // Upload to Firebase Storage
+        await fileRef.save(file.buffer, {
+          metadata: { contentType: file.mimetype },
+          public: true,
+          resumable: false
+        });
+
+        // Construct the public URL
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
+        
+        res.json({ url: publicUrl });
+      } catch (uploadErr: any) {
+        console.error("Firebase Storage upload error:", uploadErr);
+        res.status(500).json({ message: "Erro ao salvar no Firebase Storage" });
+      }
     });
   });
 
