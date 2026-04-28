@@ -110,21 +110,12 @@
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.20",
     "drizzle-kit": "^0.31.8",
-    "esbuild": "0.21.5",
+    "esbuild": "^0.21.5",
     "postcss": "^8.4.47",
     "sharp": "^0.34.5",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.20.5",
     "typescript": "5.6.3",
     "vite": "^5.4.11"
-  },
-  "overrides": {
-    "drizzle-kit": {
-      "@esbuild-kit/esm-loader": "npm:tsx@^4.20.4"
-    },
-    "esbuild": "0.21.5"
-  },
-  "optionalDependencies": {
-    "bufferutil": "^4.0.8"
   }
 }

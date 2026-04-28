@@ -13,6 +13,8 @@ const __dirname = path.dirname(__filename);
 const viteLogger = createLogger();
 
 export async function setupVite(server: Server, app: Express) {
+  console.log("🔧 [VITE] Inicializando servidor de desenvolvimento...");
+  
   const serverOptions = {
     middlewareMode: true,
     hmr: { server, path: "/vite-hmr" },
@@ -34,8 +36,7 @@ export async function setupVite(server: Server, app: Express) {
 
   app.use(vite.middlewares);
 
-  // Standard catch-all for SPA routing in development
-  // Using a pathless middleware to avoid path-to-regexp issues in Express 5
+  // SPA routing middleware for Express 5
   app.use(async (req, res, next) => {
     const url = req.originalUrl;
 
@@ -45,16 +46,21 @@ export async function setupVite(server: Server, app: Express) {
       url.startsWith("/uploads") || 
       url.startsWith("/@") || 
       url.startsWith("/node_modules") ||
-      url.includes(".") // Skip files with extensions
+      url.includes(".")
     ) {
       return next();
     }
 
     try {
       const clientTemplate = path.resolve(__dirname, "..", "client", "index.html");
+      if (!fs.existsSync(clientTemplate)) {
+        console.error(`❌ [VITE] Template não encontrado em: ${clientTemplate}`);
+        return next();
+      }
+
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
       
-      // Force reload of main entry point
+      // Force reload of main entry point to avoid cache issues
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`,
@@ -64,7 +70,10 @@ export async function setupVite(server: Server, app: Express) {
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
+      console.error("❌ [VITE] Erro ao renderizar template:", e);
       next(e);
     }
   });
+
+  console.log("✅ [VITE] Middleware pronto.");
 }
