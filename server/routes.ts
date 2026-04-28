@@ -6,8 +6,10 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { setupAuth } from "./auth";
-
 import { registerTrackingRoutes } from "./trackingRoutes";
+import * as paypal from "./paypal";
+import { processPurchaseTracking } from "./tracking";
+import { sendNotification } from "./services/notification";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -158,6 +160,17 @@ export async function registerRoutes(
     }
   });
 
+  // Public Checkout
+  app.get("/api/checkouts/public/:slug", async (req, res) => {
+    try {
+      const checkout = await storage.getCheckoutBySlug(req.params.slug);
+      if (!checkout) return res.status(404).json({ message: "Checkout não encontrado" });
+      res.json(checkout);
+    } catch (err: any) {
+      res.status(500).json({ message: "Erro ao buscar checkout" });
+    }
+  });
+
   // Settings
   app.get(api.settings.get.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -210,6 +223,103 @@ export async function registerRoutes(
       });
     } catch (err: any) {
       res.status(500).json({ message: "Erro ao carregar PayPal" });
+    }
+  });
+
+  app.post("/api/paypal/create-order", async (req, res) => {
+    try {
+      const body = paypal.createOrderBodySchema.parse(req.body);
+      const checkout = await storage.getCheckoutPublic(body.checkoutId);
+      if (!checkout) return res.status(404).json({ message: "Checkout não encontrado" });
+
+      let settings = checkout.ownerId ? await storage.getSettings(String(checkout.ownerId)) : null;
+      if (!settings?.paypalClientId || !settings?.paypalClientSecret) {
+        settings = await storage.getAnySettings();
+      }
+
+      if (!settings?.paypalClientId || !settings?.paypalClientSecret) {
+        return res.status(400).json({ message: "PayPal não configurado pelo vendedor" });
+      }
+
+      const order = await paypal.createOrder(
+        {
+          clientId: settings.paypalClientId,
+          clientSecret: settings.paypalClientSecret,
+          environment: (settings.environment as any) || "production",
+        },
+        {
+          currency: body.currency,
+          amountMinor: body.totalMinor,
+          description: `Pedido #${body.checkoutId}`,
+        }
+      );
+
+      await storage.createSale({
+        checkoutId: body.checkoutId,
+        productId: body.productId,
+        amount: body.totalUsdCents,
+        status: "pending",
+        customerEmail: body.customerData?.email || null,
+        paypalOrderId: order.id,
+        paypalCurrency: body.currency,
+        paypalAmountMinor: body.totalMinor,
+      });
+
+      res.json({ id: order.id });
+    } catch (err: any) {
+      console.error("PayPal Create Order Error:", err);
+      res.status(500).json({ message: err.message || "Erro ao criar pedido" });
+    }
+  });
+
+  app.post("/api/paypal/capture-order/:orderId", async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      const sale = await storage.getSaleByPaypalOrderId(orderId);
+      if (!sale) return res.status(404).json({ message: "Venda não encontrada" });
+
+      const checkout = await storage.getCheckoutPublic(sale.checkoutId!);
+      let settings = checkout?.ownerId ? await storage.getSettings(String(checkout.ownerId)) : null;
+      if (!settings?.paypalClientId || !settings?.paypalClientSecret) {
+        settings = await storage.getAnySettings();
+      }
+
+      if (!settings?.paypalClientId || !settings?.paypalClientSecret) {
+        return res.status(400).json({ message: "PayPal não configurado" });
+      }
+
+      const capture = await paypal.captureOrder(
+        {
+          clientId: settings.paypalClientId,
+          clientSecret: settings.paypalClientSecret,
+          environment: (settings.environment as any) || "production",
+        },
+        orderId
+      );
+
+      if (capture.status === "COMPLETED") {
+        await storage.updateSaleStatus(sale.id, "paid");
+        
+        // Tracking & Notifications
+        const product = await storage.getProduct(sale.productId!);
+        await processPurchaseTracking(settings as any, sale as any);
+        if (checkout?.ownerId) {
+          await sendNotification({
+            userId: String(checkout.ownerId),
+            type: "PURCHASE_APPROVED",
+            metadata: {
+              amount: (sale.amount / 100).toFixed(2),
+              currency: "USD",
+              productName: product?.name
+            }
+          });
+        }
+      }
+
+      res.json(capture);
+    } catch (err: any) {
+      console.error("PayPal Capture Error:", err);
+      res.status(500).json({ message: err.message || "Erro ao capturar pagamento" });
     }
   });
 
