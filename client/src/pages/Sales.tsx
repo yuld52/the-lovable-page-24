@@ -3,7 +3,7 @@ import { useSales } from "@/hooks/use-sales";
 import { useProducts } from "@/hooks/use-products";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Receipt, Search, Filter, Calendar, User, Tag, DollarSign } from "lucide-react";
+import { Loader2, Receipt, Search, Calendar, User, Package, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -29,9 +29,9 @@ export default function Sales() {
   }, [sales, products, searchTerm, statusFilter]);
 
   const formatCurrency = (cents: number) => {
-    return new Intl.NumberFormat('pt-BR', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'USD'
     }).format(cents / 100);
   };
 
@@ -42,14 +42,14 @@ export default function Sales() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <Input
             placeholder="Buscar por e-mail ou produto..."
-            className="pl-10 bg-zinc-900/50 border-zinc-800 h-11"
+            className="pl-10 bg-zinc-900/50 border-zinc-800 h-11 text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="w-full md:w-48">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="bg-zinc-900/50 border-zinc-800 h-11">
+            <SelectTrigger className="bg-zinc-900/50 border-zinc-800 h-11 text-sm">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-800">
@@ -80,57 +80,79 @@ export default function Sales() {
           </p>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {filteredSales.map((sale) => {
             const product = products?.find(p => p.id === sale.productId);
+            const saleId = sale.paypalOrderId ? `#${sale.paypalOrderId.slice(-8)}` : `#${String(sale.id).padStart(8, '0')}`;
+            
             return (
-              <Card key={sale.id} className="bg-[#18181b] border-zinc-800/60 p-5 hover:border-purple-500/30 transition-all group">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-zinc-900 flex items-center justify-center border border-zinc-800 group-hover:border-purple-500/20 transition-colors">
-                      <Tag className="w-5 h-5 text-zinc-500 group-hover:text-purple-400" />
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="text-white font-bold text-base leading-none">
-                        {product?.name || "Produto Removido"}
-                      </h4>
-                      <div className="flex items-center gap-2 text-xs text-zinc-500">
-                        <User className="w-3 h-3" />
-                        <span>{sale.customerEmail}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-[10px] text-zinc-600 uppercase font-bold tracking-wider">
-                        <Calendar className="w-3 h-3" />
-                        <span>{format(new Date(sale.createdAt!), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between md:justify-end gap-6">
-                    <div className="text-right">
-                      <div className="text-lg font-extrabold text-white">
-                        {formatCurrency(sale.amount)}
-                      </div>
-                      <div className="text-[10px] text-zinc-500 font-medium uppercase">Valor Total</div>
-                    </div>
-                    
-                    <div className="w-24 flex justify-end">
-                      {sale.status === 'paid' ? (
-                        <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase">
-                          Aprovada
-                        </Badge>
-                      ) : sale.status === 'pending' ? (
-                        <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase">
-                          Pendente
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-zinc-500/10 text-zinc-500 border-zinc-500/20 hover:bg-zinc-500/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase">
-                          {sale.status}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
+              <div key={sale.id} className="bg-[#111114] border border-zinc-800/40 hover:bg-zinc-800/20 transition-colors px-6 py-4 flex items-center justify-between group">
+                {/* ID da Venda */}
+                <div className="w-28 shrink-0">
+                  <span className="text-xs font-medium text-zinc-500">{saleId}</span>
                 </div>
-              </Card>
+
+                {/* Produto */}
+                <div className="flex-1 flex items-center gap-3 min-w-0 px-4">
+                  <div className="w-8 h-8 rounded bg-zinc-900 flex items-center justify-center border border-zinc-800 shrink-0">
+                    <Package className="w-4 h-4 text-zinc-400" />
+                  </div>
+                  <span className="text-sm font-bold text-white truncate">
+                    {product?.name || "Produto Removido"}
+                  </span>
+                </div>
+
+                {/* Cliente */}
+                <div className="flex-1 flex flex-col min-w-0 px-4">
+                  <span className="text-sm font-bold text-white truncate">
+                    {sale.customerEmail?.split('@')[0] || "Cliente"}
+                  </span>
+                  <span className="text-[11px] text-zinc-500 truncate">
+                    {sale.customerEmail}
+                  </span>
+                </div>
+
+                {/* Valor */}
+                <div className="w-24 shrink-0 text-center px-4">
+                  <span className="text-sm font-bold text-white">
+                    {formatCurrency(sale.amount)}
+                  </span>
+                </div>
+
+                {/* Gateway */}
+                <div className="w-24 shrink-0 text-center px-4">
+                  <span className="text-xs font-bold text-purple-500 uppercase tracking-wider">
+                    stripe
+                  </span>
+                </div>
+
+                {/* Status */}
+                <div className="w-32 shrink-0 flex justify-center px-4">
+                  {sale.status === 'paid' ? (
+                    <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-3 py-1 rounded-full">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Aprovada</span>
+                    </div>
+                  ) : sale.status === 'pending' ? (
+                    <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 px-3 py-1 rounded-full">
+                      <Clock className="w-3 h-3" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Pendente</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 bg-zinc-500/10 text-zinc-500 border border-zinc-500/20 px-3 py-1 rounded-full">
+                      <AlertCircle className="w-3 h-3" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">{sale.status}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Data */}
+                <div className="w-40 shrink-0 text-right">
+                  <span className="text-xs font-medium text-zinc-400">
+                    {format(new Date(sale.createdAt!), "dd/MM/yyyy HH:mm")}
+                  </span>
+                </div>
+              </div>
             );
           })}
         </div>
