@@ -11,7 +11,6 @@ import {
   User,
   BarChart3,
   DollarSign,
-  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStats } from "@/hooks/use-stats";
@@ -28,7 +27,6 @@ export function Sidebar() {
   const currentTab = searchParams.get("tab") || "integracao";
 
   const { user } = useUser();
-  const isAdmin = user?.email === "juniornegocios015@gmail.com";
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -38,13 +36,8 @@ export function Sidebar() {
     { href: "/financeiro", label: "Financeiro", icon: DollarSign },
   ];
 
-  // Admin-only nav items
-  const adminNavItems = [
-    { href: "/admin", label: "Admin", icon: Shield },
-  ];
-
   const settingSubItems = [
-    ...(isAdmin ? [{ href: "/settings?tab=usuario", label: "Usuários", icon: User }] : []),
+    { href: "/settings?tab=usuario", label: "Usuários", icon: User },
     { href: "/settings?tab=integracao", label: "Integração", icon: BarChart3 },
   ];
 
@@ -121,25 +114,6 @@ export function Sidebar() {
 
         <nav className="px-4 py-2 space-y-1">
           {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location === item.href;
-            return (
-              <Link key={item.href} href={item.href}>
-                <button
-                  className={cn(
-                    "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-                    isActive ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
-                  )}
-                >
-                  <Icon size={18} strokeWidth={2.5} />
-                  {item.label}
-                </button>
-              </Link>
-            );
-          })}
-
-          {/* Admin Link - Only visible to admins */}
-          {isAdmin && adminNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.href;
             return (

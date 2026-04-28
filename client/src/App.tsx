@@ -20,6 +20,7 @@ import CheckoutEditor from "@/pages/CheckoutEditor";
 import PublicCheckout from "./pages/PublicCheckout";
 import Financeiro from "@/pages/Financeiro";
 import Admin from "@/pages/Admin";
+import AdminLogin from "@/pages/AdminLogin";
 
 function Router() {
   const [params, setLocation] = useRoute("/:any*");
@@ -27,18 +28,18 @@ function Router() {
   useEffect(() => {
     const hostname = window.location.hostname;
     const isPayDomain = hostname === "pay.meteorfy.online";
-    const isAppDomain = hostname === "app.meteorfy.online";
     const path = window.location.pathname;
 
     // Se estiver no domínio de pagamento (pay.), só permite o checkout
     if (isPayDomain && !path.startsWith("/checkout")) {
-      // Redireciona para o app principal se tentar acessar dashboard/login pelo domínio de pagamento
       window.location.href = "https://app.meteorfy.online";
     }
 
     // Define o título padrão para as páginas do app (Login, Dashboard, etc.)
-    if (!path.startsWith("/checkout")) {
+    if (!path.startsWith("/checkout") && !path.startsWith("/admin")) {
       document.title = "Meteorfy - Plataforma de Vendas";
+    } else if (path.startsWith("/admin")) {
+      document.title = "Meteorfy - Painel Admin";
     }
 
   }, []);
@@ -61,7 +62,11 @@ function Router() {
       <Route path="/sales" component={Sales} />
       <Route path="/financeiro" component={Financeiro} />
       <Route path="/settings" component={Settings} />
+      
+      {/* Admin Routes - External Page */}
+      <Route path="/admin-login" component={AdminLogin} />
       <Route path="/admin" component={Admin} />
+      
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
