@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
-const ADMIN_EMAIL = "juniornegocios015@gmail.com";
+const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
