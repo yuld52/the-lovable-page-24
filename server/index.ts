@@ -1,4 +1,4 @@
-import { testConnection } from "./db";
+import { testConnection, db } from "./db";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
@@ -6,6 +6,7 @@ import { createServer } from "http";
 import path from "path";
 import { storage } from "./storage";
 import bcrypt from "bcryptjs";
+import { sql } from "drizzle-orm";
 
 const app = express();
 const httpServer = createServer(app);
@@ -13,6 +14,21 @@ const httpServer = createServer(app);
 app.use(express.json({ limit: '12mb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use("/uploads", express.static(path.join(process.cwd(), "public", "uploads")));
+
+async function fixDatabaseSchema() {
+  console.log("🔧 [DB-FIX] Corrigindo tipos de colunas no banco de dados...");
+  try {
+    // Converte as colunas de UUID para INTEGER para coincidir com a tabela de usuários
+    await db.execute(sql`ALTER TABLE settings ALTER COLUMN user_id TYPE integer USING NULL`);
+    await db.execute(sql`ALTER TABLE checkouts ALTER COLUMN owner_id TYPE integer USING NULL`);
+    await db.execute(sql`ALTER TABLE push_subscriptions ALTER COLUMN user_id TYPE integer USING NULL`);
+    await db.execute(sql`ALTER TABLE notifications ALTER COLUMN user_id TYPE integer USING NULL`);
+    console.log("✅ [DB-FIX] Colunas corrigidas com sucesso.");
+  } catch (err) {
+    // Se falhar, provavelmente já estão como integer ou a tabela não existe ainda
+    console.log("ℹ️ [DB-FIX] Aviso: Algumas colunas podem já estar corrigidas ou tabelas ainda não existem.");
+  }
+}
 
 async function initializeData() {
   console.log("🛠️ [SETUP] Verificando dados iniciais...");
@@ -48,6 +64,7 @@ async function initializeData() {
   
   const dbOk = await testConnection();
   if (dbOk) {
+    await fixDatabaseSchema();
     await initializeData().catch(err => console.error("❌ [SETUP] Erro na inicialização:", err));
   }
 
