@@ -35,7 +35,8 @@ export async function setupVite(server: Server, app: Express) {
   app.use(vite.middlewares);
 
   // Standard catch-all for SPA routing in development
-  app.get("*", async (req, res, next) => {
+  // Express 5 requires named wildcards like (.*)
+  app.get("(.*)", async (req, res, next) => {
     const url = req.originalUrl;
 
     // Skip API and static uploads
