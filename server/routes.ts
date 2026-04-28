@@ -63,15 +63,22 @@ export async function registerRoutes(
 
   // Products
   app.get(api.products.list.path, requireAuth, async (req, res) => {
-    res.json(await storage.getProducts());
+    try {
+      res.json(await storage.getProducts());
+    } catch (err: any) {
+      console.error("Error listing products:", err);
+      res.status(500).json({ message: "Erro ao buscar produtos: " + err.message });
+    }
   });
 
   app.post(api.products.create.path, requireAuth, async (req, res) => {
     try {
       const input = api.products.create.input.parse(req.body);
-      res.status(201).json(await storage.createProduct(input));
+      const result = await storage.createProduct(input);
+      res.status(201).json(result);
     } catch (err: any) {
-      res.status(400).json({ message: err.message });
+      console.error("Error creating product:", err);
+      res.status(400).json({ message: "Erro ao salvar produto: " + err.message });
     }
   });
 
@@ -81,7 +88,8 @@ export async function registerRoutes(
       const input = api.products.update.input.parse(req.body);
       res.json(await storage.updateProduct(id, input));
     } catch (err: any) {
-      res.status(400).json({ message: err.message });
+      console.error("Error updating product:", err);
+      res.status(400).json({ message: "Erro ao atualizar produto: " + err.message });
     }
   });
 
@@ -89,21 +97,32 @@ export async function registerRoutes(
     try {
       await storage.deleteProduct(parseInt(req.params.id as string));
       res.status(204).end();
-    } catch (err) {
-      res.status(500).json({ message: "Internal server error" });
+    } catch (err: any) {
+      console.error("Error deleting product:", err);
+      res.status(500).json({ message: "Erro ao excluir produto: " + err.message });
     }
   });
 
   app.get(api.products.get.path, async (req, res) => {
-    const product = await storage.getProduct(parseInt(req.params.id as string));
-    if (!product) return res.status(404).json({ message: "Produto não encontrado" });
-    res.json(product);
+    try {
+      const product = await storage.getProduct(parseInt(req.params.id as string));
+      if (!product) return res.status(404).json({ message: "Produto não encontrado" });
+      res.json(product);
+    } catch (err: any) {
+      console.error("Error getting product:", err);
+      res.status(500).json({ message: "Erro ao buscar produto: " + err.message });
+    }
   });
 
   // Checkouts
   app.get(api.checkouts.list.path, requireAuth, async (req, res) => {
-    const userId = String((req as any).user?.id || "");
-    res.json(await storage.getCheckouts(userId));
+    try {
+      const userId = String((req as any).user?.id || "");
+      res.json(await storage.getCheckouts(userId));
+    } catch (err: any) {
+      console.error("Error listing checkouts:", err);
+      res.status(500).json({ message: "Erro ao buscar checkouts: " + err.message });
+    }
   });
 
   app.post(api.checkouts.create.path, requireAuth, async (req, res) => {
@@ -111,17 +130,28 @@ export async function registerRoutes(
       const userId = String((req as any).user?.id || "");
       const input = api.checkouts.create.input.parse(req.body);
       const baseUrl = `${req.headers['x-forwarded-proto'] || req.protocol}://${req.headers.host}`;
-      res.status(201).json(await storage.createCheckout({ ...input, ownerId: userId, publicUrl: `${baseUrl}/checkout/${input.slug}` }));
+      const result = await storage.createCheckout({ 
+        ...input, 
+        ownerId: userId, 
+        publicUrl: `${baseUrl}/checkout/${input.slug}` 
+      });
+      res.status(201).json(result);
     } catch (err: any) {
-      res.status(400).json({ message: err.message });
+      console.error("Error creating checkout:", err);
+      res.status(400).json({ message: "Erro ao criar checkout: " + err.message });
     }
   });
 
   app.get(api.checkouts.get.path, requireAuth, async (req, res) => {
-    const userId = String((req as any).user?.id || "");
-    const checkout = await storage.getCheckout(parseInt(req.params.id as string), userId);
-    if (!checkout) return res.status(404).json({ message: "Checkout não encontrado" });
-    res.json(checkout);
+    try {
+      const userId = String((req as any).user?.id || "");
+      const checkout = await storage.getCheckout(parseInt(req.params.id as string), userId);
+      if (!checkout) return res.status(404).json({ message: "Checkout não encontrado" });
+      res.json(checkout);
+    } catch (err: any) {
+      console.error("Error getting checkout:", err);
+      res.status(500).json({ message: "Erro ao buscar checkout: " + err.message });
+    }
   });
 
   app.patch(api.checkouts.update.path, requireAuth, async (req, res) => {
@@ -130,7 +160,8 @@ export async function registerRoutes(
       const input = api.checkouts.update.input.parse(req.body);
       res.json(await storage.updateCheckout(parseInt(req.params.id as string), userId, input));
     } catch (err: any) {
-      res.status(400).json({ message: err.message });
+      console.error("Error updating checkout:", err);
+      res.status(400).json({ message: "Erro ao atualizar checkout: " + err.message });
     }
   });
 
@@ -139,48 +170,66 @@ export async function registerRoutes(
       const userId = String((req as any).user?.id || "");
       await storage.deleteCheckout(parseInt(req.params.id as string), userId);
       res.status(204).end();
-    } catch (err) {
-      res.status(500).json({ message: "Internal server error" });
+    } catch (err: any) {
+      console.error("Error deleting checkout:", err);
+      res.status(500).json({ message: "Erro ao excluir checkout: " + err.message });
     }
   });
 
   // Settings
   app.get(api.settings.get.path, requireAuth, async (req, res) => {
-    const userId = String((req as any).user?.id || "");
-    const settings = await storage.getSettings(userId);
-    res.json(settings || { environment: "production" });
+    try {
+      const userId = String((req as any).user?.id || "");
+      const settings = await storage.getSettings(userId);
+      res.json(settings || { environment: "production" });
+    } catch (err: any) {
+      console.error("Error getting settings:", err);
+      res.status(500).json({ message: "Erro ao buscar configurações: " + err.message });
+    }
   });
 
   app.post(api.settings.update.path, requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const input = api.settings.update.input.parse(req.body);
-      res.json(await storage.updateSettings(userId, input));
+      const result = await storage.updateSettings(userId, input);
+      res.json(result);
     } catch (err: any) {
-      res.status(400).json({ message: err.message });
+      console.error("Error updating settings:", err);
+      res.status(400).json({ message: "Erro ao salvar configurações: " + err.message });
     }
   });
 
   // Stats
   app.get(api.stats.get.path, requireAuth, async (req, res) => {
-    const userId = String((req as any).user?.id || "");
-    res.json(await storage.getDashboardStats(userId, req.query.period as string, req.query.productId as string));
+    try {
+      const userId = String((req as any).user?.id || "");
+      res.json(await storage.getDashboardStats(userId, req.query.period as string, req.query.productId as string));
+    } catch (err: any) {
+      console.error("Error getting stats:", err);
+      res.status(500).json({ message: "Erro ao buscar estatísticas: " + err.message });
+    }
   });
 
   // PayPal
   app.get("/api/paypal/public-config", async (req, res) => {
-    const slug = req.query.slug as string;
-    if (!slug) return res.status(400).json({ message: "Missing slug" });
-    const checkout = await storage.getCheckoutBySlug(slug);
-    if (!checkout) return res.status(404).json({ message: "Checkout não encontrado" });
-    
-    let settings = checkout.ownerId ? await storage.getSettings(String(checkout.ownerId)) : null;
-    if (!settings?.paypalClientId) settings = await storage.getAnySettings();
+    try {
+      const slug = req.query.slug as string;
+      if (!slug) return res.status(400).json({ message: "Missing slug" });
+      const checkout = await storage.getCheckoutBySlug(slug);
+      if (!checkout) return res.status(404).json({ message: "Checkout não encontrado" });
+      
+      let settings = checkout.ownerId ? await storage.getSettings(String(checkout.ownerId)) : null;
+      if (!settings?.paypalClientId) settings = await storage.getAnySettings();
 
-    res.json({
-      clientId: settings?.paypalClientId ?? null,
-      environment: settings?.environment || "production",
-    });
+      res.json({
+        clientId: settings?.paypalClientId ?? null,
+        environment: settings?.environment || "production",
+      });
+    } catch (err: any) {
+      console.error("Error getting PayPal config:", err);
+      res.status(500).json({ message: "Erro ao carregar PayPal: " + err.message });
+    }
   });
 
   app.post("/api/paypal/create-order", async (req, res) => {
@@ -216,7 +265,8 @@ export async function registerRoutes(
 
       res.json({ id: order.id });
     } catch (err: any) {
-      res.status(500).json({ message: err.message || "Erro ao criar pedido" });
+      console.error("Error creating PayPal order:", err);
+      res.status(500).json({ message: "Erro ao criar pedido: " + err.message });
     }
   });
 
@@ -240,7 +290,8 @@ export async function registerRoutes(
       await storage.updateSaleStatus(sale.id, "paid");
       res.json({ status: captured.status || "COMPLETED" });
     } catch (err: any) {
-      res.status(500).json({ message: err.message || "Erro ao capturar pedido" });
+      console.error("Error capturing PayPal order:", err);
+      res.status(500).json({ message: "Erro ao capturar pedido: " + err.message });
     }
   });
 
