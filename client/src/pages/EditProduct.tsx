@@ -118,7 +118,7 @@ export default function EditProduct() {
   }
 
   const steps = [
-    { id: 1, title: "Informações básicas" },
+    { id: 1, title: "Informações Básicas" },
     { id: 2, title: "Métodos de Pagamento" },
     { id: 3, title: "Método de entrega" }
   ];
@@ -133,18 +133,27 @@ export default function EditProduct() {
 
       <div className="max-w-2xl mx-auto">
         <div className="bg-[#18181b] border border-zinc-800/60 shadow-lg rounded-2xl p-8">
+          {/* Step Indicator */}
           <div className="flex items-center justify-between mb-8 px-2">
             {steps.map((s, i) => (
               <div key={s.id} className="flex items-center flex-1 last:flex-none">
-                <div className={`flex flex-col items-center gap-2`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${step >= s.id ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500'`}>
+                <div className="flex flex-col items-center gap-2">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                    step >= s.id ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
+                  }`}>
                     {step > s.id ? <Check className="w-4 h-4" /> : s.id}
                   </div>
-                  <span className={`text-[10px] font-medium ${step >= s.id ? 'text-zinc-300' : 'text-zinc-500'`}>
+                  <span className={`text-[10px] font-medium whitespace-nowrap ${
+                    step >= s.id ? 'text-zinc-300' : 'text-zinc-500'
+                  }`}>
                     {s.title}
                   </span>
                 </div>
-                {i < steps.length - 1 && <div className={`h-[1px] flex-1 mx-4 ${step > s.id ? 'bg-purple-600' : 'bg-zinc-800'`} />}
+                {i < steps.length - 1 && (
+                  <div className={`h-[1px] flex-1 mx-4 ${
+                    step > s.id ? 'bg-purple-600' : 'bg-zinc-800'
+                  }`} />
+                )}
               </div>
             ))}
           </div>
@@ -155,7 +164,9 @@ export default function EditProduct() {
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-zinc-200">Capa do Produto</label>
                   <div
-                    className={`border-2 border-dashed border-zinc-800 rounded-2xl w-[200px] h-[200px] mx-auto overflow-hidden cursor-pointer relative group ${isUploadingImage ? 'pointer-events-none opacity-70' : ''}`}
+                    className={`border-2 border-dashed border-zinc-800 rounded-2xl w-[200px] h-[200px] mx-auto overflow-hidden cursor-pointer relative group ${
+                      isUploadingImage ? 'pointer-events-none opacity-70' : ''
+                    }`}
                     onClick={() => !isUploadingImage && document.getElementById('edit-image')?.click()}
                   >
                     {isUploadingImage && (
@@ -164,7 +175,13 @@ export default function EditProduct() {
                       </div>
                     )}
                     {imagePreview ? (
-                      <img src={imagePreview} className="w-full h-full object-cover" alt="Capa do produto" />
+                      <>
+                        <img src={imagePreview} className="absolute inset-0 w-full h-full object-cover" alt="Capa do produto" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 z-10">
+                          <ImageIcon className="w-8 h-8 text-white" />
+                          <p className="text-xs font-bold text-white text-center px-2">Alterar capa</p>
+                        </div>
+                      </>
                     ) : (
                       <div className="flex flex-col items-center justify-center h-full text-zinc-500"><Plus /></div>
                     )}
@@ -174,7 +191,7 @@ export default function EditProduct() {
                       className="hidden"
                       accept="image/*"
                       disabled={isUploadingImage}
-                      onChange={e => {
+                      onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) handleImageUpload(file);
                       }}
@@ -182,18 +199,54 @@ export default function EditProduct() {
                   </div>
                 </div>
 
-                <div className="space-y-4 bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/50">
+                <div className="bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/50 space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-zinc-200">Nome</label>
-                    <Input className="bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="p-1.5 bg-zinc-800 rounded-lg">
+                        <LayoutIcon className="w-3.5 h-3.5 text-zinc-400" />
+                      </div>
+                      <label className="text-sm font-bold text-zinc-200">Nome</label>
+                    </div>
+                    <Input
+                      className="bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-zinc-200">Descrição</label>
-                    <textarea className="w-full bg-black/40 border border-zinc-800 rounded-md p-3 min-h-[120px] text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="p-1.5 bg-zinc-800 rounded-lg">
+                        <FileText className="w-3.5 h-3.5 text-zinc-400" />
+                      </div>
+                      <label className="text-sm font-bold text-zinc-200">Descrição</label>
+                    </div>
+                    <textarea
+                      className="w-full bg-black/40 border border-zinc-800 rounded-md p-3 min-h-[120px] text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-zinc-600 resize-none"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Descreva detalhadamente o que seu cliente receberá ao comprar este produto..."
+                    />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-zinc-200">Preço (USD)</label>
-                    <Input type="number" step="0.01" className="bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} />
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="p-1.5 bg-zinc-800 rounded-lg">
+                        <span className="text-sm font-bold text-zinc-400">$</span>
+                      </div>
+                      <label className="text-sm font-bold text-zinc-200">Preço (USD)</label>
+                    </div>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      className="bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500"
+                      value={formData.price}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "" || Number(val) >= 0) {
+                          setFormData({ ...formData, price: val });
+                        }
+                      }}
+                      placeholder="Ex: 19.90"
+                    />
                   </div>
                 </div>
               </div>
@@ -339,7 +392,7 @@ export default function EditProduct() {
                                       try {
                                         const parts = file.split('/');
                                         const filenameWithUuid = parts[parts.length - 1];
-                                        if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}-/.test(filenameWithUuid)) {
+                                        if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(filenameWithUuid)) {
                                           return decodeURIComponent(filenameWithUuid.substring(37));
                                         }
                                         return decodeURIComponent(filenameWithUuid);
@@ -370,7 +423,7 @@ export default function EditProduct() {
 
             <div className="flex gap-3 pt-6 border-t border-zinc-800/50">
               {step > 1 && <Button variant="ghost" className="flex-1" onClick={() => setStep(step - 1)}>Voltar</Button>}
-              <Button className="flex-[2] bg-purple-600 hover:bg-purple-500 h-12" onClick={() => step === 3 ? handleUpdate() : setStep(2)}>
+              <Button className="flex-[2] bg-purple-600 hover:bg-purple-500 h-12" onClick={() => step === 3 ? handleUpdate() : setStep(step + 1)}>
                 {updateProduct.isPending ? <Loader2 className="animate-spin" /> : step === 3 ? "Salvar Alterações" : "Próximo"}
               </Button>
             </div>
