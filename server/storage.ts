@@ -1,4 +1,4 @@
-import { db, isPostgresEnabled } from "./db";
+import { db } from "./db";
 import {
   users, products, checkouts, sales, settings,
   type User, type InsertUser,
@@ -328,4 +328,5 @@ export class MemoryStorage implements IStorage {
   async getDashboardStats(userId: string) { return { salesToday: 0, revenuePaid: 0, salesApproved: 0, revenueTarget: 10000, revenueCurrent: 0, chartData: [] }; }
 }
 
-export const storage = isPostgresEnabled ? new DatabaseStorage() : new MemoryStorage();
+// Verificação direta para garantir que o DatabaseStorage seja usado se a URL existir
+export const storage = process.env.DATABASE_URL ? new DatabaseStorage() : new MemoryStorage();

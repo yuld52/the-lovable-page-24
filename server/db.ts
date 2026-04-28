@@ -6,24 +6,30 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Forçar o carregamento do .env antes de qualquer outra coisa
+// Configuração para o driver Neon serverless
+neonConfig.webSocketConstructor = ws;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
 
-neonConfig.webSocketConstructor = ws;
+// Tenta carregar do .env se existir (útil para desenvolvimento local)
+dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
 
 const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
-  console.error("❌ ERRO: DATABASE_URL não encontrada no ambiente!");
+  console.error("⚠️ ALERTA: DATABASE_URL não encontrada! O sistema usará armazenamento temporário (MemoryStorage).");
+} else {
+  console.log("✅ DATABASE_URL detectada. Tentando conectar ao Neon...");
 }
 
 export const pool = new Pool({ connectionString: databaseUrl });
 export const db = drizzle(pool, { schema });
 
 export function ensurePool() {
-  console.log("[DB] Conexão PostgreSQL inicializada via Neon");
+  if (databaseUrl) {
+    console.log("[DB] Pool de conexões PostgreSQL pronto.");
+  }
 }
 
 export const isPostgresEnabled = !!databaseUrl;
