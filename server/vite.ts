@@ -4,58 +4,55 @@ import { type Server } from "http";
 import viteConfig from "../vite.config";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
 
 export async function setupVite(server: Server, app: Express) {
-  console.log("🔧 [VITE] Inicializando servidor de desenvolvimento...");
-  
+  const serverOptions = {
+    middlewareMode: true,
+    hmr: { server, path: "/vite-hmr" },
+    allowedHosts: true as const,
+  };
+
   const vite = await createViteServer({
     ...viteConfig,
     configFile: false,
-    customLogger: viteLogger,
-    server: {
-      middlewareMode: true,
-      hmr: { server },
+    customLogger: {
+      ...viteLogger,
+      error: (msg, options) => {
+        // Don't kill the whole server process; we still want the API to respond.
+        viteLogger.error(msg, options);
+      },
     },
+    server: serverOptions,
     appType: "custom",
   });
 
   app.use(vite.middlewares);
 
-  // SPA routing middleware - Pathless to avoid Express 5 path-to-regexp issues
-  app.use(async (req, res, next) => {
+  app.use("/{*path}", async (req, res, next) => {
     const url = req.originalUrl;
 
-    // Se for uma rota de API ou de uploads, deixa passar para os outros handlers
-    if (url.startsWith("/api") || url.startsWith("/uploads")) {
-      return next();
-    }
-
-    // Ignorar requisições que parecem ser arquivos (contêm ponto no final do path)
-    // mas que o vite.middlewares não pegou
-    if (url.includes('.') && !url.endsWith('.html')) {
-      return next();
-    }
-
     try {
-      const clientTemplate = path.resolve(__dirname, "..", "client", "index.html");
+      const clientTemplate = path.resolve(
+        import.meta.dirname,
+        "..",
+        "client",
+        "index.html",
+      );
+
+      // always reload the index.html file from disk incase it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      
-      // Transforma o HTML usando o Vite (injeta o cliente HMR e resolve caminhos)
+      template = template.replace(
+        `src="/src/main.tsx"`,
+        `src="/src/main.tsx?v=${nanoid()}"`,
+      );
       const page = await vite.transformIndexHtml(url, template);
-      
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
-      console.error("❌ [VITE] Erro ao renderizar template:", e);
       next(e);
     }
   });
-
-  console.log("✅ [VITE] Middleware pronto.");
 }

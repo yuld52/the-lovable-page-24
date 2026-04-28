@@ -1,99 +1,138 @@
-import { testConnection, db } from "./db";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import path from "path";
-import { storage } from "./storage";
-import bcrypt from "bcryptjs";
-import { sql } from "drizzle-orm";
+import fs from "fs";
+import { fileURLToPath } from "url";
+
+// Load .env manually if not already loaded (standard in this project's start-all.js)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const envPath = path.resolve(__dirname, "..", ".env");
+if (fs.existsSync(envPath)) {
+  const envConfig = fs.readFileSync(envPath, "utf8");
+  envConfig.split("\n").forEach((line) => {
+    const [key, ...valueParts] = line.split("=");
+    if (key && valueParts.length > 0) {
+      const value = valueParts.join("=").trim().replace(/^["']|["']$/g, "");
+      if (!process.env[key.trim()]) {
+        process.env[key.trim()] = value;
+      }
+    }
+  });
+}
 
 const app = express();
 const httpServer = createServer(app);
 
-app.use(express.json({ limit: '12mb' }));
+declare module "http" {
+  interface IncomingMessage {
+    rawBody: unknown;
+  }
+}
+
+app.use(
+  express.json({
+    limit: '12mb',
+    verify: (req, _res, buf) => {
+      req.rawBody = buf;
+    },
+  }),
+);
+
 app.use(express.urlencoded({ extended: false }));
 app.use("/uploads", express.static(path.join(process.cwd(), "public", "uploads")));
 
-async function fixDatabaseSchema() {
-  console.log("🔧 [DB-FIX] Corrigindo tipos de colunas no banco de dados...");
-  try {
-    // Converte as colunas de UUID para INTEGER para coincidir com a tabela de usuários
-    await db.execute(sql`ALTER TABLE settings ALTER COLUMN user_id TYPE integer USING NULL`);
-    await db.execute(sql`ALTER TABLE checkouts ALTER COLUMN owner_id TYPE integer USING NULL`);
-    await db.execute(sql`ALTER TABLE push_subscriptions ALTER COLUMN user_id TYPE integer USING NULL`);
-    await db.execute(sql`ALTER TABLE notifications ALTER COLUMN user_id TYPE integer USING NULL`);
-    console.log("✅ [DB-FIX] Colunas corrigidas com sucesso.");
-  } catch (err) {
-    // Se falhar, provavelmente já estão como integer ou a tabela não existe ainda
-    console.log("ℹ️ [DB-FIX] Aviso: Algumas colunas podem já estar corrigidas ou tabelas ainda não existem.");
-  }
+export function log(message: string, source = "express") {
+  const formattedTime = new Date().toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+
+  console.log(`${formattedTime} [${source}] ${message}`);
 }
 
-async function initializeData() {
-  console.log("🛠️ [SETUP] Verificando dados iniciais...");
-  
-  const adminEmail = "juniornegocios015@gmail.com";
-  let admin = await storage.getUserByUsername(adminEmail);
-  
-  if (!admin) {
-    console.log("👤 [SETUP] Criando usuário administrador padrão...");
-    const hashedPassword = await bcrypt.hash("admin123", 10);
-    admin = await storage.createUser({
-      username: adminEmail,
-      password: hashedPassword
-    });
-    console.log("✅ [SETUP] Administrador criado: " + adminEmail + " / admin123");
-  }
+// Basic healthcheck (no DB) to confirm API server is reachable
+app.get("/api/health/basic", (_req, res) => {
+  res.json({ ok: true });
+});
 
-  const existingSettings = await storage.getAnySettings();
-  if (!existingSettings && admin) {
-    console.log("⚙️ [SETUP] Inicializando tabela de configurações...");
-    await storage.updateSettings(String(admin.id), {
-      environment: "sandbox",
-      salesNotifications: false,
-      metaEnabled: true,
-      utmfyEnabled: true
-    });
-    console.log("✅ [SETUP] Configurações iniciais criadas.");
-  }
-}
+app.use((req, res, next) => {
+  const start = Date.now();
+  const path = req.path;
+  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+
+  const originalResJson = res.json;
+  res.json = function (bodyJson, ...args) {
+    capturedJsonResponse = bodyJson;
+    return originalResJson.apply(res, [bodyJson, ...args]);
+  };
+
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (path.startsWith("/api")) {
+      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      }
+
+      log(logLine);
+    }
+  });
+
+  next();
+});
 
 (async () => {
-  console.log(`🌐 [SERVER] Iniciando em modo: ${process.env.NODE_ENV || "development"}`);
-  
-  const dbOk = await testConnection();
-  if (dbOk) {
-    await fixDatabaseSchema();
-    await initializeData().catch(err => console.error("❌ [SETUP] Erro na inicialização:", err));
-  }
-
   try {
     await registerRoutes(httpServer, app);
   } catch (err) {
-    console.error("❌ [SERVER] Falha ao registrar rotas:", err);
+    console.error("registerRoutes failed (server will still start):", err);
   }
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-    if (res.headersSent) return next(err);
+
+    console.error("Internal Server Error:", err);
+
+    if (res.headersSent) {
+      return next(err);
+    }
+
     res.status(status).json({ message });
   });
 
   if (process.env.NODE_ENV === "production") {
-    serveStatic(app);
+    try {
+      serveStatic(app);
+    } catch (err) {
+      console.error("serveStatic failed:", err);
+    }
   } else {
-    const { setupVite } = await import("./vite");
-    await setupVite(httpServer, app);
+    try {
+      const { setupVite } = await import("./vite");
+      await setupVite(httpServer, app);
+    } catch (err) {
+      console.error("setupVite failed (API will still run):", err);
+    }
   }
 
-  const args = process.argv.slice(2);
-  const portIndex = args.indexOf("--port");
-  const argPort = portIndex !== -1 ? parseInt(args[portIndex + 1], 10) : null;
-  const port = argPort || parseInt(process.env.PORT || "5000", 10);
-
-  httpServer.listen({ port, host: "0.0.0.0" }, () => {
-    console.log(`\n🚀 METEORFY RODANDO NA PORTA ${port}!`);
-  });
+  const port = parseInt(process.env.PORT || "5000", 10);
+  httpServer.listen(
+    {
+      port,
+      host: "0.0.0.0",
+    },
+    () => {
+      console.log("\n\n" + "=".repeat(50));
+      console.log("🚀 METEORFY SERVER UPDATED & RUNNING!");
+      console.log("✅ FIREBASE AUTH & PUSH FIXES APPLIED");
+      console.log("=".repeat(50) + "\n\n");
+      log(`serving on port ${port}`);
+    },
+  );
 })();

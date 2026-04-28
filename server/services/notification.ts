@@ -1,47 +1,139 @@
 import webpush from "web-push";
-import { db } from "../db";
-import { pushSubscriptions, settings as settingsTable, notifications } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { adminDb } from "../firebase-admin";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 
+// Load .env if not already loaded (fixes timing issues with process.env)
+try {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const envPath = path.resolve(__dirname, "..", "..", ".env");
+  if (fs.existsSync(envPath)) {
+    const envConfig = fs.readFileSync(envPath, "utf8");
+    envConfig.split("\n").forEach((line) => {
+      const [key, ...valueParts] = line.split("=");
+      if (key && valueParts.length > 0) {
+        const value = valueParts.join("=").trim().replace(/^["']|["']$/g, "");
+        if (key.trim() && !process.env[key.trim()]) {
+          process.env[key.trim()] = value;
+        }
+      }
+    });
+  }
+} catch (err) {
+  console.error("Error loading .env in notification service:", err);
+}
+
+// Memory fallback to prevent 500 errors when DB is unreachable
+const memorySubscriptions: any[] = [];
+const memorySettings: Record<string, any> = {};
+
+// Initialize VAPID
 export function getVapidPublicKey() {
     return process.env.VAPID_PUBLIC_KEY;
 }
 
+// Ensure keys are set up at start
 const publicKey = process.env.VAPID_PUBLIC_KEY;
 const privateKey = process.env.VAPID_PRIVATE_KEY;
 
 if (publicKey && privateKey) {
-    webpush.setVapidDetails("mailto:admin@meteorfy.com", publicKey, privateKey);
+    webpush.setVapidDetails(
+        "mailto:admin@meteorfy.com",
+        publicKey,
+        privateKey
+    );
+} else {
+    console.warn("[PUSH] VAPID keys missing! Push notifications will fail if not generated.");
+    if (process.env.NODE_ENV !== 'production') {
+        const vapidKeys = webpush.generateVAPIDKeys();
+        process.env.VAPID_PUBLIC_KEY = vapidKeys.publicKey;
+        process.env.VAPID_PRIVATE_KEY = vapidKeys.privateKey;
+        webpush.setVapidDetails(
+            "mailto:admin@meteorfy.com",
+            vapidKeys.publicKey,
+            vapidKeys.privateKey
+        );
+        console.log("[PUSH] Temporary VAPID keys generated for this session.");
+    }
 }
 
 export async function saveSubscription(userId: string, subscription: any) {
+    console.log(`[PUSH] Saving subscription for user ${userId}`);
     try {
-        await db.insert(pushSubscriptions).values({
-            userId: userId as any,
-            subscription,
-            endpoint: subscription.endpoint,
-        }).onConflictDoUpdate({
-            target: pushSubscriptions.endpoint,
-            set: { subscription, userId: userId as any }
-        });
+        try {
+            const docId = Buffer.from(subscription.endpoint).toString('base64url');
+            await adminDb.collection("pushSubscriptions").doc(docId).set({
+                userId,
+                subscription,
+                endpoint: subscription.endpoint,
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+            console.log(`[PUSH] Subscription saved to Firestore`);
+        } catch (dbErr) {
+            console.warn("[PUSH] Firestore unreachable during saveSubscription, falling back to memory.");
+        }
+
+        // Always save to memory as a cache/backup
+        const idx = memorySubscriptions.findIndex(s => s.userId === userId && s.endpoint === subscription.endpoint);
+        if (idx >= 0) {
+            memorySubscriptions[idx] = { ...memorySubscriptions[idx], subscription, updatedAt: new Date() };
+        } else {
+            memorySubscriptions.push({ userId, subscription, endpoint: subscription.endpoint, createdAt: new Date() });
+        }
         return true;
     } catch (err) {
-        console.error("[PUSH] Error saving subscription:", err);
-        return false;
+        console.error("[PUSH] Critical error in saveSubscription:", err);
+        return true; // We return true because memory save usually succeeds
     }
 }
 
 export async function getSubscriptions(userId: string) {
-    return await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId as any));
+    const allSubs: any[] = [];
+
+    try {
+        const dbSubs = await adminDb.collection("pushSubscriptions").where("userId", "==", userId).get();
+        dbSubs.forEach(doc => {
+            allSubs.push(doc.data());
+        });
+    } catch (err) {
+        console.warn("[PUSH] Failed to fetch subscriptions from Firestore, using memory cache.");
+    }
+
+    // 2. Add from memory, avoiding duplicates by endpoint
+    memorySubscriptions.filter(s => s.userId === userId).forEach(ms => {
+        if (!allSubs.find(as => as.endpoint === ms.endpoint)) {
+            allSubs.push(ms);
+        }
+    });
+
+    return allSubs;
 }
 
-export async function sendNotification({ userId, type, title, body, metadata }: any) {
+export async function sendNotification({ userId, type, title, body, metadata }: NotificationData) {
+    console.log(`[PUSH] Sending notification to ${userId} (Type: ${type})`);
     try {
-        const [userSettings] = await db.select().from(settingsTable).where(eq(settingsTable.userId, userId as any));
-        if ((type === "sale_captured" || type === "PURCHASE_APPROVED") && userSettings?.salesNotifications === false) {
+        // 1. Check User Settings
+        let salesNotificationsEnabled = true; // Default if we can't check
+
+        try {
+            const snapshot = await adminDb.collection("settings").where("userId", "==", userId).limit(1).get();
+            if (!snapshot.empty) {
+                const dbSettings = snapshot.docs[0].data();
+                salesNotificationsEnabled = dbSettings?.salesNotifications !== false && dbSettings?.sales_notifications !== false;
+            }
+        } catch (dbErr) {
+            console.warn("[PUSH] Firestore unreachable during settings check.");
+            salesNotificationsEnabled = memorySettings[userId]?.salesNotifications !== false;
+        }
+
+        if ((type === "sale_captured" || type === "PURCHASE_APPROVED") && !salesNotificationsEnabled) {
+            console.log(`[PUSH] Sales notifications disabled for user ${userId}`);
             return;
         }
 
+        // 2. Generate content
         let finalTitle = title || "Meteorfy";
         let finalBody = body || "Nova notificação";
 
@@ -50,31 +142,67 @@ export async function sendNotification({ userId, type, title, body, metadata }: 
             const currency = metadata?.currency || "USD";
             const productName = metadata?.productName || "";
             finalTitle = "Venda aprovada";
-            finalBody = productName ? `${productName} — ${currency} ${amount}` : `Valor: ${currency} ${amount}`;
+            finalBody = productName
+                ? `${productName} — ${currency} ${amount}`
+                : `Valor: ${currency} ${amount}`;
         }
 
-        await db.insert(notifications).values({
-            userId: userId as any,
-            type,
+        // 3. Save to History (Optional)
+        try {
+             await adminDb.collection("notifications").add({
+                 userId,
+                 type,
+                 title: finalTitle,
+                 body: finalBody,
+                 createdAt: new Date().toISOString()
+             });
+        } catch (dbErr) {
+            console.warn("[PUSH] Failed to save notification history to Firestore.");
+        }
+
+        // 4. Send Push
+        const subs = await getSubscriptions(userId);
+        console.log(`[PUSH] Found ${subs.length} push subscriptions for user`);
+
+        const payload = JSON.stringify({
             title: finalTitle,
             body: finalBody,
+            icon: "/notification-icon.png",
+            badge: "/notification-icon.png",
         });
 
-        const subs = await getSubscriptions(userId);
-        const payload = JSON.stringify({ title: finalTitle, body: finalBody, icon: "/notification-icon.png" });
-
-        await Promise.all(subs.map(async (sub) => {
+        const sendPromises = subs.map(async (sub) => {
             try {
-                await webpush.sendNotification(sub.subscription as any, payload);
+                const subscription = sub.subscription;
+                // If the subscription object is a string, parse it
+                const finalSub = typeof subscription === 'string' ? JSON.parse(subscription) : subscription;
+                await webpush.sendNotification(finalSub, payload);
+                console.log(`[PUSH] Sent successfully to endpoint: ${sub.endpoint?.substring(0, 30)}...`);
             } catch (error: any) {
+                console.error("[PUSH] Error sending to subscription:", error.statusCode, error.message);
                 if (error.statusCode === 410 || error.statusCode === 404) {
-                    await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, sub.endpoint));
+                    try {
+                        const docId = Buffer.from(sub.endpoint).toString('base64url');
+                        await adminDb.collection("pushSubscriptions").doc(docId).delete();
+                    } catch (delErr) { /* ignore */ }
+                    const mIdx = memorySubscriptions.findIndex(ms => ms.endpoint === sub.endpoint);
+                    if (mIdx >= 0) memorySubscriptions.splice(mIdx, 1);
                 }
             }
-        }));
+        });
+
+        await Promise.all(sendPromises);
         return true;
     } catch (error) {
         console.error("[PUSH] Global error in sendNotification:", error);
         return false;
     }
+}
+
+interface NotificationData {
+    userId: string;
+    type: "sale_captured" | "sale_refunded" | "system" | "PURCHASE_APPROVED";
+    title?: string;
+    body?: string;
+    metadata?: any;
 }

@@ -1,24 +1,39 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { CreateProductRequest, UpdateProductRequest, Product } from "@shared/schema";
+import { auth } from "@/lib/firebase";
 
 export function useProducts() {
   return useQuery({
-    queryKey: ["/api/products"],
+    queryKey: ["products"],
     queryFn: async () => {
-      const response = await fetch("/api/products");
+      const user = auth.currentUser;
+      if (!user) return [];
+
+      const idToken = await user.getIdToken();
+      const response = await fetch("/api/products", {
+        headers: { "Authorization": `Bearer ${idToken}` }
+      });
+      
       if (!response.ok) return [];
       return await response.json() as Product[];
     },
     staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
   });
 }
 
 export function useProduct(id: string | number) {
   return useQuery({
-    queryKey: ["/api/products", id],
+    queryKey: ["products", id],
     queryFn: async () => {
-      if (!id) return null;
-      const response = await fetch(`/api/products/${id}`);
+      const user = auth.currentUser;
+      if (!user || !id) return null;
+
+      const idToken = await user.getIdToken();
+      const response = await fetch(`/api/products/${id}`, {
+        headers: { "Authorization": `Bearer ${idToken}` }
+      });
+
       if (!response.ok) return null;
       return await response.json() as Product;
     },
@@ -30,15 +45,26 @@ export function useCreateProduct() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: CreateProductRequest) => {
+      const user = auth.currentUser;
+      if (!user) throw new Error("Não autenticado");
+
+      const idToken = await user.getIdToken();
       const response = await fetch("/api/products", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
         body: JSON.stringify(payload)
       });
-      if (!response.ok) throw new Error("Erro ao criar produto");
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Erro ao criar produto");
+      }
       return response.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/products"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
   });
 }
 
@@ -46,15 +72,23 @@ export function useUpdateProduct() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: number } & UpdateProductRequest) => {
+      const user = auth.currentUser;
+      if (!user) throw new Error("Não autenticado");
+
+      const idToken = await user.getIdToken();
       const response = await fetch(`/api/products/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
         body: JSON.stringify(updates)
       });
+
       if (!response.ok) throw new Error("Erro ao atualizar produto");
       return response.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/products"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
   });
 }
 
@@ -62,9 +96,17 @@ export function useDeleteProduct() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string | number) => {
-      const response = await fetch(`/api/products/${id}`, { method: "DELETE" });
+      const user = auth.currentUser;
+      if (!user) throw new Error("Não autenticado");
+
+      const idToken = await user.getIdToken();
+      const response = await fetch(`/api/products/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${idToken}` }
+      });
+
       if (!response.ok) throw new Error("Erro ao excluir produto");
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/products"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
   });
 }

@@ -1,18 +1,20 @@
-import { useQuery } from "@tanstack/react-query";
-import { type User } from "@shared/schema";
+import { useEffect, useState } from "react";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 
 export function useUser() {
-  const { data: user, isLoading: loading, error } = useQuery<User | null>({
-    queryKey: ["/api/user"],
-    queryFn: async () => {
-      const res = await fetch("/api/user");
-      if (res.status === 401) return null;
-      if (!res.ok) throw new Error("Falha ao buscar usuário");
-      return res.json();
-    },
-    retry: false,
-    staleTime: Infinity,
-  });
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  return { user, loading, error };
+  useEffect(() => {
+    // Listen to auth state changes
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  return { user, loading };
 }

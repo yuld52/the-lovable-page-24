@@ -1,10 +1,10 @@
 import type { Express } from "express";
 import crypto from "crypto";
-import { pool, ensurePool, isPostgresEnabled, db } from "./db";
+import { pool, ensurePool, isPostgresEnabled } from "./db";
 import type { IStorage } from "./storage";
 import { processTopFunnelTracking, processCheckoutEventTracking, processPaymentPendingTracking } from "./tracking";
-import { sql, eq } from "drizzle-orm";
-import { checkouts } from "@shared/schema";
+import { adminDb } from "./firebase-admin";
+import { Timestamp } from "firebase-admin/firestore";
 
 const jsonHeaders = { "Content-Type": "application/json" };
 
@@ -28,7 +28,74 @@ function getUtmFromBody(body: any) {
   };
 }
 
+async function checkDedupeFirestore(dedupeKey: string): Promise<boolean> {
+  try {
+    const snapshot = await adminDb.collection("tracking_events")
+      .where("dedupe_key", "==", dedupeKey)
+      .limit(1)
+      .get();
+    return !snapshot.empty;
+  } catch (err) {
+    console.error("Firestore dedupe check error:", err);
+    return false;
+  }
+}
+
+async function insertTrackingLog(row: {
+  ownerId: string;
+  saleId?: number | null;
+  checkoutId?: number | null;
+  sessionId?: string | null;
+  destination: string;
+  eventName: string;
+  dedupeKey: string;
+  payload: any;
+  responseStatus?: number | null;
+  responseBody?: string | null;
+}) {
+  // Use Firestore if PostgreSQL is disabled
+  if (!isPostgresEnabled) {
+    try {
+      await adminDb.collection("tracking_events").add({
+        ...row,
+        payload: row.payload ? JSON.stringify(row.payload) : null,
+        created_at: Timestamp.now(),
+      });
+    } catch (err) {
+      console.error("Firestore tracking log insert error:", err);
+    }
+    return;
+  }
+
+  // Original PostgreSQL logic
+  ensurePool();
+  try {
+    await pool.query(
+      `INSERT INTO tracking_events (
+         owner_id, sale_id, checkout_id, session_id, destination, event_name, dedupe_key, payload, response_status, response_body
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+       ON CONFLICT (dedupe_key) DO NOTHING`,
+      [
+        row.ownerId,
+        row.saleId ?? null,
+        row.checkoutId ?? null,
+        row.sessionId ?? null,
+        row.destination,
+        row.eventName,
+        row.dedupeKey,
+        row.payload ? JSON.stringify(row.payload) : null,
+        row.responseStatus ?? null,
+        row.responseBody ?? null,
+      ],
+    );
+  } catch (err) {
+    // never block the request
+    console.error("tracking log insert error:", err);
+  }
+}
+
 export function registerTrackingRoutes(app: Express, storage: IStorage) {
+  // Top-of-funnel + checkout intent events (public)
   app.post("/api/tracking/event", async (req, res) => {
     try {
       const body = req.body || {};
@@ -51,6 +118,7 @@ export function registerTrackingRoutes(app: Express, storage: IStorage) {
       const ownerId = String(checkout.ownerId);
       const settings = await storage.getSettings(ownerId);
 
+      // Compose a lightweight "sale-like" payload
       const base = {
         id: body.id ?? 0,
         amount: body.amount ?? 0,
@@ -58,23 +126,89 @@ export function registerTrackingRoutes(app: Express, storage: IStorage) {
         ...getUtmFromBody(body),
       };
 
-      // Increment views using Drizzle
-      if (checkout.id) {
-        await db.update(checkouts)
-          .set({ views: sql`${checkouts.views} + 1` })
-          .where(eq(checkouts.id, checkout.id))
-          .catch(err => console.error("Error incrementing views:", err));
-      }
+      const dedupeKey = sha256(
+        ["public", ownerId, String(checkout.id), sessionId ?? "", eventName].join("|"),
+      );
 
+      // If already logged, we short-circuit (dedupe strong)
+      // We still return ok: true.
+      let isDuplicated = false;
+      if (isPostgresEnabled) {
+        const { rows } = await pool.query(
+          `SELECT 1 FROM tracking_events WHERE dedupe_key = $1 LIMIT 1`,
+          [dedupeKey],
+        );
+        isDuplicated = !!rows?.length;
+      } else {
+        isDuplicated = await checkDedupeFirestore(dedupeKey);
+      }
+      if (isDuplicated) return res.json({ ok: true, deduped: true });
+
+      // Send
       if (eventName === "PageView" || eventName === "ViewContent") {
         await processTopFunnelTracking(settings as any, eventName as any, base as any);
+
+        // Incrementar visualizações do checkout
+        if (checkout.id) {
+          try {
+            if (isPostgresEnabled) {
+              await pool.query('UPDATE checkouts SET views = COALESCE(views, 0) + 1 WHERE id = $1', [checkout.id]);
+            } else {
+              // Use Firestore to increment views
+              const checkoutRef = adminDb.collection("checkouts").doc(String(checkout.id));
+              const checkoutDoc = await checkoutRef.get();
+              if (checkoutDoc.exists) {
+                const currentData = checkoutDoc.data();
+                const currentViews = currentData?.views || 0;
+                await checkoutRef.update({ views: currentViews + 1 });
+              }
+            }
+          } catch (err) {
+            console.error("Error incrementing views:", err);
+          }
+        }
+
+        await insertTrackingLog({
+          ownerId,
+          checkoutId: Number(checkout.id),
+          sessionId,
+          destination: "multi",
+          eventName,
+          dedupeKey,
+          payload: { eventName, ...base },
+        });
       } else if (eventName === "checkout") {
         await processCheckoutEventTracking(settings as any, base as any);
+        await insertTrackingLog({
+          ownerId,
+          checkoutId: Number(checkout.id),
+          sessionId,
+          destination: "utmfy",
+          eventName,
+          dedupeKey,
+          payload: { eventName, ...base },
+        });
       } else if (eventName === "payment_pending") {
+        console.log("📧 [UTMIFY] Recebido evento payment_pending");
+        console.log("📧 [UTMIFY] Token configurado:", settings?.utmfyToken ? "SIM ✅" : "NÃO ❌");
+        console.log("📧 [UTMIFY] Dados do evento:", { ownerId, checkoutId: checkout.id, sessionId });
+
         await processPaymentPendingTracking(settings as any, base as any);
+
+        console.log("📧 [UTMIFY] Evento payment_pending processado!");
+
+        await insertTrackingLog({
+          ownerId,
+          checkoutId: Number(checkout.id),
+          sessionId,
+          destination: "utmfy",
+          eventName,
+          dedupeKey,
+          payload: { eventName, ...base },
+        });
       }
 
-      return res.json({ ok: true });
+      return res.writeHead(200, jsonHeaders).end(JSON.stringify({ ok: true }));
     } catch (err: any) {
       console.error("POST /api/tracking/event error:", err);
       return res.status(500).json({ message: err?.message || "Tracking error" });

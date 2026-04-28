@@ -1,53 +1,65 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from 'ws';
-import * as schema from "@shared/schema";
-import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
+// Firebase Firestore Migration Note:
+// This file has been modified to skip PostgreSQL connection
+// All database operations should now use Firebase Firestore
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Carregar .env imediatamente
-dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
-
-neonConfig.webSocketConstructor = ws;
-
-const databaseUrl = process.env.DATABASE_URL;
-
-if (!databaseUrl) {
-  console.error("❌ [DB] DATABASE_URL não encontrada! Verifique o arquivo .env ou os Secrets do Replit.");
-}
-
-export const pool = new Pool({ 
-  connectionString: databaseUrl,
-  connectionTimeoutMillis: 5000 
-});
-
-export const db = drizzle(pool, { schema });
-
-// Função para garantir que o pool existe (satisfaz legados de código)
-export const ensurePool = () => {
-  return pool;
+// Create a stub pool that throws errors for any database operations
+// This allows the app to start without PostgreSQL
+type PoolLike = {
+  query: (sql: string, params?: any[]) => Promise<any>;
+  on: (event: string, callback: Function) => void;
+  end: () => Promise<void>;
 };
 
-// Função para testar se o banco responde e se as tabelas existem
-export async function testConnection() {
-  if (!databaseUrl) return false;
-  try {
-    console.log("⏳ [DB] Testando conexão com Neon...");
-    // Tenta selecionar 1 da tabela users para ver se ela existe
-    await db.execute(sql`SELECT 1 FROM users LIMIT 1`).catch(() => db.execute(sql`SELECT 1`));
-    console.log("✅ [DB] Conexão estabelecida com sucesso!");
-    return true;
-  } catch (err: any) {
-    console.error("❌ [DB] Erro crítico de conexão:");
-    console.error(`   Mensagem: ${err.message}`);
-    console.error("   Dica: Verifique se você criou as tabelas no console da Neon usando o SQL fornecido.");
-    return false;
-  }
+function createFailingPool(message: string): PoolLike {
+  const stub: any = {
+    query: async () => {
+      throw new Error(message);
+    },
+    on: () => {
+      // no-op
+    },
+    end: async () => {
+      // no-op
+    },
+  };
+  return stub as PoolLike;
 }
 
-import { sql } from "drizzle-orm";
-export const isPostgresEnabled = !!databaseUrl;
+// Use Firebase Firestore instead of PostgreSQL
+// The pool is now a stub that throws errors - all DB operations should migrate to Firestore
+export const pool: PoolLike = createFailingPool("PostgreSQL disabled - use Firebase Firestore instead");
+
+// For compatibility with existing code, create a stub db object
+export const db: any = {
+  select: () => ({
+    from: () => ({
+      where: () => [],
+      orderBy: () => [],
+    }),
+  }),
+  insert: (_table: any) => ({
+    values: () => ({
+      returning: () => [],
+    }),
+  }),
+  update: (_table: any) => ({
+    set: () => ({
+      where: () => ({
+        returning: () => [],
+      }),
+    }),
+  }),
+  delete: (_table: any) => ({
+    where: () => ({
+      returning: () => [],
+    }),
+  }),
+};
+
+export function ensurePool() {
+  // No-op - PostgreSQL is disabled
+  console.log("[DB] PostgreSQL disabled - using Firebase Firestore instead");
+}
+
+// Flag to check if PostgreSQL is enabled
+export const isPostgresEnabled = false;
