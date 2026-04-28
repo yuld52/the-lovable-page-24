@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { firestoreStorage as storage } from "./firestore-storage";
 import { api } from "@shared/routes";
@@ -74,6 +74,38 @@ export async function registerRoutes(
     res.json(await storage.getProducts(userId, status));
   });
 
+  // Admin: Get ALL products (no user filter)
+  app.get("/api/admin/products", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== "yuldchissico11@gmail.com") {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      const snapshot = await adminDb.collection("products").get();
+      const products = snapshot.docs.map((doc: any) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ownerId: data.owner_id ?? data.ownerId ?? null,
+          name: data.name ?? '',
+          description: data.description ?? null,
+          price: data.price ?? 0,
+          imageUrl: data.image_url ?? data.imageUrl ?? null,
+          deliveryUrl: data.delivery_url ?? data.deliveryUrl ?? null,
+          whatsappUrl: data.whatsapp_url ?? data.whatsappUrl ?? null,
+          deliveryFiles: data.delivery_files ?? data.deliveryFiles ?? [],
+          noEmailDelivery: data.no_email_delivery ?? data.noEmailDelivery ?? false,
+          status: data.status ?? 'pending',
+          createdAt: data.created_at ?? data.createdAt ?? new Date(),
+        };
+      });
+      res.json(products);
+    } catch (error: any) {
+      console.error("Error getting all products:", error);
+      res.status(500).json({ message: error.message || "Erro ao buscar produtos" });
+    }
+  });
+
   app.post(api.products.create.path, requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
@@ -142,6 +174,35 @@ export async function registerRoutes(
   app.get(api.checkouts.list.path, requireAuth, async (req, res) => {
     const userId = String((req as any).user?.id || "");
     res.json(await storage.getCheckouts(userId));
+  });
+
+  // Admin: Get ALL checkouts
+  app.get("/api/admin/checkouts", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== "yuldchissico11@gmail.com") {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      const snapshot = await adminDb.collection("checkouts").get();
+      const checkouts = snapshot.docs.map((doc: any) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ownerId: data.owner_id ?? data.ownerId ?? null,
+          productId: data.product_id ?? data.productId ?? 0,
+          name: data.name ?? '',
+          slug: data.slug ?? '',
+          views: data.views ?? 0,
+          active: data.active ?? true,
+          config: data.config ?? null,
+          createdAt: data.created_at ?? data.createdAt ?? new Date(),
+        };
+      });
+      res.json(checkouts);
+    } catch (error: any) {
+      console.error("Error getting all checkouts:", error);
+      res.status(500).json({ message: error.message || "Erro ao buscar checkouts" });
+    }
   });
 
   app.post(api.checkouts.create.path, requireAuth, async (req, res) => {

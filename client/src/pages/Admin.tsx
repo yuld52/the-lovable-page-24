@@ -4,7 +4,7 @@ import { AdminSidebar } from "@/components/AdminSidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Shield, Users, Package, ShoppingCart, BarChart3, Loader2, ArrowRight, LogOut, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useProducts, useApproveProduct, useRejectProduct } from "@/hooks/use-products";
+import { useAdminProducts, useAdminCheckouts, useAdminApproveProduct, useAdminRejectProduct } from "@/hooks/use-admin";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
@@ -33,15 +33,14 @@ export default function Admin() {
     enabled: !!user && user.email === ADMIN_EMAIL
   });
 
-  // Fetch all products for approval
-  const { data: allProducts, isLoading: loadingProducts } = useProducts();
-  const { data: checkouts, isLoading: loadingCheckouts } = useQuery<any[]>({
-    queryKey: ["all-checkouts-admin"],
-    enabled: !!user && user.email === ADMIN_EMAIL
-  });
+  // Fetch ALL products for admin approval
+  const { data: allProducts, isLoading: loadingProducts, refetch: refetchProducts } = useAdminProducts();
 
-  const approveProduct = useApproveProduct();
-  const rejectProduct = useRejectProduct();
+  // Fetch ALL checkouts for admin
+  const { data: checkouts, isLoading: loadingCheckouts } = useAdminCheckouts();
+
+  const approveProduct = useAdminApproveProduct();
+  const rejectProduct = useAdminRejectProduct();
 
   const isLoading = loading || loadingUsers || loadingProducts || loadingCheckouts;
 
@@ -150,6 +149,14 @@ export default function Admin() {
                         <CardDescription className="text-xs text-zinc-500">Aprove ou rejeite produtos pendentes</CardDescription>
                     </div>
                     </div>
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => refetchProducts()}
+                        className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                    >
+                        Atualizar
+                    </Button>
                 </div>
                 </CardHeader>
                 <CardContent>
