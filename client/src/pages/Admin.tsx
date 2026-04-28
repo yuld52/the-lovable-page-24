@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Layout } from "@/components/Layout";
+import { AdminSidebar } from "@/components/AdminSidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Shield, Users, Package, ShoppingCart, BarChart3, Loader2, ArrowRight, LogOut, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -79,40 +80,15 @@ export default function Admin() {
     );
   }
 
-  // Calculate conversion rate safely
-  const conversionRate = checkouts && checkouts.length > 0 
-    ? Math.round(checkouts.reduce((acc: number, c: any) => acc + (c.views || 0), 0) / checkouts.length)
-    : 0;
-
   return (
-    <div className="min-h-screen bg-[#09090b] text-foreground">
-      {/* Admin Header */}
-      <header className="h-16 border-b border-border/50 bg-background/80 backdrop-blur-md px-8 flex items-center justify-between w-full">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center border border-red-500/20">
-            <Shield className="w-5 h-5 text-red-500" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-foreground tracking-tight">Painel Administrativo</h2>
-            <p className="text-xs text-muted-foreground">Visão geral do sistema</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground truncate max-w-[200px]">{user?.email}</span>
-            <Button 
-                onClick={handleLogout}
-                variant="ghost" 
-                size="sm"
-                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-            >
-                <LogOut size={16} className="mr-2" />
-                Sair
-            </Button>
-        </div>
-      </header>
-
-      <main className="p-8">
+    <div className="min-h-screen bg-[#09090b] text-foreground flex">
+      <AdminSidebar />
+      
+      <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
+            <h1 className="text-3xl font-bold text-white mb-2">Painel Administrativo</h1>
+            <p className="text-sm text-muted-foreground mb-8">Visão geral do sistema</p>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -174,13 +150,6 @@ export default function Admin() {
                         <CardDescription className="text-xs text-zinc-500">Aprove ou rejeite produtos pendentes</CardDescription>
                     </div>
                     </div>
-                    <Button 
-                    onClick={() => setLocation("/settings?tab=usuario")}
-                    className="bg-zinc-800 hover:bg-zinc-700 text-white border-0"
-                    >
-                    Gerenciar
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
                 </div>
                 </CardHeader>
                 <CardContent>
@@ -255,51 +224,6 @@ export default function Admin() {
                     </table>
                   </div>
                 )}
-                </CardContent>
-            </Card>
-
-            <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
-                <CardHeader>
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                        <Users className="w-5 h-5 text-blue-400" />
-                    </div>
-                    <div>
-                        <CardTitle className="text-base text-white">Gerenciamento de Usuários</CardTitle>
-                        <CardDescription className="text-xs text-zinc-500">Adicione, remova ou gerencie usuários do sistema</CardDescription>
-                    </div>
-                    </div>
-                    <Button 
-                    onClick={() => setLocation("/settings?tab=usuario")}
-                    className="bg-zinc-800 hover:bg-zinc-700 text-white border-0"
-                    >
-                    Gerenciar
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                </div>
-                </CardHeader>
-                <CardContent>
-                <div className="rounded-xl border border-zinc-800/50 overflow-hidden">
-                    <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="bg-zinc-950/50 border-b border-zinc-800/50">
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">E-mail</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-right">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-zinc-800/30">
-                        {users?.slice(0, 5).map((u) => (
-                        <tr key={u.id} className="hover:bg-zinc-800/20 transition-colors">
-                            <td className="px-6 py-4"><span className="text-sm text-zinc-400">{u.email}</span></td>
-                            <td className="px-6 py-4 text-right">
-                            <span className="text-xs text-zinc-500">Admin</span>
-                            </td>
-                        </tr>
-                        ))}
-                    </tbody>
-                    </table>
-                </div>
                 </CardContent>
             </Card>
         </div>

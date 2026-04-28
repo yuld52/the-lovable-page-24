@@ -1,7 +1,7 @@
 import { Switch, Route, useRoute } from "wouter";
 import { useEffect } from "react";
-import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
@@ -64,9 +64,12 @@ function Router() {
       <Route path="/financeiro" component={Financeiro} />
       <Route path="/settings" component={Settings} />
       
-      {/* Admin Routes - External Page */}
+      {/* Admin Routes */}
       <Route path="/admin-login" component={AdminLogin} />
       <Route path="/admin" component={Admin} />
+      <Route path="/admin/products" component={Admin} />
+      <Route path="/admin/users" component={Admin} />
+      <Route path="/admin/settings" component={Admin} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
