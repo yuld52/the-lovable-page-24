@@ -22,6 +22,7 @@ import Financeiro from "@/pages/Financeiro";
 import Admin from "@/pages/Admin";
 import AdminLogin from "@/pages/AdminLogin";
 import { ChatSupport } from "@/components/ChatSupport";
+import { useUser } from "@/hooks/use-user";
 
 function Router() {
   const [params, setLocation] = useRoute("/:any*");
@@ -78,12 +79,15 @@ function Router() {
 }
 
 function App() {
+  const { user, loading } = useUser();
+  
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Router />
         <Toaster />
-        <ChatSupport />
+        {/* Chat AI só aparece após login */}
+        {!loading && user && <ChatSupport />}
       </TooltipProvider>
     </QueryClientProvider>
   );
