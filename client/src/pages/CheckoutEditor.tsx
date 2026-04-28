@@ -168,6 +168,12 @@ export default function CheckoutEditor() {
     progress: heroUploadProgress,
   } = useUpload();
 
+  // Hook para upload de imagens de depoimentos
+  const {
+    uploadFile: uploadTestimonialImage,
+    isUploading: isUploadingTestimonial,
+  } = useUpload();
+
   const isNew = !checkoutId;
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
   const [orderBumpSelected, setOrderBumpSelected] = useState<number[]>([]);
@@ -542,7 +548,6 @@ export default function CheckoutEditor() {
                       if (!result?.uploadURL) {
                         throw new Error("Falha no upload");
                       }
-
                       setConfig({ ...config, heroImageUrl: result.uploadURL });
                       toast({ title: "Sucesso", description: "Banner enviado com sucesso!" });
                     } catch (err: any) {
@@ -648,26 +653,20 @@ export default function CheckoutEditor() {
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (file) {
-                              const formData = new FormData();
-                              formData.append("file", file);
-
                               try {
-                                const response = await fetch("/api/upload", {
-                                  method: "POST",
-                                  body: formData,
-                                });
-
-                                if (response.ok) {
-                                  const data = await response.json();
+                                const result = await uploadTestimonialImage(file);
+                                if (result?.uploadURL) {
                                   const newList = [...config.testimonials];
-                                  newList[index].imageUrl = data.url;
+                                  newList[index].imageUrl = result.uploadURL;
                                   setConfig({ ...config, testimonials: newList });
                                   toast({ title: "Sucesso", description: "Foto enviada!" });
                                 } else {
-                                  toast({ title: "Erro", description: "Falha no upload", variant: "destructive" });
+                                  throw new Error("Falha no upload");
                                 }
-                              } catch (err) {
-                                toast({ title: "Erro", description: "Erro de conexão", variant: "destructive" });
+                              } catch (err: any) {
+                                toast({ title: "Erro", description: err?.message || "Falha no upload", variant: "destructive" });
+                              } finally {
+                                e.target.value = "";
                               }
                             }
                           }}
