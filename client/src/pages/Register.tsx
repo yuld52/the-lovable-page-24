@@ -4,8 +4,7 @@ import { Loader2, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from "@/lib/firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -14,57 +13,23 @@ export default function Register() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // First, check if email already exists in the system
-      const checkResponse = await fetch("/api/auth/check-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      if (checkResponse.status === 409) {
-        throw new Error("Este e-mail já está cadastrado no sistema. Faça login ou recupere sua senha.");
+      const res = await apiRequest("POST", "/api/register", { username: email, password });
+      if (res.ok) {
+        await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+        toast({ title: "Sucesso", description: "Conta criada com sucesso!" });
+        setLocation("/dashboard");
       }
-
-      if (!checkResponse.ok) {
-        // If the check fails, we still proceed but log the error
-        console.error("Email check failed, proceeding with registration anyway");
-      }
-
-      await createUserWithEmailAndPassword(auth, email, password);
-
-      toast({
-        title: "Sucesso",
-        description: "Conta criada! Você já pode fazer login.",
-      });
-      setLocation("/login");
     } catch (err: any) {
-      // Check if the error is due to user already existing
-      const errorMessage = err.message?.toLowerCase() || "";
-      if (
-        errorMessage.includes('email-already-in-use') ||
-        errorMessage.includes('already registered') ||
-        errorMessage.includes('already exists')
-      ) {
-        toast({
-          title: "Erro",
-          description: "Este e-mail já está cadastrado no sistema. Faça login ou recupere sua senha.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Erro",
-          description: err.message || "Erro ao criar conta",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Erro",
+        description: "Este e-mail já está em uso ou a senha é inválida.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -80,13 +45,13 @@ export default function Register() {
       <div className="w-full max-w-sm p-6 relative z-10">
         <div className="text-center mb-6">
           <h1 className="text-4xl font-extrabold tracking-tight mb-2">
-            <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Berry</span>
-            <span className="text-foreground">Pay</span>
+            <span className="bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent">Meteor</span>
+            <span className="text-white">fy</span>
           </h1>
           <p className="text-muted-foreground text-sm">Crie sua conta</p>
         </div>
 
-        <div className="bg-card/80 backdrop-blur-xl p-6 rounded-xl shadow-2xl ring-0 border-none outline-none">
+        <div className="bg-card/80 backdrop-blur-xl p-6 rounded-xl shadow-2xl">
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground/80 ml-1">E-mail</label>
@@ -95,7 +60,7 @@ export default function Register() {
                 placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-background/40 border-border text-foreground focus-visible:ring-ring focus-visible:border-ring h-11"
+                className="bg-background/40 border-border text-foreground h-11"
                 required
               />
             </div>
@@ -107,43 +72,21 @@ export default function Register() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-background/40 border-border text-foreground focus-visible:ring-ring focus-visible:border-ring h-11"
+                className="bg-background/40 border-border text-foreground h-11"
                 required
               />
             </div>
 
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-11 rounded-xl shadow-lg transition-all duration-300"
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Criando...</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span>Criar Conta</span>
-                  <ArrowRight className="w-4 h-4" />
-                </div>
-              )}
+            <Button type="submit" disabled={isLoading} className="w-full h-11 rounded-xl shadow-lg">
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Criar Conta"}
             </Button>
           </form>
         </div>
 
-        <div className="mt-4 bg-card/60 backdrop-blur-xl p-4 rounded-xl flex items-center justify-center gap-1 shadow-2xl ring-0 border-none outline-none">
-          <p className="text-sm text-muted-foreground">
-            Já tem uma conta?{" "}
-            <Link to="/login" className="text-sm text-primary hover:text-primary/90 font-medium transition-colors">
-              Entre agora
-            </Link>
-          </p>
+        <div className="mt-4 bg-card/60 backdrop-blur-xl p-4 rounded-xl flex items-center justify-center gap-1">
+          <p className="text-sm text-muted-foreground">Já tem uma conta?</p>
+          <Link to="/login" className="text-sm text-primary font-medium">Entre agora</Link>
         </div>
-
-        <p className="text-center text-xs text-muted-foreground mt-8">
-          © 2026 Meteorfy Inc. Todos os direitos reservados.
-        </p>
       </div>
     </div>
   );
