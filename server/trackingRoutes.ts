@@ -1,10 +1,8 @@
 import type { Express } from "express";
 import crypto from "crypto";
-import { pool, ensurePool, isPostgresEnabled } from "./db";
-import type { IStorage } from "./storage";
-import { processTopFunnelTracking, processCheckoutEventTracking, processPaymentPendingTracking } from "./tracking";
 import { adminDb } from "./firebase-admin";
-import { Timestamp } from "firebase-admin/firestore";
+import type { FirestoreStorage } from "./firestore-storage";
+import { processTopFunnelTracking, processCheckoutEventTracking, processPaymentPendingTracking } from "./tracking";
 
 const jsonHeaders = { "Content-Type": "application/json" };
 
@@ -53,48 +51,18 @@ async function insertTrackingLog(row: {
   responseStatus?: number | null;
   responseBody?: string | null;
 }) {
-  // Use Firestore if PostgreSQL is disabled
-  if (!isPostgresEnabled) {
-    try {
-      await adminDb.collection("tracking_events").add({
-        ...row,
-        payload: row.payload ? JSON.stringify(row.payload) : null,
-        created_at: Timestamp.now(),
-      });
-    } catch (err) {
-      console.error("Firestore tracking log insert error:", err);
-    }
-    return;
-  }
-
-  // Original PostgreSQL logic
-  ensurePool();
   try {
-    await pool.query(
-      `INSERT INTO tracking_events (
-         owner_id, sale_id, checkout_id, session_id, destination, event_name, dedupe_key, payload, response_status, response_body
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-       ON CONFLICT (dedupe_key) DO NOTHING`,
-      [
-        row.ownerId,
-        row.saleId ?? null,
-        row.checkoutId ?? null,
-        row.sessionId ?? null,
-        row.destination,
-        row.eventName,
-        row.dedupeKey,
-        row.payload ? JSON.stringify(row.payload) : null,
-        row.responseStatus ?? null,
-        row.responseBody ?? null,
-      ],
-    );
+    await adminDb.collection("tracking_events").add({
+      ...row,
+      payload: row.payload ? JSON.stringify(row.payload) : null,
+      created_at: new Date(),
+    });
   } catch (err) {
-    // never block the request
-    console.error("tracking log insert error:", err);
+    console.error("Firestore tracking log insert error:", err);
   }
 }
 
-export function registerTrackingRoutes(app: Express, storage: IStorage) {
+export function registerTrackingRoutes(app: Express, storage: FirestoreStorage) {
   // Top-of-funnel + checkout intent events (public)
   app.post("/api/tracking/event", async (req, res) => {
     try {
@@ -131,17 +99,7 @@ export function registerTrackingRoutes(app: Express, storage: IStorage) {
       );
 
       // If already logged, we short-circuit (dedupe strong)
-      // We still return ok: true.
-      let isDuplicated = false;
-      if (isPostgresEnabled) {
-        const { rows } = await pool.query(
-          `SELECT 1 FROM tracking_events WHERE dedupe_key = $1 LIMIT 1`,
-          [dedupeKey],
-        );
-        isDuplicated = !!rows?.length;
-      } else {
-        isDuplicated = await checkDedupeFirestore(dedupeKey);
-      }
+      const isDuplicated = await checkDedupeFirestore(dedupeKey);
       if (isDuplicated) return res.json({ ok: true, deduped: true });
 
       // Send
@@ -151,17 +109,12 @@ export function registerTrackingRoutes(app: Express, storage: IStorage) {
         // Incrementar visualizações do checkout
         if (checkout.id) {
           try {
-            if (isPostgresEnabled) {
-              await pool.query('UPDATE checkouts SET views = COALESCE(views, 0) + 1 WHERE id = $1', [checkout.id]);
-            } else {
-              // Use Firestore to increment views
-              const checkoutRef = adminDb.collection("checkouts").doc(String(checkout.id));
-              const checkoutDoc = await checkoutRef.get();
-              if (checkoutDoc.exists) {
-                const currentData = checkoutDoc.data();
-                const currentViews = currentData?.views || 0;
-                await checkoutRef.update({ views: currentViews + 1 });
-              }
+            const checkoutRef = adminDb.collection("checkouts").doc(String(checkout.id));
+            const checkoutDoc = await checkoutRef.get();
+            if (checkoutDoc.exists) {
+              const currentData = checkoutDoc.data();
+              const currentViews = currentData?.views || 0;
+              await checkoutRef.update({ views: currentViews + 1 });
             }
           } catch (err) {
             console.error("Error incrementing views:", err);

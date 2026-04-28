@@ -493,14 +493,7 @@ export class FirestoreStorage {
       return { salesToday: 0, revenuePaid: 0, salesApproved: 0, revenueTarget: 10000, revenueCurrent: 0, chartData: [] };
     }
   }
-
-  // Compatibility stubs
-  async getUsers(): Promise<any[]> { return []; }
-  async getUser(id: number): Promise<any | undefined> { return undefined; }
-  async getUserByUsername(username: string): Promise<any | undefined> { return undefined; }
-  async createUser(user: any): Promise<any> { return user; }
-  async deleteUser(id: number): Promise<void> {}
-  async deleteUserByUsername(username: string): Promise<void> {}
 }
 
 export const firestoreStorage = new FirestoreStorage();
+export type { FirestoreStorage };

@@ -118,7 +118,7 @@ export async function sendUtmfyEvent(
 export async function sendMetaCapiEvent(
   settings: SettingsLike | null | undefined,
   eventName: "PageView" | "ViewContent" | "Purchase" | "Refund",
-  saleOrLike: SaleLike,
+  like: SaleLike,
 ) {
   const pixelId = settings?.facebookPixelId;
   const accessToken = settings?.facebookAccessToken;
@@ -126,7 +126,7 @@ export async function sendMetaCapiEvent(
   if (!pixelId) return;
   if (!accessToken) return;
 
-  const email = saleOrLike.customerEmail;
+  const email = like.customerEmail;
   const hashedEmail = email ? sha256LowerTrim(email) : undefined;
 
   const payload = {
@@ -140,7 +140,7 @@ export async function sendMetaCapiEvent(
         },
         custom_data: {
           currency: "BRL",
-          value: saleOrLike.amount / 100,
+          value: like.amount / 100,
         },
       },
     ],
