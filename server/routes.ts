@@ -68,7 +68,8 @@ export async function registerRoutes(
   // Products
   app.get(api.products.list.path, requireAuth, async (req, res) => {
     const userId = String((req as any).user?.id || "");
-    res.json(await storage.getProducts(userId));
+    const status = req.query.status as string;
+    res.json(await storage.getProducts(userId, status));
   });
 
   app.post(api.products.create.path, requireAuth, async (req, res) => {
@@ -79,6 +80,12 @@ export async function registerRoutes(
     } catch (err: any) {
       res.status(400).json({ message: err.message });
     }
+  });
+
+  app.get(api.products.get.path, async (req, res) => {
+    const product = await storage.getProduct(parseInt(req.params.id as string));
+    if (!product) return res.status(404).json({ message: "Produto não encontrado" });
+    res.json(product);
   });
 
   app.patch(api.products.update.path, requireAuth, async (req, res) => {
@@ -100,10 +107,33 @@ export async function registerRoutes(
     }
   });
 
-  app.get(api.products.get.path, async (req, res) => {
-    const product = await storage.getProduct(parseInt(req.params.id as string));
-    if (!product) return res.status(404).json({ message: "Produto não encontrado" });
-    res.json(product);
+  // Product Approval Routes (Admin only)
+  app.post("/api/products/:id/approve", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== "yuldchissico11@gmail.com") {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      const id = parseInt(req.params.id as string);
+      const product = await storage.approveProduct(id);
+      res.json(product);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Erro ao aprovar produto" });
+    }
+  });
+
+  app.post("/api/products/:id/reject", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== "yuldchissico11@gmail.com") {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      const id = parseInt(req.params.id as string);
+      const product = await storage.rejectProduct(id);
+      res.json(product);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Erro ao rejeitar produto" });
+    }
   });
 
   // Checkouts
@@ -209,6 +239,11 @@ export async function registerRoutes(
       const product = await storage.getProduct(body.productId);
       if (!checkout || !product) return res.status(404).json({ message: "Checkout/Produto não encontrado" });
 
+      // Check if product is approved
+      if (product.status !== 'approved') {
+        return res.status(403).json({ message: "Produto não aprovado" });
+      }
+
       let settings = checkout.ownerId ? await storage.getSettings(String(checkout.ownerId)) : null;
       if (!settings?.paypalClientId) settings = await storage.getAnySettings();
 
@@ -265,20 +300,20 @@ export async function registerRoutes(
 
   // User Management
   app.get("/api/users-v2", requireAuth, async (req, res) => {
-    if ((req as any).user?.email !== "juniornegocios015@gmail.com") return res.status(403).json({ message: "Acesso negado." });
+    if ((req as any).user?.email !== "yuldchissico11@gmail.com") return res.status(403).json({ message: "Acesso negado." });
     const list = await adminAuth.listUsers(1000);
     res.json(list.users.map(u => ({ id: u.uid, email: u.email, username: u.displayName || u.email, createdAt: u.metadata.creationTime })));
   });
 
   app.delete("/api/users-v2/:uid", requireAuth, async (req, res) => {
-    if ((req as any).user?.email !== "juniornegocios015@gmail.com") return res.status(403).json({ message: "Acesso negado." });
+    if ((req as any).user?.email !== "yuldchissico11@gmail.com") return res.status(403).json({ message: "Acesso negado." });
     const uid = Array.isArray(req.params.uid) ? req.params.uid[0] : req.params.uid;
     await adminAuth.deleteUser(uid);
     res.json({ success: true });
   });
 
   app.post("/api/users-v2", requireAuth, async (req, res) => {
-    if ((req as any).user?.email !== "juniornegocios015@gmail.com") return res.status(403).json({ message: "Acesso negado." });
+    if ((req as any).user?.email !== "yuldchissico11@gmail.com") return res.status(403).json({ message: "Acesso negado." });
     const { email, password } = req.body;
     const user = await adminAuth.createUser({ email, password, emailVerified: true });
     res.status(201).json({ id: user.uid, email: user.email, success: true });

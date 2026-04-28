@@ -1,25 +1,7 @@
 import { adminDb } from "./firebase-admin";
 import { Timestamp } from "firebase-admin/firestore";
 
-// Helper function to normalize checkout data from Firestore (handles both old camelCase and new snake_case)
-function normalizeCheckoutData(docId: string, data: any): any {
-  if (!data) return null;
-  
-  return {
-    id: isNaN(parseInt(docId)) ? docId : parseInt(docId),
-    productId: data.product_id ?? data.productId ?? 0,
-    ownerId: data.owner_id ?? data.ownerId ?? null,
-    publicUrl: data.public_url ?? data.publicUrl ?? null,
-    views: data.views ?? 0,
-    active: data.active ?? true,
-    name: data.name ?? '',
-    slug: data.slug ?? '',
-    config: data.config ?? null,
-    createdAt: toDate(data.created_at ?? data.createdAt)
-  };
-}
-
-// Helper function to normalize product data from Firestore
+// Helper function to normalize product data from Firestore (handles both old camelCase and new snake_case)
 function normalizeProductData(docId: string, data: any): any {
   if (!data) return null;
   
@@ -34,7 +16,25 @@ function normalizeProductData(docId: string, data: any): any {
     whatsappUrl: data.whatsapp_url ?? data.whatsappUrl ?? null,
     deliveryFiles: data.delivery_files ?? data.deliveryFiles ?? [],
     noEmailDelivery: data.no_email_delivery ?? data.noEmailDelivery ?? false,
+    status: data.status ?? 'pending', // pending, approved, rejected
+    createdAt: toDate(data.created_at ?? data.createdAt)
+  };
+}
+
+// Helper function to normalize checkout data from Firestore
+function normalizeCheckoutData(docId: string, data: any): any {
+  if (!data) return null;
+  
+  return {
+    id: isNaN(parseInt(docId)) ? docId : parseInt(docId),
+    productId: data.product_id ?? data.productId ?? 0,
+    ownerId: data.owner_id ?? data.ownerId ?? null,
+    publicUrl: data.public_url ?? data.publicUrl ?? null,
+    views: data.views ?? 0,
     active: data.active ?? true,
+    name: data.name ?? '',
+    slug: data.slug ?? '',
+    config: data.config ?? null,
     createdAt: toDate(data.created_at ?? data.createdAt)
   };
 }
@@ -89,9 +89,15 @@ function toDate(timestamp: any): Date {
 
 export class FirestoreStorage {
   // Products
-  async getProducts(userId?: string): Promise<any[]> {
+  async getProducts(userId?: string, status?: string): Promise<any[]> {
     try {
       let q: any = adminDb.collection("products");
+      
+      // Filter by status if provided
+      if (status) {
+        q = q.where("status", "==", status);
+      }
+      
       if (userId) {
         const snapshot = await q.get();
         return snapshot.docs
@@ -124,6 +130,7 @@ export class FirestoreStorage {
       const productData = {
         ...product,
         owner_id: product.userId || product.ownerId,
+        status: 'pending', // All new products start as pending
         created_at: Timestamp.now()
       };
       delete productData.userId;
@@ -142,6 +149,7 @@ export class FirestoreStorage {
       const firestoreUpdates: any = { ...updates };
       if (updates.imageUrl) firestoreUpdates.image_url = updates.imageUrl;
       if (updates.deliveryUrl) firestoreUpdates.delivery_url = updates.deliveryUrl;
+      if (updates.status) firestoreUpdates.status = updates.status;
       
       await docRef.update(firestoreUpdates);
       return this.getProduct(id);
@@ -158,6 +166,14 @@ export class FirestoreStorage {
       console.error("Error deleting product:", error);
       throw error;
     }
+  }
+
+  async approveProduct(id: number): Promise<any> {
+    return this.updateProduct(id, { status: 'approved' });
+  }
+
+  async rejectProduct(id: number): Promise<any> {
+    return this.updateProduct(id, { status: 'rejected' });
   }
 
   // Checkouts

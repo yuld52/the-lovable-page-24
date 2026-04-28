@@ -1,16 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { CreateProductRequest, UpdateProductRequest, Product } from "@shared/schema";
 import { auth } from "@/lib/firebase";
+import { getIdToken } from "firebase/auth";
 
-export function useProducts() {
+export function useProducts(status?: string) {
   return useQuery({
-    queryKey: ["products"],
+    queryKey: ["products", status],
     queryFn: async () => {
       const user = auth.currentUser;
       if (!user) return [];
 
-      const idToken = await user.getIdToken();
-      const response = await fetch("/api/products", {
+      const idToken = await getIdToken(user);
+      const url = status ? `/api/products?status=${status}` : "/api/products";
+      const response = await fetch(url, {
         headers: { "Authorization": `Bearer ${idToken}` }
       });
       
@@ -29,7 +31,7 @@ export function useProduct(id: string | number) {
       const user = auth.currentUser;
       if (!user || !id) return null;
 
-      const idToken = await user.getIdToken();
+      const idToken = await getIdToken(user);
       const response = await fetch(`/api/products/${id}`, {
         headers: { "Authorization": `Bearer ${idToken}` }
       });
@@ -48,7 +50,7 @@ export function useCreateProduct() {
       const user = auth.currentUser;
       if (!user) throw new Error("Não autenticado");
 
-      const idToken = await user.getIdToken();
+      const idToken = await getIdToken(user);
       const response = await fetch("/api/products", {
         method: "POST",
         headers: {
@@ -75,7 +77,7 @@ export function useUpdateProduct() {
       const user = auth.currentUser;
       if (!user) throw new Error("Não autenticado");
 
-      const idToken = await user.getIdToken();
+      const idToken = await getIdToken(user);
       const response = await fetch(`/api/products/${id}`, {
         method: "PATCH",
         headers: {
@@ -99,13 +101,53 @@ export function useDeleteProduct() {
       const user = auth.currentUser;
       if (!user) throw new Error("Não autenticado");
 
-      const idToken = await user.getIdToken();
+      const idToken = await getIdToken(user);
       const response = await fetch(`/api/products/${id}`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${idToken}` }
       });
 
       if (!response.ok) throw new Error("Erro ao excluir produto");
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+  });
+}
+
+export function useApproveProduct() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const user = auth.currentUser;
+      if (!user) throw new Error("Não autenticado");
+
+      const idToken = await getIdToken(user);
+      const response = await fetch(`/api/products/${id}/approve`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${idToken}` }
+      });
+
+      if (!response.ok) throw new Error("Erro ao aprovar produto");
+      return response.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+  });
+}
+
+export function useRejectProduct() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const user = auth.currentUser;
+      if (!user) throw new Error("Não autenticado");
+
+      const idToken = await getIdToken(user);
+      const response = await fetch(`/api/products/${id}/reject`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${idToken}` }
+      });
+
+      if (!response.ok) throw new Error("Erro ao rejeitar produto");
+      return response.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
   });

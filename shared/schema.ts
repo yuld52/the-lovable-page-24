@@ -18,7 +18,7 @@ export const products = pgTable("products", {
   whatsappUrl: text("whatsapp_url"),
   deliveryFiles: jsonb("delivery_files").$type<string[]>().default([]),
   noEmailDelivery: boolean("no_email_delivery").default(false),
-  active: boolean("active").default(true),
+  status: text("status").notNull().default("pending"), // pending, approved, rejected
   createdAt: timestamp("created_at").defaultNow(),
 });
 
