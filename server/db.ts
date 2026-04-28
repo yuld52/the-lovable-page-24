@@ -1,65 +1,20 @@
-// Firebase Firestore Migration Note:
-// This file has been modified to skip PostgreSQL connection
-// All database operations should now use Firebase Firestore
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import ws from 'ws';
+import * as schema from "@shared/schema";
 
-// Create a stub pool that throws errors for any database operations
-// This allows the app to start without PostgreSQL
-type PoolLike = {
-  query: (sql: string, params?: any[]) => Promise<any>;
-  on: (event: string, callback: Function) => void;
-  end: () => Promise<void>;
-};
+neonConfig.webSocketConstructor = ws;
 
-function createFailingPool(message: string): PoolLike {
-  const stub: any = {
-    query: async () => {
-      throw new Error(message);
-    },
-    on: () => {
-      // no-op
-    },
-    end: async () => {
-      // no-op
-    },
-  };
-  return stub as PoolLike;
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL must be set. Please provide a connection string.");
 }
 
-// Use Firebase Firestore instead of PostgreSQL
-// The pool is now a stub that throws errors - all DB operations should migrate to Firestore
-export const pool: PoolLike = createFailingPool("PostgreSQL disabled - use Firebase Firestore instead");
-
-// For compatibility with existing code, create a stub db object
-export const db: any = {
-  select: () => ({
-    from: () => ({
-      where: () => [],
-      orderBy: () => [],
-    }),
-  }),
-  insert: (_table: any) => ({
-    values: () => ({
-      returning: () => [],
-    }),
-  }),
-  update: (_table: any) => ({
-    set: () => ({
-      where: () => ({
-        returning: () => [],
-      }),
-    }),
-  }),
-  delete: (_table: any) => ({
-    where: () => ({
-      returning: () => [],
-    }),
-  }),
-};
+export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const db = drizzle(pool, { schema });
 
 export function ensurePool() {
-  // No-op - PostgreSQL is disabled
-  console.log("[DB] PostgreSQL disabled - using Firebase Firestore instead");
+  // Connection is handled by the pool automatically
+  console.log("[DB] PostgreSQL connection initialized via Neon");
 }
 
-// Flag to check if PostgreSQL is enabled
-export const isPostgresEnabled = false;
+export const isPostgresEnabled = true;

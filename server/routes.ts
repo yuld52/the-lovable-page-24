@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { firestoreStorage as storage } from "./firestore-storage";
+import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import multer from "multer";
@@ -63,15 +63,13 @@ export async function registerRoutes(
 
   // Products
   app.get(api.products.list.path, requireAuth, async (req, res) => {
-    const userId = String((req as any).user?.id || "");
-    res.json(await storage.getProducts(userId));
+    res.json(await storage.getProducts());
   });
 
   app.post(api.products.create.path, requireAuth, async (req, res) => {
     try {
-      const userId = String((req as any).user?.id || "");
       const input = api.products.create.input.parse(req.body);
-      res.status(201).json(await storage.createProduct({ ...input, userId }));
+      res.status(201).json(await storage.createProduct(input));
     } catch (err: any) {
       res.status(400).json({ message: err.message });
     }
@@ -208,7 +206,6 @@ export async function registerRoutes(
       await storage.createSale({
         checkoutId: body.checkoutId,
         productId: body.productId,
-        user_id: checkout.ownerId,
         amount: body.totalUsdCents,
         status: "pending",
         customerEmail: body.customerData?.email || null,
@@ -229,7 +226,7 @@ export async function registerRoutes(
       const sale = await storage.getSaleByPaypalOrderId(req.params.orderId);
       if (!sale) return res.status(404).json({ message: "Venda não encontrada" });
 
-      const checkout = await storage.getCheckoutPublic(sale.checkoutId);
+      const checkout = await storage.getCheckoutPublic(sale.checkoutId!);
       let settings = checkout?.ownerId ? await storage.getSettings(String(checkout.ownerId)) : null;
       if (!settings?.paypalClientId) settings = await storage.getAnySettings();
 
