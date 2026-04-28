@@ -9,7 +9,6 @@ import {
   ChevronDown,
   User,
   BarChart3,
-  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStats } from "@/hooks/use-stats";
@@ -23,7 +22,7 @@ export function Sidebar() {
   const [settingsOpen, setSettingsOpen] = useState(location.startsWith("/settings"));
 
   const searchParams = new URLSearchParams(window.location.search);
-  const currentTab = searchParams.get("tab") || "gateway";
+  const currentTab = searchParams.get("tab") || "metricas";
 
   const { user } = useUser();
 
@@ -36,7 +35,6 @@ export function Sidebar() {
   const isAdmin = user?.email === "juniornegocios015@gmail.com";
 
   const settingSubItems = [
-    { href: "/settings?tab=gateway", label: "Gateway", icon: Wallet },
     ...(isAdmin ? [{ href: "/settings?tab=usuario", label: "Usuários", icon: User }] : []),
     { href: "/settings?tab=metricas", label: "Métricas", icon: BarChart3 },
   ];
