@@ -35,6 +35,11 @@ export default function Admin() {
     );
   }
 
+  // Calculate conversion rate safely
+  const conversionRate = checkouts && checkouts.length > 0 
+    ? Math.round(checkouts.reduce((acc: number, c: any) => acc + (c.views || 0), 0) / checkouts.length)
+    : 0;
+
   return (
     <Layout title="Painel Administrativo" subtitle="Visão geral do sistema e gerenciamento">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -78,9 +83,7 @@ export default function Admin() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-white">
-              {checkouts && checkouts.length > 0 
-                ? `${Math.round((checkouts.reduce((acc, c) => acc + (c.views || 0), 0) / checkouts.length)}%` 
-                : "0%"}
+              {conversionRate}%
             </div>
             <p className="text-xs text-zinc-500 mt-1">Média de visualizações</p>
           </CardContent>
