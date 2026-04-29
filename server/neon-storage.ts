@@ -101,15 +101,14 @@ export class NeonStorage {
     try {
       const client = await getPool().connect();
       try {
-        const id = Date.now(); // Simple ID generation
+        // Let PostgreSQL handle the SERIAL ID automatically
         const productData = toSnakeCase(product);
         
         const result = await client.query(`
-          INSERT INTO products (id, name, description, price, image_url, delivery_url, whatsapp_url, delivery_files, no_email_delivery, payment_methods, status, owner_id, created_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+          INSERT INTO products (name, description, price, image_url, delivery_url, whatsapp_url, delivery_files, no_email_delivery, payment_methods, status, owner_id)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
           RETURNING *
         `, [
-          id,
           productData.name,
           productData.description || null,
           productData.price,
@@ -192,15 +191,21 @@ export class NeonStorage {
   }
 
   // Checkouts
-  async getCheckouts(userId: string): Promise<any[]> {
+  async getCheckouts(userId?: string): Promise<any[]> {
     try {
       const client = await getPool().connect();
       try {
-        const result = await client.query(`
-          SELECT * FROM checkouts 
-          WHERE owner_id = $1
-          ORDER BY created_at DESC
-        `, [userId]);
+        let query = `SELECT * FROM checkouts`;
+        const params: any[] = [];
+        
+        if (userId) {
+          query += ` WHERE owner_id = $1`;
+          params.push(userId);
+        }
+        
+        query += ` ORDER BY created_at DESC`;
+        
+        const result = await client.query(query, params);
         return result.rows.map(row => toCamelCase(row));
       } finally {
         client.release();
@@ -211,14 +216,19 @@ export class NeonStorage {
     }
   }
 
-  async getCheckout(id: number, userId: string): Promise<any | undefined> {
+  async getCheckout(id: number, userId?: string): Promise<any | undefined> {
     try {
       const client = await getPool().connect();
       try {
-        const result = await client.query(`
-          SELECT * FROM checkouts 
-          WHERE id = $1 AND owner_id = $2
-        `, [id, userId]);
+        let query = `SELECT * FROM checkouts WHERE id = $1`;
+        const params: any[] = [id];
+        
+        if (userId) {
+          query += ` AND owner_id = $2`;
+          params.push(userId);
+        }
+        
+        const result = await client.query(query, params);
         if (result.rows.length === 0) return undefined;
         return toCamelCase(result.rows[0]);
       } finally {
@@ -283,15 +293,14 @@ export class NeonStorage {
     try {
       const client = await getPool().connect();
       try {
-        const id = Date.now();
+        // Let PostgreSQL handle the SERIAL ID automatically
         const checkoutData = toSnakeCase(checkout);
         
         const result = await client.query(`
-          INSERT INTO checkouts (id, product_id, owner_id, name, slug, public_url, views, active, created_at, config)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+          INSERT INTO checkouts (product_id, owner_id, name, slug, public_url, views, active, config)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
           RETURNING *
         `, [
-          id,
           checkoutData.product_id,
           checkoutData.owner_id,
           checkoutData.name,
@@ -540,15 +549,14 @@ export class NeonStorage {
     try {
       const client = await getPool().connect();
       try {
-        const id = Date.now();
+        // Let PostgreSQL handle the SERIAL ID automatically
         const saleData = toSnakeCase(sale);
         
         const result = await client.query(`
-          INSERT INTO sales (id, checkout_id, product_id, user_id, amount, status, customer_email, paypal_order_id, paypal_capture_id, paypal_currency, paypal_amount_minor, created_at, utm_source, utm_medium, utm_campaign, utm_content, utm_term)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11, $12, $13, $14, $15)
+          INSERT INTO sales (checkout_id, product_id, user_id, amount, status, customer_email, paypal_order_id, paypal_capture_id, paypal_currency, paypal_amount_minor, created_at, utm_source, utm_medium, utm_campaign, utm_content, utm_term)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, $11, $12, $13, $14)
           RETURNING *
         `, [
-          id,
           saleData.checkout_id || null,
           saleData.product_id || null,
           saleData.user_id || null,

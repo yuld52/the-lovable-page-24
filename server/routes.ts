@@ -7,7 +7,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { requireAuth } from "./middleware/auth";
-import { adminAuth, adminDb } from "./firebase-admin";
+import { adminAuth, adminDb, adminStorage } from "./firebase-admin";
 import { getVapidPublicKey, saveSubscription } from "./services/notification";
 
 import { registerTrackingRoutes } from "./trackingRoutes";
@@ -25,7 +25,52 @@ export async function registerRoutes(
   // Use memory storage for multer to upload directly to Firebase
   const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    limits: { fileSize: 64 * 1024 * 1024 }, // 64MB
+  });
+
+  // ADD THIS: File Upload Route
+  app.post("/api/upload", requireAuth, upload.single("file"), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Nenhum arquivo enviado" });
+      }
+
+      const file = req.file;
+      const fileName = `${Date.now()}-${file.originalname}`;
+      const filePath = `public/${fileName}`;
+
+      // Upload to Firebase Storage using admin SDK
+      const bucket = adminStorage.bucket();
+      const fileUpload = bucket.file(filePath);
+
+      await fileUpload.save(file.buffer, {
+        metadata: {
+          contentType: file.mimetype,
+          metadata: {
+            originalName: file.originalname,
+          }
+        }
+      });
+
+      // Make the file public
+      await fileUpload.makePublic();
+
+      // Get the public URL
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+
+      console.log(`[Upload] File uploaded: ${publicUrl}`);
+
+      res.json({
+        url: publicUrl,
+        path: filePath,
+        name: file.originalname,
+        size: file.size,
+        type: file.mimetype,
+      });
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      res.status(500).json({ message: err.message || "Falha no upload" });
+    }
   });
 
   // PWA Push Notification Routes
