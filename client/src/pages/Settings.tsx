@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Save, User, Shield, Bell, History, Settings as SettingsIcon, CheckCircle2, Trash2, Eye, EyeOff, Search, UserPlus, Filter, MoreHorizontal, Download } from "lucide-react";
+import { Loader2, Save, User, Shield, Bell, History, Settings as SettingsIcon, CheckCircle2, Trash2, Eye, EyeOff, Search, UserPlus, Filter, MoreHorizontal, Download, Webhook } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
@@ -116,6 +116,9 @@ export default function Settings() {
   };
 
   const [form, setForm] = useState({
+    paypalClientId: "",
+    paypalClientSecret: "",
+    paypalWebhookId: "",
     facebookPixelId: "",
     facebookAccessToken: "",
     utmfyToken: "",
@@ -132,6 +135,9 @@ export default function Settings() {
   useEffect(() => {
     if (settings) {
       setForm({
+        paypalClientId: settings.paypalClientId || "",
+        paypalClientSecret: settings.paypalClientSecret || "",
+        paypalWebhookId: settings.paypalWebhookId || "",
         facebookPixelId: settings.facebookPixelId || "",
         facebookAccessToken: (settings as any).facebookAccessToken || "",
         utmfyToken: settings.utmfyToken || "",
@@ -262,16 +268,17 @@ export default function Settings() {
         <Button variant="ghost" size="sm" onClick={() => setMetricsSubTab("utmfy")} className={cn("h-9 px-4 rounded-lg text-xs font-bold", metricsSubTab === "utmfy" ? "bg-purple-600 text-white" : "text-zinc-500")}>
           <img src={utmifyLogo} alt="UTMify" className="w-5 h-5 mr-2" /> UTMfy
         </Button>
+        <Button variant="ghost" size="sm" onClick={() => setMetricsSubTab("webhook")} className={cn("h-9 px-4 rounded-lg text-xs font-bold", metricsSubTab === "webhook" ? "bg-purple-600 text-white" : "text-zinc-500")}>
+          <Webhook className="w-5 h-5 mr-2" /> Webhook
+        </Button>
       </div>
       <div className="mb-8">
         {metricsSubTab === "pixel" ? (
           <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg max-w-2xl">
             <CardHeader className="border-b border-zinc-800/50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20"><img src={facebookFavicon} alt="Facebook" className="w-8 h-8" /></div>
-                  <div><CardTitle className="text-base text-white">Facebook</CardTitle><CardDescription className="text-xs text-zinc-500">Acompanhe suas conversões</CardDescription></div>
-                </div>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20"><img src={facebookFavicon} alt="Facebook" className="w-8 h-8" /></div>
+                <div><CardTitle className="text-base text-white">Facebook</CardTitle><CardDescription className="text-xs text-zinc-500">Acompanhe suas conversões</CardDescription></div>
               </div>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
@@ -288,7 +295,7 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
-        ) : (
+        ) : metricsSubTab === "utmfy" ? (
           <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg max-w-2xl">
             <CardHeader className="border-b border-zinc-800/50">
               <div className="flex items-center gap-3">
@@ -300,6 +307,32 @@ export default function Settings() {
               <div className="space-y-2">
                 <label className="text-xs font-bold text-zinc-400 uppercase">UTMfy Token</label>
                 <Input className="bg-zinc-900 border-zinc-800 text-sm h-11" value={form.utmfyToken} onChange={(e) => setForm({ ...form, utmfyToken: e.target.value })} placeholder="Insira seu token UTMfy" />
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg max-w-2xl">
+            <CardHeader className="border-b border-zinc-800/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center border border-orange-500/20"><Webhook className="w-5 h-5 text-orange-500" /></div>
+                <div>
+                  <CardTitle className="text-base text-white">Webhook</CardTitle>
+                  <CardDescription className="text-xs text-zinc-500">Configure webhooks para receber notificações de pagamento</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-400 uppercase">PayPal Webhook ID</label>
+                <Input 
+                  className="bg-zinc-900 border-zinc-800 text-sm h-11" 
+                  value={form.paypalWebhookId} 
+                  onChange={(e) => setForm({ ...form, paypalWebhookId: e.target.value })} 
+                  placeholder="ID do Webhook do PayPal" 
+                />
+                <p className="text-[11px] text-zinc-500 mt-1">
+                  Configure webhooks no <a href="https://developer.paypal.com/docs/api/webhooks/" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:underline">PayPal Developer</a> para receber notificações de eventos de pagamento.
+                </p>
               </div>
             </CardContent>
           </Card>
