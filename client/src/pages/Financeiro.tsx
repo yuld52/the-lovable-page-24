@@ -43,7 +43,7 @@ export default function Financeiro() {
         <button 
           className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all font-medium flex-1 min-w-0 ${
             activeTab === 'visao' 
-              ? 'bg-gradient-to-r from-[#00C29A] to-[#00B894] text-white shadow-lg scale-105' 
+              ? 'bg-purple-600 text-white shadow-lg scale-105' 
               : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
           }`}
           onClick={() => setActiveTab('visao')}
@@ -55,7 +55,7 @@ export default function Financeiro() {
         <button 
           className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all font-medium flex-1 min-w-0 ${
             activeTab === 'historico' 
-              ? 'bg-gradient-to-r from-[#00C29A] to-[#00B894] text-white shadow-lg scale-105' 
+              ? 'bg-purple-600 text-white shadow-lg scale-105' 
               : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
           }`}
           onClick={() => setActiveTab('historico')}
@@ -67,7 +67,7 @@ export default function Financeiro() {
         <button 
           className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all font-medium flex-1 min-w-0 ${
             activeTab === 'contas' 
-              ? 'bg-gradient-to-r from-[#00C29A] to-[#00B894] text-white shadow-lg scale-105' 
+              ? 'bg-purple-600 text-white shadow-lg scale-105' 
               : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
           }`}
           onClick={() => setActiveTab('contas')}
@@ -144,7 +144,7 @@ export default function Financeiro() {
                   <Button 
                     onClick={handleWithdraw}
                     disabled={isLoading}
-                    className="w-full bg-[#00C29A] hover:bg-[#00B894] text-white h-11"
+                    className="w-full bg-purple-600 hover:bg-purple-500 text-white h-11"
                   >
                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Solicitar Saque"}
                   </Button>
