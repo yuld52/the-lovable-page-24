@@ -106,7 +106,7 @@ export class NeonStorage {
         
         const result = await client.query(`
           INSERT INTO products (name, description, price, image_url, delivery_url, whatsapp_url, delivery_files, no_email_delivery, payment_methods, status, owner_id)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
           RETURNING *
         `, [
           productData.name,
@@ -554,7 +554,7 @@ export class NeonStorage {
         
         const result = await client.query(`
           INSERT INTO sales (checkout_id, product_id, user_id, amount, status, customer_email, paypal_order_id, paypal_capture_id, paypal_currency, paypal_amount_minor, created_at, utm_source, utm_medium, utm_campaign, utm_content, utm_term)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11, $12, $13, $14, $15)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, $11, $12, $13, $14)
           RETURNING *
         `, [
           saleData.checkout_id || null,
@@ -580,96 +580,6 @@ export class NeonStorage {
       }
     } catch (error) {
       console.error("Error creating sale:", error);
-      throw error;
-    }
-  }
-
-  // Withdrawals
-  async getWithdrawals(userId?: string): Promise<any[]> {
-    try {
-      const client = await getPool().connect();
-      try {
-        let query = `SELECT w.*, u.username FROM withdrawals w LEFT JOIN users u ON w.user_id = u.id`;
-        const params: any[] = [];
-        
-        if (userId) {
-          query += ` WHERE w.user_id = $1`;
-          params.push(userId);
-        }
-        
-        query += ` ORDER BY w.requested_at DESC`;
-        
-        const result = await client.query(query, params);
-        return result.rows.map(row => toCamelCase(row));
-      } finally {
-        client.release();
-      }
-    } catch (error) {
-      console.error("Error getting withdrawals:", error);
-      return [];
-    }
-  }
-
-  async getWithdrawal(id: number): Promise<any | undefined> {
-    try {
-      const client = await getPool().connect();
-      try {
-        const result = await client.query(`SELECT * FROM withdrawals WHERE id = $1`, [id]);
-        if (result.rows.length === 0) return undefined;
-        return toCamelCase(result.rows[0]);
-      } finally {
-        client.release();
-      }
-    } catch (error) {
-      console.error("Error getting withdrawal:", error);
-      return undefined;
-    }
-  }
-
-  async createWithdrawal(withdrawal: any): Promise<any> {
-    try {
-      const client = await getPool().connect();
-      try {
-        const withdrawalData = toSnakeCase(withdrawal);
-        
-        const result = await client.query(`
-          INSERT INTO withdrawals (user_id, amount, pix_key, pix_key_type, status)
-          VALUES ($1, $2, $3, $4, 'pending')
-          RETURNING *
-        `, [
-          withdrawalData.user_id,
-          withdrawalData.amount,
-          withdrawalData.pix_key,
-          withdrawalData.pix_key_type || 'email'
-        ]);
-        
-        return toCamelCase(result.rows[0]);
-      } finally {
-        client.release();
-      }
-    } catch (error) {
-      console.error("Error creating withdrawal:", error);
-      throw error;
-    }
-  }
-
-  async updateWithdrawalStatus(id: number, status: string, adminNote?: string): Promise<any> {
-    try {
-      const client = await getPool().connect();
-      try {
-        const result = await client.query(`
-          UPDATE withdrawals 
-          SET status = $1, processed_at = NOW(), admin_note = $2
-          WHERE id = $3
-          RETURNING *
-        `, [status, adminNote || null, id]);
-        
-        return toCamelCase(result.rows[0]);
-      } finally {
-        client.release();
-      }
-    } catch (error) {
-      console.error("Error updating withdrawal status:", error);
       throw error;
     }
   }
@@ -710,10 +620,10 @@ export class NeonStorage {
         const params: any[] = [userId, startDate, endDate];
         
         if (productId && productId !== "all") {
-          query += ` AND product_id = $4`;
+          query += ` AND product_id = $${params.length + 1}`;
           params.push(productId);
         }
-
+        
         const result = await client.query(query, params);
         const sales = result.rows.map(row => toCamelCase(row));
         
@@ -745,9 +655,9 @@ export class NeonStorage {
         for (let i = diffDays; i >= 0; i--) {
           const d = new Date(endDate);
           d.setDate(endDate.getDate() - i);
-          const key = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+          const key = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
           const daySales = sales.filter((s: any) => {
-            const saleDate = new Date(s.created_at);
+            const saleDate = new Date(s.createdAt);
             return saleDate.getDate() === d.getDate() && 
                    saleDate.getMonth() === d.getMonth() && 
                    saleDate.getFullYear() === d.getFullYear();
