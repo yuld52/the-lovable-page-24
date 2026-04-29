@@ -46,7 +46,7 @@ app.use("/uploads", express.static(path.join(process.cwd(), "public", "uploads")
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
     hour12: true,
@@ -57,7 +57,18 @@ export function log(message: string, source = "express") {
 
 // Basic healthcheck (no DB) to confirm API server is reachable
 app.get("/api/health/basic", (_req, res) => {
-  res.json({ ok: true });
+  res.json({ ok: true, timestamp: new Date().toISOString() });
+});
+
+// Health check with DB (if needed)
+app.get("/api/health", async (_req, res) => {
+  try {
+    // Simple check - just return ok for now
+    // In production, you'd check database connectivity here
+    res.json({ ok: true, timestamp: new Date().toISOString() });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
 });
 
 app.use((req, res, next) => {
