@@ -27,6 +27,7 @@ import AdminSettings from "@/pages/AdminSettings";
 import Profile from "@/pages/Profile";
 import MembersArea from "@/pages/MembersArea";
 import FAQ from "@/pages/FAQ";
+import FAQArticle from "@/pages/FAQArticle";
 import { ChatSupport } from "@/components/ChatSupport";
 import { useUser } from "@/hooks/use-user";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -75,6 +76,7 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/members-area" component={MembersArea} />
       <Route path="/faq" component={FAQ} />
+      <Route path="/faq/:collectionId" component={FAQArticle} />
       
       {/* Admin Routes */}
       <Route path="/admin-login" component={AdminLogin} />
