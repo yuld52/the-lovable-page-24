@@ -4,10 +4,11 @@ import { signOut } from "firebase/auth";
 import { useLocation, Link } from "wouter";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserCircle, Mail, Calendar, ArrowLeft, Settings, LogOut } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { UserCircle, Mail, Calendar, LogOut, Settings, HelpCircle, Shield, Crown, CheckCircle2, Clock, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
+import { Badge } from "@/components/ui/badge";
 
 export default function Profile() {
   const { user, loading } = useUser();
@@ -43,9 +44,29 @@ export default function Profile() {
     return null;
   }
 
+  const memberSince = user.metadata?.creationTime 
+    ? new Date(user.metadata.creationTime).toLocaleDateString('pt-BR', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      })
+    : "Data indisponível";
+
+  const lastLogin = user.metadata?.lastSignInTime 
+    ? new Date(user.metadata.lastSignInTime).toLocaleDateString('pt-BR', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    : "Data indisponível";
+
+  const isAdmin = user.email?.toLowerCase().trim() === "yuldchissico11@gmail.com";
+
   return (
     <Layout title="Perfil" subtitle="Gerencie suas informações pessoais">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <Button
           variant="ghost"
           className="mb-6 text-zinc-400 hover:text-white -ml-2"
@@ -55,81 +76,169 @@ export default function Profile() {
           Voltar para Dashboard
         </Button>
 
-        <div className="space-y-6">
-          {/* User Info Card */}
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
-            <CardHeader>
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 rounded-full bg-purple-600/10 flex items-center justify-center border border-purple-500/20">
-                  <UserCircle className="w-10 h-10 text-purple-400" />
+        <div className="grid gap-6">
+          {/* Profile Header Card */}
+          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg overflow-hidden">
+            <div className="relative h-32 bg-gradient-to-r from-purple-600/20 via-purple-500/10 to-transparent">
+              <div className="absolute inset-0 bg-[url('data:image/svg+xml,...')] opacity-5"></div>
+            </div>
+            <CardContent className="relative -mt-16 pt-0">
+              <div className="flex flex-col sm:flex-row items-center gap-6">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-600 to-purple-400 flex items-center justify-center border-4 border-background shadow-xl -mt-2">
+                  {user.photoURL ? (
+                    <img 
+                      src={user.photoURL} 
+                      alt="Profile" 
+                      className="w-full h-full rounded-full object-cover" 
+                    />
+                  ) : (
+                    <UserCircle className="w-12 h-12 text-white" />
+                  )}
                 </div>
-                <div>
-                  <CardTitle className="text-2xl font-bold text-white">
-                    {user.email?.split('@')[0] || "Usuário"}
+                <div className="flex-1 text-center sm:text-left mt-4 sm:mt-0">
+                  <h2 className="text-3xl font-bold text-white mb-1">
+                    {user.displayName || user.email?.split('@')[0] || "Usuário"}
+                  </h2>
+                  <div className="flex items-center justify-center sm:justify-start gap-2">
+                    <Badge variant={user.emailVerified ? "default" : "secondary"} className={user.emailVerified ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-amber-500/20 text-amber-400 border-amber-500/30"}>
+                      {user.emailVerified ? (
+                        <>
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          E-mail verificado
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="w-3 h-3 mr-1" />
+                          Pendente
+                        </>
+                      )}
+                    </Badge>
+                    {isAdmin && (
+                      <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                        <Crown className="w-3 h-3 mr-1" />
+                        Admin
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Account Info */}
+            <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg md:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3 text-white">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <Mail className="w-4 h-4 text-blue-400" />
+                  </div>
+                  Informações da Conta
+                </CardTitle>
+                <CardDescription className="text-zinc-500">
+                  Detalhes e status da sua conta
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between py-3 border-b border-zinc-800/50">
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-4 h-4 text-zinc-500" />
+                    <div>
+                      <p className="text-sm font-medium text-white">E-mail</p>
+                      <p className="text-xs text-zinc-500">Seu endereço de e-mail principal</p>
+                    </div>
+                  </div>
+                  <span className="text-sm text-zinc-300 font-mono">{user.email}</span>
+                </div>
+
+                <div className="flex items-center justify-between py-3 border-b border-zinc-800/50">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="w-4 h-4 text-zinc-500" />
+                    <div>
+                      <p className="text-sm font-medium text-white">Membro desde</p>
+                      <p className="text-xs text-zinc-500">Data de criação da conta</p>
+                    </div>
+                  </div>
+                  <span className="text-sm text-zinc-300">{memberSince}</span>
+                </div>
+
+                <div className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-4 h-4 text-zinc-500" />
+                    <div>
+                      <p className="text-sm font-medium text-white">Último acesso</p>
+                      <p className="text-xs text-zinc-500">Data e hora do último login</p>
+                    </div>
+                  </div>
+                  <span className="text-sm text-zinc-300 text-right">{lastLogin}</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions Sidebar */}
+            <div className="space-y-6">
+              <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-3">
+                    <Settings className="w-4 h-4 text-purple-400" />
+                    Ações Rápidas
                   </CardTitle>
-                  <p className="text-sm text-zinc-400 mt-1">Membro desde {new Date(user.metadata?.creationTime || Date.now()).toLocaleDateString('pt-BR')}</p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3 p-4 bg-zinc-900/40 rounded-xl border border-zinc-800/50">
-                <div className="p-2 bg-zinc-800 rounded-lg">
-                  <Mail className="w-4 h-4 text-zinc-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs text-zinc-500 uppercase font-bold">E-mail</p>
-                  <p className="text-sm text-white font-medium">{user.email}</p>
-                </div>
-                <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
-                  user.emailVerified 
-                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
-                    : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                }`}>
-                  {user.emailVerified ? 'Verificado' : 'Pendente'}
-                </div>
-              </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                    onClick={() => setLocation("/settings")}
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Configurações
+                  </Button>
 
-              <div className="flex items-center gap-3 p-4 bg-zinc-900/40 rounded-xl border border-zinc-800/50">
-                <div className="p-2 bg-zinc-800 rounded-lg">
-                  <Calendar className="w-4 h-4 text-zinc-400" />
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500 uppercase font-bold">Último acesso</p>
-                  <p className="text-sm text-white font-medium">
-                    {user.metadata?.lastSignInTime 
-                      ? new Date(user.metadata.lastSignInTime).toLocaleString('pt-BR') 
-                      : 'Não disponível'}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                    onClick={() => toast({ title: "Em breve", description: "Central de ajuda será implementada em breve." })}
+                  >
+                    <HelpCircle className="w-4 h-4 mr-2" />
+                    Ajuda & Suporte
+                  </Button>
 
-          {/* Quick Links */}
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-base text-white">Ações Rápidas</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button
-                variant="outline"
-                className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
-                onClick={() => setLocation("/settings")}
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Configurações
-              </Button>
+                  <div className="h-px bg-zinc-800/50 mx-1 my-2"></div>
 
-              <Button
-                variant="outline"
-                className="w-full justify-start border-red-500/50 text-red-400 hover:bg-red-500/10"
-                onClick={handleLogout}
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sair da Conta
-              </Button>
-            </CardContent>
-          </Card>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start border-red-500/30 text-red-400 hover:bg-red-500/10"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sair da Conta
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Security Card */}
+              <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-3">
+                    <Shield className="w-4 h-4 text-emerald-400" />
+                    Segurança
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-zinc-400">Autenticação de dois fatores</span>
+                      <Badge variant="secondary" className="bg-zinc-800 text-zinc-500">Indisponível</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-zinc-400">Sessões ativas</span>
+                      <span className="text-sm text-zinc-300">1</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
     </Layout>
