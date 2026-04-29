@@ -17,7 +17,7 @@ export default defineConfig({
           m.devBanner(),
         ),
       ]
-      : [],
+      : []),
   ],
   resolve: {
     alias: {
@@ -36,8 +36,16 @@ export default defineConfig({
     hmr: {
       overlay: false,
     },
-    // Proxy removed: server/index.ts handles API and Vite integration directly.
-    // Run `npm run dev` (tsx watch server/index.ts) to start the integrated server.
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:5000",
+        changeOrigin: true,
+      },
+      "/uploads": {
+        target: "http://127.0.0.1:5000",
+        changeOrigin: true,
+      },
+    },
     fs: {
       strict: true,
       deny: ["**/.*"],
