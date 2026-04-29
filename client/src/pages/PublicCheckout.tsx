@@ -10,8 +10,7 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { db } from "@/lib/firebase";
 import { collection, doc, getDoc, getDocs, query, where, limit } from "firebase/firestore";
-import { useAutoCurrency, useUsdRates } from "@/hooks/use-currency";
-import { useAutoLanguage } from "@/hooks/use-language";
+import { useAutoCurrency, useAutoLanguage, useUsdRates } from "@/hooks/use-currency";
 import {
     convertUsdCentsToCurrencyMinor,
     formatMoney,
@@ -22,6 +21,7 @@ import { CheckCircle2, Lock, ShieldCheck, Star, Timer, CreditCard, Loader2 } fro
 import { PayPalVisual } from "@/components/payments/PayPalVisual";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 const defaultConfig: CheckoutConfig = {
     timerMinutes: 10,
@@ -108,6 +108,7 @@ export default function PublicCheckout() {
     const slug = params?.slug;
     const [orderBumpSelected, setOrderBumpSelected] = useState<number[]>([]);
     const [isPaid, setIsPaid] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
     const { toast } = useToast();
 
     const { data: checkoutData, isLoading: isLoadingCheckout, error: checkoutError } = useQuery<Checkout | null>({
@@ -225,6 +226,7 @@ export default function PublicCheckout() {
     };
 
     const handleApprove = async (orderId: string) => {
+        setIsProcessing(true);
         try {
             const res = await apiRequest("POST", `/api/paypal/capture-order/${orderId}`);
             const data = await res.json();
@@ -234,10 +236,12 @@ export default function PublicCheckout() {
             }
         } catch (err: any) {
             toast({ title: "Erro", description: "Falha ao processar pagamento.", variant: "destructive" });
+        } finally {
+            setIsProcessing(false);
         }
     };
 
-    if (isLoadingCheckout || isLoadingProduct) return <div className="min-h-screen bg-[#f9fafb] flex items-center justify-center"><Loader2 className="animate-spin text-purple-600" /></div>;
+    if (isLoadingCheckout || isLoadingProduct || isProcessing) return <LoadingScreen />;
     if (checkoutError || !checkoutData || !product) return <div className="p-8 text-center">Checkout não encontrado</div>;
 
     const orderBumpProductsData = allProducts?.filter((p) => config.orderBumpProducts.includes(p.id)) || [];
