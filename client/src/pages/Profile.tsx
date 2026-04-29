@@ -44,16 +44,30 @@ export default function Profile() {
     return null;
   }
 
-  const memberSince = user.metadata?.creationTime 
-    ? new Date(user.metadata.creationTime).toLocaleDateString('pt-BR', { 
+  // Helper function to parse Firebase timestamp
+  const parseFirebaseDate = (dateString: string | undefined): Date | null => {
+    if (!dateString) return null;
+    try {
+      // Firebase returns format like: "Tue, 01 Feb 2022 12:34:56 GMT"
+      return new Date(dateString);
+    } catch {
+      return null;
+    }
+  };
+
+  const creationDate = parseFirebaseDate(user.metadata?.creationTime);
+  const lastSignInDate = parseFirebaseDate(user.metadata?.lastSignInTime);
+
+  const memberSince = creationDate 
+    ? creationDate.toLocaleDateString('pt-BR', { 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric' 
       })
     : "Data indisponível";
 
-  const lastLogin = user.metadata?.lastSignInTime 
-    ? new Date(user.metadata.lastSignInTime).toLocaleDateString('pt-BR', { 
+  const lastLogin = lastSignInDate 
+    ? lastSignInDate.toLocaleDateString('pt-BR', { 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric',
