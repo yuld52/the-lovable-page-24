@@ -170,7 +170,7 @@ export default function PublicCheckout() {
       return querySnapshot.docs.map(doc => {
         const data = doc.data();
         return { 
-          id: parseInt(doc.id) || doc.id, 
+          id: parseInt(doc.id), 
           name: data?.name,
           price: data?.price || 0,
           imageUrl: data?.image_url || data?.imageUrl,
@@ -217,10 +217,11 @@ export default function PublicCheckout() {
   const [formData, setFormData] = useState({ email: "", confirmEmail: "", name: "", surname: "", cpf: "", phone: "" });
   const [showErrors, setShowErrors] = useState(false);
 
+  // Fixed: use String comparison to handle both number and string ids
   const calculateTotal = () => {
     let total = product?.price ?? 0;
     orderBumpSelected.forEach(id => {
-      const p = allProducts?.find(x => x.id === id || x.id === String(id));
+      const p = allProducts?.find(x => String(x.id) === String(id));
       if (p) total += p.price;
     });
     return total;
@@ -277,7 +278,10 @@ export default function PublicCheckout() {
   if (isLoadingCheckout || isLoadingProduct || isProcessing) return <LoadingScreen />;
   if (checkoutError || !checkoutData || !product) return <div className="p-8 text-center">Checkout não encontrado</div>;
 
-  const orderBumpProductsData = allProducts?.filter((p) => config.orderBumpProducts?.includes(p.id as any)) || [];
+  // Fixed: use String comparison for safety
+  const orderBumpProductsData = allProducts?.filter(p => 
+    config.orderBumpProducts?.some(opId => String(opId) === String(p.id))
+  ) || [];
 
   if (isPaid) {
     return (
@@ -361,8 +365,16 @@ export default function PublicCheckout() {
                         <div className="mt-1 font-bold text-sm" style={{ color: config.primaryColor }}>+ {moneyFromUsdCents(p.price)}</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 p-3 cursor-pointer" style={{ backgroundColor: getSoftBackgroundColor(config.primaryColor) }} onClick={() => orderBumpSelected.includes(p.id as any) ? setOrderBumpSelected(orderBumpSelected.filter(id => id !== p.id)) : setOrderBumpSelected([...orderBumpSelected, p.id as any])}>
-                      <Checkbox checked={orderBumpSelected.includes(p.id as any)} />
+                    <div className="flex items-center gap-2 p-3 cursor-pointer" style={{ backgroundColor: getSoftBackgroundColor(config.primaryColor) }} onClick={() => {
+                      // Fixed: use String comparison for safety
+                      const isSelected = orderBumpSelected.some(selectedId => String(selectedId) === String(p.id));
+                      if (isSelected) {
+                        setOrderBumpSelected(orderBumpSelected.filter(selectedId => String(selectedId) !== String(p.id)));
+                      } else {
+                        setOrderBumpSelected([...orderBumpSelected, Number(p.id)]);
+                      }
+                    }}>
+                      <Checkbox checked={orderBumpSelected.some(selectedId => String(selectedId) === String(p.id))} />
                       <span className="text-sm font-medium" style={{ color: "#000000" }}>{t.addToOrder}</span>
                     </div>
                   </div>
