@@ -37,7 +37,7 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
           variant="ghost"
           size="icon"
           className="h-10 w-10 rounded-full hover:bg-accent"
-          onClick={() => setLocation("/settings")}
+          onClick={() => setLocation("/profile")}
           title="Perfil"
         >
           <UserCircle className="h-5 w-5 text-foreground" />

@@ -17,13 +17,14 @@ import Sales from "@/pages/Sales";
 import Settings from "@/pages/Settings";
 import CreateProduct from "@/pages/CreateProduct";
 import CheckoutEditor from "@/pages/CheckoutEditor";
-import PublicCheckout from "./pages/PublicCheckout";
+import PublicCheckout from "@/pages/PublicCheckout";
 import Financeiro from "@/pages/Financeiro";
 import Admin from "@/pages/Admin";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminProducts from "@/pages/AdminProducts";
 import AdminUsers from "@/pages/AdminUsers";
 import AdminSettings from "@/pages/AdminSettings";
+import Profile from "@/pages/Profile";
 import { ChatSupport } from "@/components/ChatSupport";
 import { useUser } from "@/hooks/use-user";
 
@@ -67,6 +68,7 @@ function Router() {
       <Route path="/sales" component={Sales} />
       <Route path="/financeiro" component={Financeiro} />
       <Route path="/settings" component={Settings} />
+      <Route path="/profile" component={Profile} />
       
       {/* Admin Routes */}
       <Route path="/admin-login" component={AdminLogin} />
