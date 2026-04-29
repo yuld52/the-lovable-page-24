@@ -15,14 +15,18 @@ export async function apiRequest(
   data?: unknown | undefined,
 ): Promise<Response> {
   const user = auth.currentUser;
-  
   const headers: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
   if (user) {
     const idToken = await getIdToken(user);
     headers["Authorization"] = `Bearer ${idToken}`;
   }
 
-  const res = await fetch(url, {
+  // In Vercel, API routes are at the same domain
+  const baseUrl = process.env.NODE_ENV === "production" 
+    ? "" // Same domain in production
+    : "http://localhost:3000"; // Local development
+
+  const res = await fetch(`${baseUrl}${url}`, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
@@ -47,13 +51,17 @@ export const getQueryFn: <T>(options: {
       headers["Authorization"] = `Bearer ${idToken}`;
     }
 
-    const res = await fetch(queryKey.join("/") as string, {
+    const baseUrl = process.env.NODE_ENV === "production" 
+      ? "" 
+      : "http://localhost:3000";
+
+    const res = await fetch(`${baseUrl}${queryKey.join("/")}`, {
       credentials: "include",
       headers,
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+      return null as T;
     }
 
     await throwIfResNotOk(res);
