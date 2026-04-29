@@ -1,6 +1,6 @@
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { DollarSign, ArrowDownToLine, History, Loader2, PieChart, CreditCard, Plus, Trash2, Check, Clock, AlertCircle } from "lucide-react";
+import { DollarSign, ArrowDownToLine, History, Loader2, PieChart, CreditCard, Plus, Trash2, Check, Clock, AlertCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -12,6 +12,14 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { apiRequest } from "@/lib/queryClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function Financeiro() {
   const { toast } = useToast();
@@ -22,6 +30,10 @@ export default function Financeiro() {
   const [activeTab, setActiveTab] = useState<"visao" | "historico" | "contas">("visao");
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [newAccount, setNewAccount] = useState<{ bank: string; agency: string; account: string; type: "checking" | "savings" }>({ bank: "", agency: "", account: "", type: "checking" });
+  
+  // Withdrawal dialog state
+  const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
+  const [withdrawSuccess, setWithdrawSuccess] = useState(false);
 
   const { data: stats, isLoading: statsLoading } = useStats();
   const { data: sales, isLoading: salesLoading } = useSales();
@@ -61,10 +73,7 @@ export default function Financeiro() {
         method: "pix"
       });
       
-      toast({
-        title: "Saque solicitado!",
-        description: `Pedido de saque de R$ ${amount} realizado com sucesso.`,
-      });
+      setWithdrawSuccess(true);
       setAmount("");
       setPixKey("");
     } catch (error: any) {
@@ -212,7 +221,7 @@ export default function Financeiro() {
                     />
                   </div>
                   <Button 
-                    onClick={handleWithdraw}
+                    onClick={() => setShowWithdrawDialog(true)}
                     disabled={isLoading || !amount || !pixKey}
                     className="w-full bg-purple-600 hover:bg-purple-500 text-white h-11"
                   >
@@ -229,8 +238,8 @@ export default function Financeiro() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
-                      <ArrowDownToLine className="w-8 h-8 text-zinc-500" />
+                    <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mb-4">
+                      <ArrowDownToLine className="w-8 h-8 text-zinc-400" />
                     </div>
                     <h3 className="text-lg font-medium text-white mb-2">Nenhum saque realizado</h3>
                     <p className="text-sm text-zinc-500 max-w-sm">
@@ -298,7 +307,10 @@ export default function Financeiro() {
                           </td>
                           <td className="px-6 py-4">
                             <span className="text-sm font-bold text-white">
-                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((sale.amount || 0) / 100)}
+                              {new Intl.NumberFormat('pt-BR', { 
+                                style: 'currency', 
+                                currency: 'BRL' 
+                              }).format((sale.amount || 0) / 100)}
                             </span>
                           </td>
                           <td className="px-6 py-4">
@@ -367,6 +379,101 @@ export default function Financeiro() {
         </Card>
       )}
 
+      {/* Withdrawal Confirmation Dialog */}
+      <Dialog open={showWithdrawDialog} onOpenChange={setShowWithdrawDialog}>
+        <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowDownToLine className="w-5 h-5 text-purple-400" />
+              Confirmar Saque
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              Revise os dados antes de confirmar o saque via PIX.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-zinc-900/50 rounded-lg p-4 space-y-3">
+              <div className="flex justify-between">
+                <span className="text-sm text-zinc-400">Valor:</span>
+                <span className="text-lg font-bold text-white">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(amount) || 0)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-zinc-400">Chave PIX:</span>
+                <span className="text-sm font-medium text-white">{pixKey}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-zinc-400">Método:</span>
+                <span className="text-sm font-medium text-purple-400">PIX Instantâneo</span>
+              </div>
+            </div>
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+              <p className="text-xs text-amber-400">
+                ⚠️ O processamento leva até 3 dias úteis. Certifique-se que a chave PIX está correta.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowWithdrawDialog(false)}
+              className="border-zinc-700 text-zinc-300"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => {
+                setShowWithdrawDialog(false);
+                handleWithdraw();
+              }}
+              disabled={isLoading}
+              className="bg-purple-600 hover:bg-purple-500 text-white"
+            >
+              {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Confirmar Saque"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Dialog */}
+      <Dialog open={withdrawSuccess} onOpenChange={setWithdrawSuccess}>
+        <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm">
+          <div className="flex flex-col items-center text-center p-6">
+            <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6">
+              <Check className="w-10 h-10 text-emerald-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Saquue Solicitado!</h2>
+            <p className="text-zinc-400 mb-6">
+              Seu saque de{' '}
+              <span className="text-white font-bold">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(amount) || 0)}
+              </span>
+              {' '}foi solicitado com sucesso via PIX.
+            </p>
+            <div className="bg-zinc-900/50 rounded-lg p-4 w-full mb-6">
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-zinc-400">Chave PIX:</span>
+                <span className="text-sm font-medium text-white">{pixKey}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-zinc-400">Status:</span>
+                <span className="text-sm font-medium text-amber-400">Pendente</span>
+              </div>
+            </div>
+            <p className="text-xs text-zinc-500 mb-6">
+              O processamento leva até 3 dias úteis. Você receberá uma notificação quando o valor for enviado.
+            </p>
+            <Button 
+              onClick={() => setWithdrawSuccess(false)}
+              className="w-full bg-purple-600 hover:bg-purple-500 text-white"
+            >
+              Entendi
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Add Account Dialog */}
       {showAddAccount && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -407,9 +514,9 @@ export default function Financeiro() {
                 <div className="flex gap-2">
                   <button
                     className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-                      newAccount.type === 'checking' 
-                        ? 'bg-purple-600 text-white' 
-                        : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800'
+                        newAccount.type === 'checking' 
+                          ? 'bg-purple-600 text-white' 
+                          : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800'
                     }`}
                     onClick={() => setNewAccount({ ...newAccount, type: 'checking' })}
                   >
@@ -417,9 +524,9 @@ export default function Financeiro() {
                   </button>
                   <button
                     className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-                      newAccount.type === 'savings' 
-                        ? 'bg-purple-600 text-white' 
-                        : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800'
+                        newAccount.type === 'savings' 
+                          ? 'bg-purple-600 text-white' 
+                          : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800'
                     }`}
                     onClick={() => setNewAccount({ ...newAccount, type: 'savings' })}
                   >
