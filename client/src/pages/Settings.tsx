@@ -123,7 +123,7 @@ export default function Settings() {
     facebookAccessToken: "",
     utmfyToken: "",
     environment: "production",
-    checkoutLanguage: "AUTO" as any,
+    checkoutLanguage: "AUTO",
     metaEnabled: true,
     utmfyEnabled: true,
     trackTopFunnel: true,
@@ -141,13 +141,13 @@ export default function Settings() {
         facebookPixelId: settings.facebookPixelId || "",
         facebookAccessToken: (settings as any).facebookAccessToken || "",
         utmfyToken: settings.utmfyToken || "",
-        environment: "production",
+        environment: settings.environment || "production",
         checkoutLanguage: "AUTO",
-        metaEnabled: true,
-        utmfyEnabled: true,
-        trackTopFunnel: true,
-        trackCheckout: true,
-        trackPurchaseRefund: true,
+        metaEnabled: settings.metaEnabled ?? true,
+        utmfyEnabled: settings.utmfyEnabled ?? true,
+        trackTopFunnel: settings.trackTopFunnel ?? true,
+        trackCheckout: settings.trackCheckout ?? true,
+        trackPurchaseRefund: settings.trackPurchaseRefund ?? true,
         salesNotifications: settings.salesNotifications === true,
       });
     }
@@ -393,7 +393,7 @@ export default function Settings() {
           <DialogHeader><DialogTitle>Ativando Notificações</DialogTitle></DialogHeader>
           <div className="py-6 space-y-4">
             <div className={cn("flex items-center gap-3", activationStep < 2 && "opacity-50")}>
-              <div className={cn("w-6 h-6 rounded-full flex items-center justify-center border", activationStep > 2 ? "bg-green-500" : "border-zinc-700")}>
+              <div className={cn("w-6 h-6 rounded-full flex items-center justify-center border", activationStep > 2 ? "bg-emerald-500" : "border-zinc-700")}>
                 {activationStep > 2 ? <CheckCircle2 size={16} /> : <Loader2 size={12} className="animate-spin" />}
               </div>
               <span className="text-sm">Configurando alertas</span>
