@@ -21,6 +21,7 @@ import utmifyLogo from "@/assets/utmify-logo.jfif";
 export default function Settings() {
   const [isActivating, setIsActivating] = useState(false);
   const [activationStep, setActivationStep] = useState(0);
+  const [openDialog, setOpenDialog] = useState<"webhook" | "pixel" | "utmfy" | null>(null);
 
   const [activeTab, setActiveTab] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -64,7 +65,6 @@ export default function Settings() {
   const { data: settings, isLoading: isLoadingSettings } = useSettings();
   const updateSettings = useUpdateSettings();
   const { toast } = useToast();
-  const [metricsSubTab, setMetricsSubTab] = useState("pixel");
   const [showFacebookToken, setShowFacebookToken] = useState(false);
 
   const queryClient = useQueryClient();
@@ -182,6 +182,7 @@ export default function Settings() {
     try {
       await updateSettings.mutateAsync(form);
       toast({ title: "Configurações salvas" });
+      setOpenDialog(null);
     } catch (error: any) {
       toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
     }
@@ -260,84 +261,51 @@ export default function Settings() {
   );
 
   const renderIntegracao = () => (
-    <div className="max-w-4xl animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="flex items-center gap-2 mb-6 bg-zinc-900/50 p-1 rounded-xl border border-zinc-800/50 w-fit">
-        <Button variant="ghost" size="sm" onClick={() => setMetricsSubTab("pixel")} className={cn("h-9 px-4 rounded-lg text-xs font-bold", metricsSubTab === "pixel" ? "bg-purple-600 text-white" : "text-zinc-500")}>
-          <img src={facebookFavicon} alt="Facebook" className="w-5 h-5 mr-2" /> Facebook
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => setMetricsSubTab("utmfy")} className={cn("h-9 px-4 rounded-lg text-xs font-bold", metricsSubTab === "utmfy" ? "bg-purple-600 text-white" : "text-zinc-500")}>
-          <img src={utmifyLogo} alt="UTMify" className="w-5 h-5 mr-2" /> UTMfy
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => setMetricsSubTab("webhook")} className={cn("h-9 px-4 rounded-lg text-xs font-bold", metricsSubTab === "webhook" ? "bg-purple-600 text-white" : "text-zinc-500")}>
-          <Webhook className="w-5 h-5 mr-2" /> Webhook
-        </Button>
+    <div className="max-w-6xl animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Webhook Card */}
+        <Card 
+          className="bg-[#18181b] border-zinc-800/60 hover:border-purple-500/50 transition-all cursor-pointer group"
+          onClick={() => setOpenDialog("webhook")}
+        >
+          <CardContent className="pt-8 pb-8 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
+              <Webhook className="w-10 h-10 text-[#E91E63]" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-1">Integração Webhook</h3>
+            <p className="text-xs text-zinc-500">Notificações de vendas via URL</p>
+          </CardContent>
+        </Card>
+
+        {/* Meta Pixel Card */}
+        <Card 
+          className="bg-[#18181b] border-zinc-800/60 hover:border-purple-500/50 transition-all cursor-pointer group"
+          onClick={() => setOpenDialog("pixel")}
+        >
+          <CardContent className="pt-8 pb-8 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-2xl bg-[#1877F2] flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
+              <img src={facebookFavicon} alt="Meta" className="w-10 h-10" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-1">Pixel da Meta</h3>
+            <p className="text-xs text-zinc-500">ID do pixel para rastreamento</p>
+          </CardContent>
+        </Card>
+
+        {/* UTMify Card */}
+        <Card 
+          className="bg-[#18181b] border-zinc-800/60 hover:border-purple-500/50 transition-all cursor-pointer group"
+          onClick={() => setOpenDialog("utmfy")}
+        >
+          <CardContent className="pt-8 pb-8 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-2xl bg-black flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform border border-zinc-800">
+              <img src={utmifyLogo} alt="UTMify" className="w-10 h-10 rounded-lg" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-1">UTMify</h3>
+            <p className="text-xs text-zinc-500">Parâmetros UTM para campanhas</p>
+          </CardContent>
+        </Card>
       </div>
-      <div className="mb-8">
-        {metricsSubTab === "pixel" ? (
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg max-w-2xl">
-            <CardHeader className="border-b border-zinc-800/50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20"><img src={facebookFavicon} alt="Facebook" className="w-8 h-8" /></div>
-                <div><CardTitle className="text-base text-white">Facebook</CardTitle><CardDescription className="text-xs text-zinc-500">Acompanhe suas conversões</CardDescription></div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-400 uppercase">Pixel ID</label>
-                <Input className="bg-zinc-900 border-zinc-800 text-sm h-11" value={form.facebookPixelId} onChange={(e) => setForm({ ...form, facebookPixelId: e.target.value })} placeholder="Ex: 123456789012345" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-400 uppercase">Access Token</label>
-                <div className="relative">
-                  <Input type={showFacebookToken ? "text" : "password"} className="bg-zinc-900 border-zinc-800 text-sm h-11 pr-10" value={form.facebookAccessToken} onChange={(e) => setForm({ ...form, facebookAccessToken: e.target.value })} placeholder="Cole aqui o token" />
-                  <button type="button" onClick={() => setShowFacebookToken(!showFacebookToken)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500">{showFacebookToken ? <EyeOff size={16} /> : <Eye size={16} />}</button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ) : metricsSubTab === "utmfy" ? (
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg max-w-2xl">
-            <CardHeader className="border-b border-zinc-800/50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20"><img src={utmifyLogo} alt="UTMfy" className="w-8 h-8" /></div>
-                <div><CardTitle className="text-base text-white">UTMfy</CardTitle><CardDescription className="text-xs text-zinc-500">Rastreamento avançado</CardDescription></div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-400 uppercase">UTMfy Token</label>
-                <Input className="bg-zinc-900 border-zinc-800 text-sm h-11" value={form.utmfyToken} onChange={(e) => setForm({ ...form, utmfyToken: e.target.value })} placeholder="Insira seu token UTMfy" />
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg max-w-2xl">
-            <CardHeader className="border-b border-zinc-800/50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center border border-orange-500/20"><Webhook className="w-5 h-5 text-orange-500" /></div>
-                <div>
-                  <CardTitle className="text-base text-white">Webhook</CardTitle>
-                  <CardDescription className="text-xs text-zinc-500">Configure webhooks para receber notificações de pagamento</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-400 uppercase">PayPal Webhook ID</label>
-                <Input 
-                  className="bg-zinc-900 border-zinc-800 text-sm h-11" 
-                  value={form.paypalWebhookId} 
-                  onChange={(e) => setForm({ ...form, paypalWebhookId: e.target.value })} 
-                  placeholder="ID do Webhook do PayPal" 
-                />
-                <p className="text-[11px] text-zinc-500 mt-1">
-                  Configure webhooks no <a href="https://developer.paypal.com/docs/api/webhooks/" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:underline">PayPal Developer</a> para receber notificações de eventos de pagamento.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+
       <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg max-w-2xl mb-8">
         <CardHeader><div className="flex items-center gap-2"><Bell size={18} className="text-zinc-400" /><CardTitle className="text-base text-white">Notificações</CardTitle></div></CardHeader>
         <CardContent>
@@ -349,9 +317,68 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
-      <Button onClick={handleSave} disabled={updateSettings.isPending} className="bg-purple-600 hover:bg-purple-500 text-white h-12 px-8 border-0">
-        {updateSettings.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />} Salvar Configurações
-      </Button>
+
+      {/* Configuration Dialogs */}
+      <Dialog open={openDialog !== null} onOpenChange={(open) => !open && setOpenDialog(null)}>
+        <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              {openDialog === "webhook" && <><Webhook className="w-5 h-5 text-[#E91E63]" /> Configurar Webhook</>}
+              {openDialog === "pixel" && <><img src={facebookFavicon} className="w-5 h-5" /> Configurar Pixel da Meta</>}
+              {openDialog === "utmfy" && <><img src={utmifyLogo} className="w-5 h-5 rounded" /> Configurar UTMify</>}
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              {openDialog === "webhook" && "Insira o ID do Webhook do PayPal para receber notificações."}
+              {openDialog === "pixel" && "Configure seu Pixel ID e Access Token para rastreamento."}
+              {openDialog === "utmfy" && "Insira seu token UTMify para rastreamento de campanhas."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {openDialog === "webhook" && (
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-400 uppercase">PayPal Webhook ID</label>
+                <Input 
+                  className="bg-zinc-900 border-zinc-800 text-sm h-11" 
+                  value={form.paypalWebhookId} 
+                  onChange={(e) => setForm({ ...form, paypalWebhookId: e.target.value })} 
+                  placeholder="ID do Webhook do PayPal" 
+                />
+              </div>
+            )}
+
+            {openDialog === "pixel" && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-zinc-400 uppercase">Pixel ID</label>
+                  <Input className="bg-zinc-900 border-zinc-800 text-sm h-11" value={form.facebookPixelId} onChange={(e) => setForm({ ...form, facebookPixelId: e.target.value })} placeholder="Ex: 123456789012345" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-zinc-400 uppercase">Access Token</label>
+                  <div className="relative">
+                    <Input type={showFacebookToken ? "text" : "password"} className="bg-zinc-900 border-zinc-800 text-sm h-11 pr-10" value={form.facebookAccessToken} onChange={(e) => setForm({ ...form, facebookAccessToken: e.target.value })} placeholder="Cole aqui o token" />
+                    <button type="button" onClick={() => setShowFacebookToken(!showFacebookToken)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500">{showFacebookToken ? <EyeOff size={16} /> : <Eye size={16} />}</button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {openDialog === "utmfy" && (
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-400 uppercase">UTMify Token</label>
+                <Input className="bg-zinc-900 border-zinc-800 text-sm h-11" value={form.utmfyToken} onChange={(e) => setForm({ ...form, utmfyToken: e.target.value })} placeholder="Insira seu token UTMify" />
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpenDialog(null)}>Cancelar</Button>
+            <Button onClick={handleSave} disabled={updateSettings.isPending} className="bg-purple-600 hover:bg-purple-500 text-white font-bold">
+              {updateSettings.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar Alterações"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
