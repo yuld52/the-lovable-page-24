@@ -476,6 +476,78 @@ export async function registerRoutes(
     }
   });
 
+  // Withdrawals
+  app.post("/api/withdrawals", requireAuth, async (req, res) => {
+    try {
+      const userId = String((req as any).user?.id || "");
+      const { amount, pixKey, pixKeyType } = req.body;
+      
+      if (!amount || !pixKey) {
+        return res.status(400).json({ message: "Amount and pixKey are required" });
+      }
+
+      const withdrawal = await storage.createWithdrawal({
+        userId,
+        amount: Math.round(parseFloat(amount) * 100), // Convert to cents
+        pixKey,
+        pixKeyType: pixKeyType || 'email'
+      });
+
+      res.status(201).json(withdrawal);
+    } catch (err: any) {
+      console.error("Error creating withdrawal:", err);
+      res.status(500).json({ message: err.message || "Erro ao solicitar saque" });
+    }
+  });
+
+  // Admin: Get ALL withdrawals
+  app.get("/api/admin/withdrawals", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      const result = await storage.getWithdrawals(); // No user filter for admin
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error getting all withdrawals:", error);
+      res.status(500).json({ message: error.message || "Erro ao buscar saques" });
+    }
+  });
+
+  // Admin: Approve/Reject withdrawal
+  app.post("/api/admin/withdrawals/:id/approve", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      const id = parseInt(req.params.id as string);
+      const { adminNote } = req.body;
+      const withdrawal = await storage.updateWithdrawalStatus(id, 'approved', adminNote);
+      res.json(withdrawal);
+    } catch (err: any) {
+      console.error("Error approving withdrawal:", err);
+      res.status(500).json({ message: err.message || "Erro ao aprovar saque" });
+    }
+  });
+
+  app.post("/api/admin/withdrawals/:id/reject", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      const id = parseInt(req.params.id as string);
+      const { adminNote } = req.body;
+      const withdrawal = await storage.updateWithdrawalStatus(id, 'rejected', adminNote);
+      res.json(withdrawal);
+    } catch (err: any) {
+      console.error("Error rejecting withdrawal:", err);
+      res.status(500).json({ message: err.message || "Erro ao rejeitar saque" });
+    }
+  });
+
   // Database test endpoint
   app.get("/api/db-test", async (_req, res) => {
     try {
