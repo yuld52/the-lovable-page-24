@@ -63,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Get views from checkouts
       const checkoutsResult = await client.query(`
         SELECT * FROM checkouts 
-        WHERE owner_id = $1
+        WHERE owner_id = $1`
       `, [userId]);
       
       let totalViews = 0;

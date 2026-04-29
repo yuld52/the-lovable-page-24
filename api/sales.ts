@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
 import { getDbClient } from "./_lib/database";
-import { verifyAuth, isAdmin } from "./_lib/auth";
+import { verifyAuth } from "./_lib/auth";
 import { toCamelCase } from "./_lib/database";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

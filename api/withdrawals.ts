@@ -52,7 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           SELECT w.*, u.username 
           FROM withdrawals w 
           LEFT JOIN users u ON w.user_id = u.id 
-          ORDER BY w.requested_at DESC
+          ORDER BY w.requested_at DESC`
         `);
         
         return res.json(result.rows.map(row => toCamelCase(row)));
