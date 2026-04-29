@@ -23,6 +23,7 @@ import Admin from "@/pages/Admin";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminProducts from "@/pages/AdminProducts";
 import AdminUsers from "@/pages/AdminUsers";
+import AdminSettings from "@/pages/AdminSettings";
 import { ChatSupport } from "@/components/ChatSupport";
 import { useUser } from "@/hooks/use-user";
 
@@ -35,7 +36,7 @@ function Router() {
     const path = window.location.pathname;
 
     // Se estiver no domínio de pagamento (pay.), só permite o checkout
-    if (isPayDomain && path.startsWith("/checkout")) {
+    if (isPayDomain && !path.startsWith("/checkout")) {
       window.location.href = "https://app.meteorfy.online";
     }
 
@@ -72,7 +73,7 @@ function Router() {
       <Route path="/admin" component={Admin} />
       <Route path="/admin/products" component={AdminProducts} />
       <Route path="/admin/users" component={AdminUsers} />
-      <Route path="/admin/settings" component={Admin} />
+      <Route path="/admin/settings" component={AdminSettings} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
