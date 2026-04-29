@@ -42,13 +42,7 @@ export default function Financeiro() {
   // Calculate real financial data
   const totalEarnings = sales?.filter(s => s.status === 'paid').reduce((sum, s) => sum + (s.amount || 0), 0) || 0;
   const availableBalance = totalEarnings; // In a real app, this would subtract fees/withdrawals
-  
-  // Fetch user's withdrawals
-  const { data: withdrawals, isLoading: withdrawalsLoading } = useQuery<any[]>({
-    queryKey: ["/api/withdrawals"],
-  });
-
-  const pendingWithdrawals = withdrawals?.filter(w => w.status === 'pending' || w.status === 'approved') || [];
+  const pendingWithdrawals = 0; // Would come from a withdrawals table
 
   const handleWithdraw = async () => {
     if (!amount || !pixKey) {
@@ -72,17 +66,16 @@ export default function Financeiro() {
 
     setIsLoading(true);
     try {
-      // This now creates a withdrawal request in the database
+      // In production, this would call a real withdrawal API
       await apiRequest("POST", "/api/withdrawals", {
-        amount: parseFloat(amount),
+        amount: amountCents,
         pixKey,
-        pixKeyType: "email" // Simplified for now
+        method: "pix"
       });
       
       setWithdrawSuccess(true);
       setAmount("");
       setPixKey("");
-      queryClient.invalidateQueries({ queryKey: ["/api/withdrawals"] });
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -106,7 +99,7 @@ export default function Financeiro() {
     }
   });
 
-  if (statsLoading || salesLoading || withdrawalsLoading) {
+  if (statsLoading || salesLoading) {
     return (
       <Layout title="Financeiro" subtitle="Gerencie seus saques e saldo">
         <div className="flex justify-center p-12">
@@ -194,9 +187,7 @@ export default function Financeiro() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-white">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                    withdrawals?.filter(w => w.status === 'pending').reduce((sum, w) => sum + (w.amount || 0), 0) / 100 || 0
-                  )}
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pendingWithdrawals / 100)}
                 </div>
                 <p className="text-xs text-zinc-500 mt-1">Aguardando processamento</p>
               </CardContent>
@@ -246,67 +237,15 @@ export default function Financeiro() {
                   <CardTitle className="text-base font-bold text-white">Histórico de Saques</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {!withdrawals || withdrawals.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mb-4">
-                        <ArrowDownToLine className="w-8 h-8 text-zinc-400" />
-                      </div>
-                      <h3 className="text-lg font-medium text-white mb-2">Nenhum saque realizado</h3>
-                      <p className="text-sm text-zinc-500 max-w-sm">
-                        Quando você realizar saques, eles aparecerão aqui. O processamento leva até 3 dias úteis.
-                      </p>
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mb-4">
+                      <ArrowDownToLine className="w-8 h-8 text-zinc-400" />
                     </div>
-                  ) : (
-                    <div className="rounded-xl border border-zinc-800/50 overflow-hidden">
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-zinc-950/50 border-b border-zinc-800/50">
-                              <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Valor</th>
-                              <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Chave PIX</th>
-                              <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Status</th>
-                              <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Data</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-zinc-800/30">
-                          {withdrawals.map((w) => (
-                            <tr key={w.id} className="hover:bg-zinc-800/20 transition-colors">
-                                <td className="px-6 py-4">
-                                  <span className="text-sm font-bold text-white">
-                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((w.amount || 0) / 100)}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <span className="text-sm text-zinc-300 truncate block max-w-[150px]">{w.pix_key}</span>
-                                </td>
-                                <td className="px-6 py-4">
-                                  {w.status === 'approved' ? (
-                                    <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-3 py-1 rounded-full w-fit">
-                                      <Check className="w-3 h-3" />
-                                      <span className="text-[10px] font-bold uppercase tracking-wider">Aprovado</span>
-                                    </div>
-                                  ) : w.status === 'pending' ? (
-                                    <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 px-3 py-1 rounded-full w-fit">
-                                      <Clock className="w-3 h-3" />
-                                      <span className="text-[10px] font-bold uppercase tracking-wider">Pendente</span>
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center gap-1.5 bg-red-500/10 text-red-500 border border-red-500/20 px-3 py-1 rounded-full w-fit">
-                                      <XCircle className="w-3 h-3" />
-                                      <span className="text-[10px] font-bold uppercase tracking-wider">{w.status}</span>
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="px-6 py-4">
-                                  <span className="text-xs text-zinc-400">
-                                    {w.requested_at ? format(new Date(w.requested_at), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "-"}
-                                  </span>
-                                </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                    <h3 className="text-lg font-medium text-white mb-2">Nenhum saque realizado</h3>
+                    <p className="text-sm text-zinc-500 max-w-sm">
+                      Quando você realizar saques, eles aparecerão aqui. O processamento leva até 3 dias úteis.
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -338,12 +277,12 @@ export default function Financeiro() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-zinc-950/50 border-b border-zinc-800/50">
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">ID</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Produto</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Cliente</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Valor</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Data</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">ID</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Produto</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Cliente</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Valor</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Data</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800/30">
@@ -351,52 +290,52 @@ export default function Financeiro() {
                       const product = products?.find(p => p.id === sale.productId);
                       return (
                         <tr key={sale.id} className="hover:bg-zinc-800/20 transition-colors">
-                            <td className="px-6 py-4">
-                              <span className="text-xs font-medium text-zinc-500">
-                                #{sale.paypalOrderId ? sale.paypalOrderId.slice(-8) : String(sale.id).padStart(8, '0')}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="text-sm font-bold text-white truncate block max-w-[200px]">
-                                {product?.name || "Produto Removido"}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="text-sm text-zinc-300 truncate block max-w-[150px]">
-                                {sale.customerEmail?.split('@')[0] || "Cliente"}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="text-sm font-bold text-white">
-                                {new Intl.NumberFormat('pt-BR', { 
-                                  style: 'currency', 
-                                  currency: 'BRL' 
-                                }).format((sale.amount || 0) / 100)}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              {sale.status === 'paid' ? (
-                                <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-3 py-1 rounded-full w-fit">
-                                  <Check className="w-3 h-3" />
-                                  <span className="text-[10px] font-bold uppercase tracking-wider">Aprovada</span>
-                                </div>
-                              ) : sale.status === 'pending' ? (
-                                <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 px-3 py-1 rounded-full w-fit">
-                                  <Clock className="w-3 h-3" />
-                                  <span className="text-[10px] font-bold uppercase tracking-wider">Pendente</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1.5 bg-zinc-500/10 text-zinc-500 border border-zinc-500/20 px-3 py-1 rounded-full w-fit">
-                                  <AlertCircle className="w-3 h-3" />
-                                  <span className="text-[10px] font-bold uppercase tracking-wider">{sale.status}</span>
-                                </div>
-                              )}
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="text-xs text-zinc-400">
-                                {sale.createdAt ? format(new Date(sale.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "-"}
-                              </span>
-                            </td>
+                          <td className="px-6 py-4">
+                            <span className="text-xs font-medium text-zinc-500">
+                              #{sale.paypalOrderId ? sale.paypalOrderId.slice(-8) : String(sale.id).padStart(8, '0')}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm font-bold text-white truncate block max-w-[200px]">
+                              {product?.name || "Produto Removido"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm text-zinc-300 truncate block max-w-[150px]">
+                              {sale.customerEmail?.split('@')[0] || "Cliente"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm font-bold text-white">
+                              {new Intl.NumberFormat('pt-BR', { 
+                                style: 'currency', 
+                                currency: 'BRL' 
+                              }).format((sale.amount || 0) / 100)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            {sale.status === 'paid' ? (
+                              <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-3 py-1 rounded-full w-fit">
+                                <Check className="w-3 h-3" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider">Aprovada</span>
+                              </div>
+                            ) : sale.status === 'pending' ? (
+                              <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 px-3 py-1 rounded-full w-fit">
+                                <Clock className="w-3 h-3" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider">Pendente</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5 bg-zinc-500/10 text-zinc-500 border border-zinc-500/20 px-3 py-1 rounded-full w-fit">
+                                <AlertCircle className="w-3 h-3" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider">{sale.status}</span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-xs font-medium text-zinc-400">
+                              {sale.createdAt ? format(new Date(sale.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "-"}
+                            </span>
+                          </td>
                         </tr>
                       );
                     })}
@@ -613,6 +552,7 @@ export default function Financeiro() {
               </Button>
             </div>
           </div>
+        </div>
       )}
     </Layout>
   );

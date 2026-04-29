@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, uuid, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -184,24 +184,29 @@ export const sales = pgTable("sales", {
   utmTerm: text("utm_term"),
 });
 
-// New: Withdrawals table
-export const withdrawals = pgTable("withdrawals", {
+export const pushSubscriptions = pgTable("push_subscriptions", {
   id: serial("id").primaryKey(),
-  userId: uuid("user_id").notNull(), // auth user id (uuid)
-  amount: integer("amount").notNull(), // in cents
-  pixKey: text("pix_key").notNull(),
-  pixKeyType: text("pix_key_type").default("email"), // email, cpf, phone, random
-  status: text("status").notNull().default("pending"), // pending, approved, rejected, completed
-  requestedAt: timestamp("requested_at").defaultNow(),
-  processedAt: timestamp("processed_at"),
-  adminNote: text("admin_note"),
+  userId: uuid("user_id"), // auth user id
+  subscription: jsonb("subscription").notNull(),
+  endpoint: text("endpoint").unique().notNull(), // to prevent duplicates
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
-export type Withdrawal = typeof withdrawals.$inferSelect;
-export type InsertWithdrawal = z.infer<typeof insertWithdrawalSchema>;
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: uuid("user_id"), // auth user id
+  type: text("type").notNull(), // PURCHASE_APPROVED, NEW_LESSON, etc.
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  read: boolean("read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
 
-export const insertWithdrawalSchema = createInsertSchema(withdrawals).omit({ id: true, requestedAt: true, processedAt: true });
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+// Schemas
 export const insertProductSchema = createInsertSchema(products).omit({ id: true, createdAt: true });
 export const insertCheckoutSchema = createInsertSchema(checkouts).omit({ id: true, ownerId: true, createdAt: true, views: true });
 export const insertSettingsSchema = createInsertSchema(settings).omit({ id: true, userId: true });
@@ -242,22 +247,3 @@ export type DashboardStats = {
 
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
-
-// New types for withdrawals
-export const pushSubscriptions = pgTable("push_subscriptions", {
-  id: serial("id").primaryKey(),
-  userId: uuid("user_id"), // auth user id
-  subscription: jsonb("subscription").notNull(),
-  endpoint: text("endpoint").unique().notNull(), // to prevent duplicates
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const notifications = pgTable("notifications", {
-  id: serial("id").primaryKey(),
-  userId: uuid("user_id"), // auth user id
-  type: text("type").notNull(), // PURCHASE_APPROVED, NEW_LESSON, etc.
-  title: text("title").notNull(),
-  body: text("body").notNull(),
-  read: boolean("read").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-});
