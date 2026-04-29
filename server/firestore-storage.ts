@@ -444,6 +444,20 @@ export class FirestoreStorage {
         };
       });
 
+      // Fetch views from checkouts
+      const checkoutsSnapshot = await adminDb.collection("checkouts").where("owner_id", "==", userId).get();
+      let totalViews = 0;
+      checkoutsSnapshot.forEach(doc => {
+        const data = doc.data();
+        if (productId && productId !== "all") {
+          if (String(data.product_id ?? data.productId) === String(productId)) {
+            totalViews += (data.views || 0);
+          }
+        } else {
+          totalViews += (data.views || 0);
+        }
+      });
+
       const now = new Date();
       let startDate = new Date();
       startDate.setHours(0, 0, 0, 0);
@@ -472,6 +486,7 @@ export class FirestoreStorage {
       }
 
       const totalRevenue = filteredSales.reduce((sum: number, s: any) => sum + (Number(s.amount) || 0), 0);
+      const conversionRate = totalViews > 0 ? (filteredSales.length / totalViews) * 100 : 0;
       
       // Chart Data
       const chartData: { name: string; sales: number }[] = [];
@@ -504,13 +519,14 @@ export class FirestoreStorage {
         salesToday: totalRevenue / 100,
         revenuePaid: totalRevenue / 100,
         salesApproved: filteredSales.length,
+        conversionRate,
         revenueTarget: 10000,
         revenueCurrent: totalRevenue / 100,
         chartData,
       };
     } catch (error) {
       console.error("Error getting dashboard stats:", error);
-      return { salesToday: 0, revenuePaid: 0, salesApproved: 0, revenueTarget: 10000, revenueCurrent: 0, chartData: [] };
+      return { salesToday: 0, revenuePaid: 0, salesApproved: 0, conversionRate: 0, revenueTarget: 10000, revenueCurrent: 0, chartData: [] };
     }
   }
 }

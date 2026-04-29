@@ -1,7 +1,7 @@
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useStats } from "@/hooks/use-stats";
-import { Loader2, PackageX, Eye, EyeOff, Calendar as CalendarIcon } from "lucide-react";
+import { Loader2, PackageX, Eye, EyeOff, Calendar as CalendarIcon, TrendingUp } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -65,6 +65,7 @@ export default function Dashboard() {
   const { data: products, isLoading: productsLoading } = useProducts();
   const [showSales, setShowSales] = useState(true);
   const [showQty, setShowQty] = useState(true);
+  const [showConversion, setShowConversion] = useState(true);
 
   const { data: autoCurrency } = useAutoCurrency();
   const { data: usdRates } = useUsdRates();
@@ -257,7 +258,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="bg-card border-border/60 shadow-lg transition-all duration-300 group relative overflow-hidden hover:border-primary/50 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.25)]">
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-md" />
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4">
@@ -290,11 +291,31 @@ export default function Dashboard() {
               className="h-7 w-7 text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setShowQty(!showQty)}
             >
-              {showQty ? stats?.salesApproved || 0 : "••••"}
+              {showQty ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
             </Button>
           </CardHeader>
           <CardContent className="pb-4">
             <div className="text-xl font-bold text-foreground mb-0.5">{showQty ? stats?.salesApproved || 0 : "••••"}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-border/60 shadow-lg transition-all duration-300 group relative overflow-hidden hover:border-primary/50 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.25)]">
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-md" />
+          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4">
+            <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">Taxa de conversão</CardTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setShowConversion(!showConversion)}
+            >
+              {showConversion ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+            </Button>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <div className="text-xl font-bold text-foreground mb-0.5">
+              {showConversion ? `${(stats?.conversionRate || 0).toFixed(2)}%` : "••••"}
+            </div>
           </CardContent>
         </Card>
       </div>
