@@ -11,6 +11,8 @@ import {
   User,
   BarChart3,
   DollarSign,
+  Folder,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStats } from "@/hooks/use-stats";
@@ -24,6 +26,7 @@ const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 export function Sidebar() {
   const [location, setLocation] = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(location.startsWith("/settings"));
+  const [productsOpen, setProductsOpen] = useState(location.startsWith("/products") || location.startsWith("/members-area"));
 
   const searchParams = new URLSearchParams(window.location.search);
   const currentTab = searchParams.get("tab") || "integracao";
@@ -33,10 +36,14 @@ export function Sidebar() {
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/products", label: "Produtos", icon: Package },
     { href: "/checkouts", label: "Checkouts", icon: ShoppingCart },
     { href: "/sales", label: "Vendas", icon: Receipt },
     { href: "/financeiro", label: "Financeiro", icon: DollarSign },
+  ];
+
+  const productSubItems = [
+    { href: "/products", label: "Meus produtos" },
+    { href: "/members-area", label: "Área de membros" },
   ];
 
   const settingSubItems = [
@@ -115,23 +122,90 @@ export function Sidebar() {
         </div>
 
         <nav className="px-4 py-2 space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location === item.href;
-            return (
-              <Link key={item.href} href={item.href}>
-                <button
-                  className={cn(
-                    "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-                    isActive ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
-                  )}
-                >
-                  <Icon size={18} strokeWidth={2.5} />
-                  {item.label}
-                </button>
-              </Link>
-            );
-          })}
+          <Link href="/dashboard">
+            <button
+              className={cn(
+                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+                location === "/dashboard" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+              )}
+            >
+              <LayoutDashboard size={18} strokeWidth={2.5} />
+              Dashboard
+            </button>
+          </Link>
+
+          {/* Collapsible Products Menu */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setProductsOpen(!productsOpen)}
+              className={cn(
+                "w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+                (location.startsWith("/products") || location.startsWith("/members-area")) ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+              )}
+            >
+              <div className="flex items-center gap-4">
+                <Folder size={18} strokeWidth={2.5} />
+                Produtos
+              </div>
+              <ChevronDown size={16} className={cn("transition-transform duration-200", productsOpen && "rotate-180")} />
+            </button>
+
+            {productsOpen && (
+              <div className="space-y-1 ml-4 border-l border-border pl-2">
+                {productSubItems.map((item) => {
+                  const isActive = location === item.href;
+                  return (
+                    <Link key={item.href} href={item.href}>
+                      <button
+                        className={cn(
+                          "w-full flex items-center gap-3 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm",
+                          isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                        )}
+                      >
+                        {item.label}
+                      </button>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <Link href="/checkouts">
+            <button
+              className={cn(
+                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+                location === "/checkouts" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+              )}
+            >
+              <ShoppingCart size={18} strokeWidth={2.5} />
+              Checkouts
+            </button>
+          </Link>
+
+          <Link href="/sales">
+            <button
+              className={cn(
+                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+                location === "/sales" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+              )}
+            >
+              <Receipt size={18} strokeWidth={2.5} />
+              Vendas
+            </button>
+          </Link>
+
+          <Link href="/financeiro">
+            <button
+              className={cn(
+                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+                location === "/financeiro" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+              )}
+            >
+              <DollarSign size={18} strokeWidth={2.5} />
+              Financeiro
+            </button>
+          </Link>
 
           <div className="space-y-1">
             <button

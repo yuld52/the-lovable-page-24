@@ -3,12 +3,13 @@ import { useSales } from "@/hooks/use-sales";
 import { useProducts } from "@/hooks/use-products";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Receipt, Search, Calendar, User, Package, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { Loader2, Receipt, Search, Calendar, User, Package, CheckCircle2, Clock, AlertCircle, FileText } from "lucide-react";
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
 export default function Sales() {
   const { data: sales, isLoading: loadingSales } = useSales();
@@ -35,10 +36,15 @@ export default function Sales() {
     }).format(cents / 100);
   };
 
+  const handleExportPDF = () => {
+    // Placeholder for PDF export logic
+    alert("Exportando relatório de vendas em PDF...");
+  };
+
   return (
     <Layout title="Vendas" subtitle="Acompanhe suas transações em tempo real">
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <div className="relative flex-1">
+      <div className="flex flex-col md:flex-row gap-4 mb-8 items-center">
+        <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <Input
             placeholder="Buscar por e-mail ou produto..."
@@ -61,6 +67,13 @@ export default function Sales() {
             </SelectContent>
           </Select>
         </div>
+        <Button 
+          onClick={handleExportPDF}
+          className="bg-[#18181b] hover:bg-zinc-800 text-white border border-zinc-800 h-11 px-6 rounded-xl flex items-center gap-3 font-bold"
+        >
+          <FileText className="w-4 h-4" />
+          Exportar PDF
+        </Button>
       </div>
 
       {loadingSales ? (

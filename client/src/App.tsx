@@ -25,6 +25,7 @@ import AdminProducts from "@/pages/AdminProducts";
 import AdminUsers from "@/pages/AdminUsers";
 import AdminSettings from "@/pages/AdminSettings";
 import Profile from "@/pages/Profile";
+import MembersArea from "@/pages/MembersArea";
 import { ChatSupport } from "@/components/ChatSupport";
 import { useUser } from "@/hooks/use-user";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -70,6 +71,7 @@ function Router() {
       <Route path="/financeiro" component={Financeiro} />
       <Route path="/settings" component={Settings} />
       <Route path="/profile" component={Profile} />
+      <Route path="/members-area" component={MembersArea} />
       
       {/* Admin Routes */}
       <Route path="/admin-login" component={AdminLogin} />
