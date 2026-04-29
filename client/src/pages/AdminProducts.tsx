@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, Clock, CheckCircle2, XCircle, Check, ArrowLeft } from "lucide-react";
+import { Loader2, Clock, CheckCircle2, XCircle, Check, ArrowLeft, Package } from "lucide-react";
 import { useAdminProducts, useAdminApproveProduct, useAdminRejectProduct } from "@/hooks/use-admin";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";

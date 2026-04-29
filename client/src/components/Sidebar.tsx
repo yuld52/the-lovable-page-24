@@ -34,7 +34,7 @@ export function Sidebar() {
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/products", label: "Produtos", icon: Package },
-    { href: "/checkouts", label: "Checkouts", label: "Checkouts", icon: ShoppingCart },
+    { href: "/checkouts", label: "Checkouts", icon: ShoppingCart },
     { href: "/sales", label: "Vendas", icon: Receipt },
     { href: "/financeiro", label: "Financeiro", icon: DollarSign },
   ];

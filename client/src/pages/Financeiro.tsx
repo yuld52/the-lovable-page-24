@@ -1,6 +1,6 @@
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { DollarSign, ArrowDownToLine, History, Loader2, PieChart, CreditCard, Plus, Trash2 } from "lucide-react";
+import { DollarSign, ArrowDownToLine, History, Loader2, PieChart, CreditCard, Plus, Trash2, Check, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -21,7 +21,7 @@ export default function Financeiro() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"visao" | "historico" | "contas">("visao");
   const [showAddAccount, setShowAddAccount] = useState(false);
-  const [newAccount, setNewAccount] = useState({ bank: "", agency: "", account: "", type: "checking" | "savings" });
+  const [newAccount, setNewAccount] = useState<{ bank: string; agency: string; account: string; type: "checking" | "savings" }>({ bank: "", agency: "", account: "", type: "checking" });
 
   const { data: stats, isLoading: statsLoading } = useStats();
   const { data: sales, isLoading: salesLoading } = useSales();

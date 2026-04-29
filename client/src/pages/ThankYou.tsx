@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, Mail, ArrowLeft, Download, Star, Gift, Clock } from "lucide-react";
+import { CheckCircle2, Mail, ArrowLeft, Download, Star, Gift, Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSales } from "@/hooks/use-sales";
 import { useProducts } from "@/hooks/use-products";

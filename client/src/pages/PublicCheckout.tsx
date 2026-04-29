@@ -10,7 +10,8 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { db } from "@/lib/firebase";
 import { collection, doc, getDoc, getDocs, query, where, limit } from "firebase/firestore";
-import { useAutoCurrency, useAutoLanguage, useUsdRates } from "@/hooks/use-currency";
+import { useAutoCurrency, useUsdRates } from "@/hooks/use-currency";
+import { useAutoLanguage } from "@/hooks/use-language";
 import {
     convertUsdCentsToCurrencyMinor,
     formatMoney,

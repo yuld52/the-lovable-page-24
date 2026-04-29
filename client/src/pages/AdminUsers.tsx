@@ -6,7 +6,7 @@ import { Loader2, Users, UserPlus, Trash2, ArrowLeft, Search } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { auth, adminAuth } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
