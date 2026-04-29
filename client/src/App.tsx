@@ -26,6 +26,7 @@ import AdminUsers from "@/pages/AdminUsers";
 import AdminSettings from "@/pages/AdminSettings";
 import Profile from "@/pages/Profile";
 import MembersArea from "@/pages/MembersArea";
+import Afiliados from "@/pages/Afiliados";
 import { ChatSupport } from "@/components/ChatSupport";
 import { useUser } from "@/hooks/use-user";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -72,6 +73,7 @@ function Router() {
       <Route path="/settings" component={Settings} />
       <Route path="/profile" component={Profile} />
       <Route path="/members-area" component={MembersArea} />
+      <Route path="/afiliados" component={Afiliados} />
       
       {/* Admin Routes */}
       <Route path="/admin-login" component={AdminLogin} />
