@@ -13,9 +13,10 @@ export function useStats(period?: string, productId?: string, startDate?: string
           salesToday: 0,
           revenuePaid: 0,
           salesApproved: 0,
+          conversionRate: 0,
           revenueTarget: 10000,
           revenueCurrent: 0,
-          chartData: [],
+          chartData: [] as { name: string; sales: number }[],
         };
       }
 
@@ -27,9 +28,7 @@ export function useStats(period?: string, productId?: string, startDate?: string
       if (endDate) params.append("endDate", endDate);
 
       const response = await fetch(`/api/stats?${params.toString()}`, {
-        headers: {
-          "Authorization": `Bearer ${idToken}`
-        }
+        headers: { "Authorization": `Bearer ${idToken}` }
       });
 
       if (!response.ok) {
