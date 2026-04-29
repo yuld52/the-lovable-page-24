@@ -11,12 +11,18 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useUser } from "@/hooks/use-user";
+import { useLocation } from "wouter";
+import { UserCircle } from "lucide-react";
 
 export function Header({ title, subtitle }: { title: string; subtitle?: string }) {
   const [date, setDate] = React.useState<DateRange | undefined>({
     from: new Date(2026, 0, 1),
     to: new Date(2026, 0, 29),
   });
+  
+  const { user } = useUser();
+  const [, setLocation] = useLocation();
 
   return (
     <header className="h-28 border-b border-border/50 bg-background/80 backdrop-blur-md px-8 flex items-center justify-between w-full shrink-0">
@@ -26,7 +32,16 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
       </div>
 
       <div className="flex items-center gap-6">
-        {/* User Pill removed per user request */}
+        {/* User Profile Icon */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-10 w-10 rounded-full hover:bg-accent"
+          onClick={() => setLocation("/settings")}
+          title="Perfil"
+        >
+          <UserCircle className="h-5 w-5 text-foreground" />
+        </Button>
       </div>
     </header>
   );
