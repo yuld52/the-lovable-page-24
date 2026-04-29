@@ -74,7 +74,6 @@ export const checkouts = pgTable("checkouts", {
     showAddress: false,
     checkoutLanguage: "AUTO",
     checkoutCurrency: "AUTO",
-    previewCurrency: "AUTO",
   }),
 });
 
@@ -184,6 +183,20 @@ export const sales = pgTable("sales", {
   utmTerm: text("utm_term"),
 });
 
+// Withdrawals table
+export const withdrawals = pgTable("withdrawals", {
+  id: serial("id").primaryKey(),
+  userId: uuid("user_id"), // auth user id (uuid)
+  amount: integer("amount").notNull(), // in cents
+  pixKey: text("pix_key").notNull(),
+  method: text("method").default("pix"),
+  status: text("status").notNull().default("pending"), // pending, approved, rejected
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type Withdrawal = typeof withdrawals.$inferSelect;
+export type InsertWithdrawal = typeof withdrawals.$inferInsert;
+
 export const pushSubscriptions = pgTable("push_subscriptions", {
   id: serial("id").primaryKey(),
   userId: uuid("user_id"), // auth user id
@@ -211,6 +224,7 @@ export const insertProductSchema = createInsertSchema(products).omit({ id: true,
 export const insertCheckoutSchema = createInsertSchema(checkouts).omit({ id: true, ownerId: true, createdAt: true, views: true });
 export const insertSettingsSchema = createInsertSchema(settings).omit({ id: true, userId: true });
 export const insertSaleSchema = createInsertSchema(sales).omit({ id: true, createdAt: true });
+export const insertWithdrawalSchema = createInsertSchema(withdrawals).omit({ id: true, createdAt: true });
 
 // Types
 export type Product = typeof products.$inferSelect;
@@ -224,6 +238,8 @@ export type InsertSettings = z.infer<typeof insertSettingsSchema>;
 
 export type Sale = typeof sales.$inferSelect;
 export type InsertSale = z.infer<typeof insertSaleSchema>;
+
+export type InsertWithdrawal = z.infer<typeof insertWithdrawalSchema>;
 
 // Request Types
 export type CreateProductRequest = InsertProduct;

@@ -476,6 +476,94 @@ export async function registerRoutes(
     }
   });
 
+  // Withdrawals (Admin only)
+  app.get("/api/admin/withdrawals", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      
+      const client = await import("./neon-storage").then(m => m.getPool().connect());
+      try {
+        const result = await client.query(`
+          SELECT w.*, u.email as user_email 
+          FROM withdrawals w
+          LEFT JOIN users u ON w.user_id = u.id::text
+          ORDER BY w.created_at DESC
+        `);
+        res.json(result.rows);
+      } finally {
+        client.release();
+      }
+    } catch (err: any) {
+      console.error("Error getting withdrawals:", err);
+      res.status(500).json({ message: err.message || "Erro ao buscar saques" });
+    }
+  });
+
+  app.patch("/api/admin/withdrawals/:id", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      
+      const { status } = req.body;
+      if (!['approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ message: "Status inválido" });
+      }
+
+      const client = await import("./neon-storage").then(m => m.getPool().connect());
+      try {
+        const result = await client.query(`
+          UPDATE withdrawals 
+          SET status = $1 
+          WHERE id = $2 
+          RETURNING *
+        `, [status, parseInt(req.params.id)]);
+        
+        if (result.rows.length === 0) {
+          return res.status(404).json({ message: "Saque não encontrado" });
+        }
+        
+        res.json(result.rows[0]);
+      } finally {
+        client.release();
+      }
+    } catch (err: any) {
+      console.error("Error updating withdrawal:", err);
+      res.status(500).json({ message: err.message || "Erro ao atualizar saque" });
+    }
+  });
+
+  app.post("/api/withdrawals", requireAuth, async (req, res) => {
+    try {
+      const userId = String((req as any).user?.id || "");
+      const { amount, pixKey, method } = req.body;
+      
+      if (!amount || !pixKey) {
+        return res.status(400).json({ message: "Campos obrigatórios" });
+      }
+
+      const client = await import("./neon-storage").then(m => m.getPool().connect());
+      try {
+        const result = await client.query(`
+          INSERT INTO withdrawals (user_id, amount, pix_key, method, status)
+          VALUES ($1, $2, $3, $4, 'pending')
+          RETURNING *
+        `, [userId, amount, pixKey, method || 'pix']);
+        
+        res.status(201).json(result.rows[0]);
+      } finally {
+        client.release();
+      }
+    } catch (err: any) {
+      console.error("Error creating withdrawal:", err);
+      res.status(500).json({ message: err.message || "Erro ao solicitar saque" });
+    }
+  });
+
   // Database test endpoint
   app.get("/api/db-test", async (_req, res) => {
     try {
