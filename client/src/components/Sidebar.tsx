@@ -34,13 +34,12 @@ export function Sidebar() {
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/products", label: "Produtos", icon: Package },
-    { href: "/checkouts", label: "Checkouts", icon: ShoppingCart },
+    { href: "/checkouts", label: "Checkouts", label: "Checkouts", icon: ShoppingCart },
     { href: "/sales", label: "Vendas", icon: Receipt },
     { href: "/financeiro", label: "Financeiro", icon: DollarSign },
   ];
 
   const settingSubItems = [
-    { href: "/settings?tab=usuario", label: "Usuários", icon: User, adminOnly: true },
     { href: "/settings?tab=integracao", label: "Integração", icon: BarChart3 },
   ];
 
@@ -152,9 +151,6 @@ export function Sidebar() {
             {settingsOpen && (
               <div className="space-y-1 ml-4 border-l border-border pl-2">
                 {settingSubItems.map((item) => {
-                  // Only show "Usuários" to admin
-                  if (item.adminOnly && !isAdmin) return null;
-                  
                   const Icon = item.icon;
                   const itemTab = new URLSearchParams(item.href.split("?")[1]).get("tab");
                   const isActive = location === "/settings" && currentTab === itemTab;
