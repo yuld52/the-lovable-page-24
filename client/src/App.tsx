@@ -30,21 +30,21 @@ import FAQ from "@/pages/FAQ";
 import { ChatSupport } from "@/components/ChatSupport";
 import { useUser } from "@/hooks/use-user";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 function Router() {
   const [params, setLocation] = useRoute("/:any*");
 
   useEffect(() => {
     const hostname = window.location.hostname;
-    const isPayDomain = hostname === "pay.meteorfy.online";
     const path = window.location.pathname;
-
-    // Se estiver no domínio de pagamento (pay.), só permite o checkout
-    if (isPayDomain && !path.startsWith("/checkout")) {
+    
+    // Only redirect if on the payment subdomain and NOT accessing a checkout
+    if (hostname === "pay.meteorfy.online" && !path.startsWith("/checkout")) {
       window.location.href = "https://app.meteorfy.online";
     }
 
-    // Define o título padrão para as páginas do app (Login, Dashboard, etc.)
+    // Set default title
     if (!path.startsWith("/checkout") && !path.startsWith("/admin") && !path.startsWith("/faq")) {
       document.title = "Meteorfy - Plataforma de Vendas";
     } else if (path.startsWith("/admin")) {
@@ -52,7 +52,6 @@ function Router() {
     } else if (path.startsWith("/faq")) {
       document.title = "Meteorfy - Central de Ajuda";
     }
-
   }, []);
 
   return (
@@ -98,14 +97,16 @@ function App() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Router />
-        <Toaster />
-        {/* Chat AI só aparece após login */}
-        {user && <ChatSupport />}
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Router />
+          <Toaster />
+          {/* Chat AI só aparece após login */}
+          {user && <ChatSupport />}
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

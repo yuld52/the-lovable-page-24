@@ -13,6 +13,8 @@ import { getVapidPublicKey, saveSubscription } from "./services/notification";
 import { registerTrackingRoutes } from "./trackingRoutes";
 import { registerChatRoutes } from "./chat";
 
+const ADMIN_EMAIL = "yuldchissico11@gmail.com";
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -70,15 +72,14 @@ export async function registerRoutes(
   // Products
   app.get(api.products.list.path, requireAuth, async (req, res) => {
     const userId = String((req as any).user?.id || "");
-    const status = req.query.status as string;
-    res.json(await storage.getProducts(userId, status));
+    res.json(await storage.getProducts(userId));
   });
 
   // Admin: Get ALL products (no user filter)
   app.get("/api/admin/products", requireAuth, async (req, res) => {
     try {
       const user = (req as any).user;
-      if (user?.email !== "yuldchissico11@gmail.com") {
+      if (user?.email !== ADMIN_EMAIL) {
         return res.status(403).json({ message: "Acesso negado" });
       }
       const snapshot = await adminDb.collection("products").get();
@@ -145,7 +146,7 @@ export async function registerRoutes(
   app.post("/api/products/:id/approve", requireAuth, async (req, res) => {
     try {
       const user = (req as any).user;
-      if (user?.email !== "yuldchissico11@gmail.com") {
+      if (user?.email !== ADMIN_EMAIL) {
         return res.status(403).json({ message: "Acesso negado" });
       }
       const id = parseInt(req.params.id as string);
@@ -159,7 +160,7 @@ export async function registerRoutes(
   app.post("/api/products/:id/reject", requireAuth, async (req, res) => {
     try {
       const user = (req as any).user;
-      if (user?.email !== "yuldchissico11@gmail.com") {
+      if (user?.email !== ADMIN_EMAIL) {
         return res.status(403).json({ message: "Acesso negado" });
       }
       const id = parseInt(req.params.id as string);
@@ -180,7 +181,7 @@ export async function registerRoutes(
   app.get("/api/admin/checkouts", requireAuth, async (req, res) => {
     try {
       const user = (req as any).user;
-      if (user?.email !== "yuldchissico11@gmail.com") {
+      if (user?.email !== ADMIN_EMAIL) {
         return res.status(403).json({ message: "Acesso negado" });
       }
       const snapshot = await adminDb.collection("checkouts").get();
@@ -363,20 +364,20 @@ export async function registerRoutes(
 
   // User Management
   app.get("/api/users-v2", requireAuth, async (req, res) => {
-    if ((req as any).user?.email !== "yuldchissico11@gmail.com") return res.status(403).json({ message: "Acesso negado." });
+    if ((req as any).user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado." });
     const list = await adminAuth.listUsers(1000);
     res.json(list.users.map(u => ({ id: u.uid, email: u.email, username: u.displayName || u.email, createdAt: u.metadata.creationTime })));
   });
 
   app.delete("/api/users-v2/:uid", requireAuth, async (req, res) => {
-    if ((req as any).user?.email !== "yuldchissico11@gmail.com") return res.status(403).json({ message: "Acesso negado." });
+    if ((req as any).user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado." });
     const uid = Array.isArray(req.params.uid) ? req.params.uid[0] : req.params.uid;
     await adminAuth.deleteUser(uid);
     res.json({ success: true });
   });
 
   app.post("/api/users-v2", requireAuth, async (req, res) => {
-    if ((req as any).user?.email !== "yuldchissico11@gmail.com") return res.status(403).json({ message: "Acesso negado." });
+    if ((req as any).user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado." });
     const { email, password } = req.body;
     const user = await adminAuth.createUser({ email, password, emailVerified: true });
     res.status(201).json({ id: user.uid, email: user.email, success: true });

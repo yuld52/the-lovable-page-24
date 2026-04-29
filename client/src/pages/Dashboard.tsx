@@ -1,7 +1,7 @@
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useStats } from "@/hooks/use-stats";
-import { Loader2, PackageX, Eye, EyeOff, Calendar as CalendarIcon, TrendingUp } from "lucide-react";
+import { Loader2, PackageX, Eye, EyeOff, CalendarIcon, TrendingUp } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -185,8 +185,6 @@ export default function Dashboard() {
               <SelectItem value="AUD">AUD - Dólar Australiano</SelectItem>
               <SelectItem value="JPY">JPY - Iene Japonês</SelectItem>
               <SelectItem value="MXN">MXN - Peso Mexicano</SelectItem>
-              <SelectItem value="ARS">ARS - Peso Argentino</SelectItem>
-              <SelectItem value="CLP">CLP - Peso Chileno</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -262,7 +260,7 @@ export default function Dashboard() {
         <Card className="bg-card border-border/60 shadow-lg transition-all duration-300 group relative overflow-hidden hover:border-primary/50 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.25)]">
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-md" />
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">Vendas realizadas</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">VENDAS REALIZADAS</CardTitle>
             <Button
               variant="ghost"
               size="icon"
@@ -284,7 +282,7 @@ export default function Dashboard() {
         <Card className="bg-card border-border/60 shadow-lg transition-all duration-300 group relative overflow-hidden hover:border-primary/50 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.25)]">
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-md" />
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">Quantidade de vendas</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">QUANTIDADE DE VENDAS</CardTitle>
             <Button
               variant="ghost"
               size="icon"
@@ -302,7 +300,7 @@ export default function Dashboard() {
         <Card className="bg-card border-border/60 shadow-lg transition-all duration-300 group relative overflow-hidden hover:border-primary/50 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.25)]">
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-md" />
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">Taxa de conversão</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">TAXA DE CONVERSÃO</CardTitle>
             <Button
               variant="ghost"
               size="icon"

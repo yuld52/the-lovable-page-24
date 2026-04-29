@@ -126,7 +126,11 @@ export function useApproveProduct() {
         headers: { "Authorization": `Bearer ${idToken}` }
       });
 
-      if (!response.ok) throw new Error("Erro ao aprovar produto");
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || "Erro ao aprovar produto");
+      }
+
       return response.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
@@ -146,7 +150,11 @@ export function useRejectProduct() {
         headers: { "Authorization": `Bearer ${idToken}` }
       });
 
-      if (!response.ok) throw new Error("Erro ao rejeitar produto");
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || "Erro ao rejeitar produto");
+      }
+
       return response.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
