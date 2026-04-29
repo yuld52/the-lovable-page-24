@@ -2,10 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { useSettings, useUpdateSettings } from "@/hooks/use-settings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Save, User, Shield, Bell, History, Settings as SettingsIcon, CheckCircle2, Trash2, Eye, EyeOff, Search, UserPlus, Filter, MoreHorizontal, Download, Webhook } from "lucide-react";
+import { Loader2, Save, User, Shield, Bell, History, Settings as SettingsIcon, CheckCircle2, Trash2, Search, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
@@ -15,23 +12,19 @@ import { apiRequest } from "@/lib/queryClient";
 import { useUser } from "@/hooks/use-user";
 import { enablePush } from "@/lib/push";
 
-import facebookFavicon from "@/assets/facebook-favicon.ico";
-import utmifyLogo from "@/assets/utmify-logo.jfif";
-
 export default function Settings() {
   const [isActivating, setIsActivating] = useState(false);
   const [activationStep, setActivationStep] = useState(0);
-  const [openDialog, setOpenDialog] = useState<"webhook" | "pixel" | "utmfy" | null>(null);
 
   const [activeTab, setActiveTab] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get("tab") || "integracao";
+    return params.get("tab") || "usuario";
   });
 
   useEffect(() => {
     const handleLocationChange = () => {
       const params = new URLSearchParams(window.location.search);
-      const tab = params.get("tab") || "integracao";
+      const tab = params.get("tab") || "usuario";
       setActiveTab(tab);
     };
 
@@ -115,50 +108,10 @@ export default function Settings() {
     }
   };
 
-  const [form, setForm] = useState({
-    paypalClientId: "",
-    paypalClientSecret: "",
-    paypalWebhookId: "",
-    facebookPixelId: "",
-    facebookAccessToken: "",
-    utmfyToken: "",
-    environment: "production",
-    checkoutLanguage: "AUTO" as any,
-    metaEnabled: true,
-    utmfyEnabled: true,
-    trackTopFunnel: true,
-    trackCheckout: true,
-    trackPurchaseRefund: true,
-    salesNotifications: false,
-  });
-
-  useEffect(() => {
-    if (settings) {
-      setForm({
-        paypalClientId: settings.paypalClientId || "",
-        paypalClientSecret: settings.paypalClientSecret || "",
-        paypalWebhookId: settings.paypalWebhookId || "",
-        facebookPixelId: settings.facebookPixelId || "",
-        facebookAccessToken: (settings as any).facebookAccessToken || "",
-        utmfyToken: settings.utmfyToken || "",
-        environment: "production",
-        checkoutLanguage: "AUTO",
-        metaEnabled: true,
-        utmfyEnabled: true,
-        trackTopFunnel: true,
-        trackCheckout: true,
-        trackPurchaseRefund: true,
-        salesNotifications: settings.salesNotifications === true,
-      });
-    }
-  }, [settings]);
-
   const handleToggleNotifications = async () => {
-    const newState = !form.salesNotifications;
-    const updatedForm = { ...form, salesNotifications: newState };
+    const newState = !settings?.salesNotifications;
     if (!newState) {
-      setForm(updatedForm);
-      updateSettings.mutate(updatedForm);
+      updateSettings.mutate({ salesNotifications: false });
       return;
     }
     setIsActivating(true);
@@ -169,22 +122,11 @@ export default function Settings() {
       setActivationStep(3);
       await enablePush(user);
       setActivationStep(4);
-      setForm(updatedForm);
-      updateSettings.mutate(updatedForm);
+      updateSettings.mutate({ salesNotifications: true });
       setTimeout(() => setIsActivating(false), 1500);
     } catch (err: any) {
       setIsActivating(false);
       toast({ title: "Falha na ativação", description: err?.message, variant: "destructive" });
-    }
-  };
-
-  const handleSave = async () => {
-    try {
-      await updateSettings.mutateAsync(form);
-      toast({ title: "Configurações salvas" });
-      setOpenDialog(null);
-    } catch (error: any) {
-      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
     }
   };
 
@@ -260,133 +202,10 @@ export default function Settings() {
     </div>
   );
 
-  const renderIntegracao = () => (
-    <div className="max-w-6xl animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {/* Webhook Card */}
-        <Card 
-          className="bg-[#18181b] border-zinc-800/60 hover:border-purple-500/50 transition-all cursor-pointer group"
-          onClick={() => setOpenDialog("webhook")}
-        >
-          <CardContent className="pt-8 pb-8 flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
-              <Webhook className="w-10 h-10 text-[#E91E63]" />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-1">Integração Webhook</h3>
-            <p className="text-xs text-zinc-500">Notificações de vendas via URL</p>
-          </CardContent>
-        </Card>
-
-        {/* Meta Pixel Card */}
-        <Card 
-          className="bg-[#18181b] border-zinc-800/60 hover:border-purple-500/50 transition-all cursor-pointer group"
-          onClick={() => setOpenDialog("pixel")}
-        >
-          <CardContent className="pt-8 pb-8 flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-2xl bg-[#1877F2] flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
-              <img src={facebookFavicon} alt="Meta" className="w-10 h-10" />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-1">Pixel da Meta</h3>
-            <p className="text-xs text-zinc-500">ID do pixel para rastreamento</p>
-          </CardContent>
-        </Card>
-
-        {/* UTMify Card */}
-        <Card 
-          className="bg-[#18181b] border-zinc-800/60 hover:border-purple-500/50 transition-all cursor-pointer group"
-          onClick={() => setOpenDialog("utmfy")}
-        >
-          <CardContent className="pt-8 pb-8 flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-2xl bg-black flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform border border-zinc-800">
-              <img src={utmifyLogo} alt="UTMify" className="w-10 h-10 rounded-lg" />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-1">UTMify</h3>
-            <p className="text-xs text-zinc-500">Parâmetros UTM para campanhas</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg max-w-2xl mb-8">
-        <CardHeader><div className="flex items-center gap-2"><Bell size={18} className="text-zinc-400" /><CardTitle className="text-base text-white">Notificações</CardTitle></div></CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-4 bg-zinc-900/40 rounded-xl border border-zinc-800/50">
-            <div><p className="text-sm font-bold text-zinc-200">Alertas de Vendas</p><p className="text-xs text-zinc-500">Avisos em tempo real (Push)</p></div>
-            <div className={cn("w-10 h-5 rounded-full relative cursor-pointer transition-colors", form.salesNotifications ? "bg-purple-600" : "bg-zinc-700")} onClick={handleToggleNotifications}>
-              <div className={cn("absolute top-1 w-3 h-3 bg-white rounded-full transition-all", form.salesNotifications ? "right-1" : "left-1")} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Configuration Dialogs */}
-      <Dialog open={openDialog !== null} onOpenChange={(open) => !open && setOpenDialog(null)}>
-        <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              {openDialog === "webhook" && <><Webhook className="w-5 h-5 text-[#E91E63]" /> Configurar Webhook</>}
-              {openDialog === "pixel" && <><img src={facebookFavicon} className="w-5 h-5" /> Configurar Pixel da Meta</>}
-              {openDialog === "utmfy" && <><img src={utmifyLogo} className="w-5 h-5 rounded" /> Configurar UTMify</>}
-            </DialogTitle>
-            <DialogDescription className="text-zinc-500">
-              {openDialog === "webhook" && "Insira o ID do Webhook do PayPal para receber notificações."}
-              {openDialog === "pixel" && "Configure seu Pixel ID e Access Token para rastreamento."}
-              {openDialog === "utmfy" && "Insira seu token UTMify para rastreamento de campanhas."}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            {openDialog === "webhook" && (
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-400 uppercase">PayPal Webhook ID</label>
-                <Input 
-                  className="bg-zinc-900 border-zinc-800 text-sm h-11" 
-                  value={form.paypalWebhookId} 
-                  onChange={(e) => setForm({ ...form, paypalWebhookId: e.target.value })} 
-                  placeholder="ID do Webhook do PayPal" 
-                />
-              </div>
-            )}
-
-            {openDialog === "pixel" && (
-              <>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase">Pixel ID</label>
-                  <Input className="bg-zinc-900 border-zinc-800 text-sm h-11" value={form.facebookPixelId} onChange={(e) => setForm({ ...form, facebookPixelId: e.target.value })} placeholder="Ex: 123456789012345" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase">Access Token</label>
-                  <div className="relative">
-                    <Input type={showFacebookToken ? "text" : "password"} className="bg-zinc-900 border-zinc-800 text-sm h-11 pr-10" value={form.facebookAccessToken} onChange={(e) => setForm({ ...form, facebookAccessToken: e.target.value })} placeholder="Cole aqui o token" />
-                    <button type="button" onClick={() => setShowFacebookToken(!showFacebookToken)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500">{showFacebookToken ? <EyeOff size={16} /> : <Eye size={16} />}</button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {openDialog === "utmfy" && (
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-400 uppercase">UTMify Token</label>
-                <Input className="bg-zinc-900 border-zinc-800 text-sm h-11" value={form.utmfyToken} onChange={(e) => setForm({ ...form, utmfyToken: e.target.value })} placeholder="Insira seu token UTMify" />
-              </div>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpenDialog(null)}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={updateSettings.isPending} className="bg-purple-600 hover:bg-purple-500 text-white font-bold">
-              {updateSettings.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar Alterações"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-
   return (
     <Layout title={activeTab === "usuario" ? "Gerenciar Usuários" : "Integração"} subtitle={activeTab === "usuario" ? "Visualize e gerencie usuários" : "Configure suas integrações"}>
       <div className="flex flex-col gap-6">
         {activeTab === "usuario" && renderUsuario()}
-        {activeTab === "integracao" && renderIntegracao()}
       </div>
       <Dialog open={isActivating} onOpenChange={setIsActivating}>
         <DialogContent className="bg-zinc-950 border-zinc-800 text-white">
