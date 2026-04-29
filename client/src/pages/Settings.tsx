@@ -214,8 +214,8 @@ export default function Settings() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-zinc-950/50 border-b border-zinc-800/50">
-                    <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">E-mail</th>
-                    <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Ações</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">E-mail</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/30">
@@ -265,8 +265,8 @@ export default function Settings() {
         <Button variant="ghost" size="sm" onClick={() => setMetricsSubTab("pixel")} className={cn("h-9 px-4 rounded-lg text-xs font-bold", metricsSubTab === "pixel" ? "bg-purple-600 text-white" : "text-zinc-500")}>
           <img src={facebookFavicon} alt="Facebook" className="w-5 h-5 mr-2" /> Facebook
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => setMetricsSubTab("utmfy")} className={cn("h-9 px-4 rounded-lg text-xs font-bold", metricsSubTab === "utmfy" ? "bg-purple-600 text-white" : "text-zinc-500")}>
-          <img src={utmifyLogo} alt="UTMify" className="w-5 h-5 mr-2" /> UTMfy
+        <Button variant="ghost" size="sm" onClick={() => setMetricsSubTab("utmify")} className={cn("h-9 px-4 rounded-lg text-xs font-bold", metricsSubTab === "utmify" ? "bg-purple-600 text-white" : "text-zinc-500")}>
+          <img src={utmifyLogo} alt="UTMify" className="w-5 h-5 mr-2" /> UTMify
         </Button>
         <Button variant="ghost" size="sm" onClick={() => setMetricsSubTab("webhook")} className={cn("h-9 px-4 rounded-lg text-xs font-bold", metricsSubTab === "webhook" ? "bg-purple-600 text-white" : "text-zinc-500")}>
           <Webhook className="w-5 h-5 mr-2" /> Webhook
@@ -295,18 +295,18 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
-        ) : metricsSubTab === "utmfy" ? (
+        ) : metricsSubTab === "utmify" ? (
           <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg max-w-2xl">
             <CardHeader className="border-b border-zinc-800/50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20"><img src={utmifyLogo} alt="UTMfy" className="w-8 h-8" /></div>
-                <div><CardTitle className="text-base text-white">UTMfy</CardTitle><CardDescription className="text-xs text-zinc-500">Rastreamento avançado</CardDescription></div>
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20"><img src={utmifyLogo} alt="UTMify" className="w-8 h-8" /></div>
+                <div><CardTitle className="text-base text-white">UTMify</CardTitle><CardDescription className="text-xs text-zinc-500">Rastreamento avançado</CardDescription></div>
               </div>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-400 uppercase">UTMfy Token</label>
-                <Input className="bg-zinc-900 border-zinc-800 text-sm h-11" value={form.utmfyToken} onChange={(e) => setForm({ ...form, utmfyToken: e.target.value })} placeholder="Insira seu token UTMfy" />
+                <label className="text-xs font-bold text-zinc-400 uppercase">UTMify Token</label>
+                <Input className="bg-zinc-900 border-zinc-800 text-sm h-11" value={form.utmfyToken} onChange={(e) => setForm({ ...form, utmfyToken: e.target.value })} placeholder="Insira seu token UTMify" />
               </div>
             </CardContent>
           </Card>
