@@ -553,17 +553,18 @@ export class NeonStorage {
         const saleData = toSnakeCase(sale);
         
         const result = await client.query(`
-          INSERT INTO sales (checkout_id, product_id, user_id, amount, status, customer_email, paypal_order_id, paypal_currency, paypal_amount_minor, created_at, utm_source, utm_medium, utm_campaign, utm_content, utm_term)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9, $10, $11, $12, $13)
+          INSERT INTO sales (checkout_id, product_id, user_id, amount, status, customer_email, paypal_order_id, paypal_capture_id, paypal_currency, paypal_amount_minor, created_at, utm_source, utm_medium, utm_campaign, utm_content, utm_term)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, $11, $12, $13, $14)
           RETURNING *
         `, [
           saleData.checkout_id || null,
           saleData.product_id || null,
           saleData.user_id || null,
-          saleData.amount || 0,
+          saleData.amount,
           saleData.status || 'pending',
           saleData.customer_email || null,
           saleData.paypal_order_id || null,
+          saleData.paypal_capture_id || null,
           saleData.paypal_currency || null,
           saleData.paypal_amount_minor || null,
           saleData.utm_source || null,
@@ -579,76 +580,6 @@ export class NeonStorage {
       }
     } catch (error) {
       console.error("Error creating sale:", error);
-      throw error;
-    }
-  }
-
-  // Withdrawals
-  async getWithdrawals(): Promise<any[]> {
-    try {
-      const client = await getPool().connect();
-      try {
-        const result = await client.query(`
-          SELECT w.*, u.email as user_email 
-          FROM withdrawals w
-          LEFT JOIN users u ON w.user_id = u.id::text
-          ORDER BY w.created_at DESC
-        `);
-        return result.rows.map(row => toCamelCase(row));
-      } finally {
-        client.release();
-      }
-    } catch (error) {
-      console.error("Error getting withdrawals:", error);
-      return [];
-    }
-  }
-
-  async updateWithdrawalStatus(id: number, status: string): Promise<any> {
-    try {
-      const client = await getPool().connect();
-      try {
-        const result = await client.query(`
-          UPDATE withdrawals 
-          SET status = $1 
-          WHERE id = $2 
-          RETURNING *
-        `, [status, id]);
-        
-        if (result.rows.length === 0) return null;
-        return toCamelCase(result.rows[0]);
-      } finally {
-        client.release();
-      }
-    } catch (error) {
-      console.error("Error updating withdrawal:", error);
-      throw error;
-    }
-  }
-
-  async createWithdrawal(withdrawal: any): Promise<any> {
-    try {
-      const client = await getPool().connect();
-      try {
-        const withdrawalData = toSnakeCase(withdrawal);
-        
-        const result = await client.query(`
-          INSERT INTO withdrawals (user_id, amount, pix_key, method, status)
-          VALUES ($1, $2, $3, $4, 'pending')
-          RETURNING *
-        `, [
-          withdrawalData.user_id,
-          withdrawalData.amount,
-          withdrawalData.pix_key,
-          withdrawalData.method || 'pix'
-        ]);
-        
-        return toCamelCase(result.rows[0]);
-      } finally {
-        client.release();
-      }
-    } catch (error) {
-      console.error("Error creating withdrawal:", error);
       throw error;
     }
   }
@@ -678,14 +609,43 @@ export class NeonStorage {
           startDate.setDate(startDate.getDate() - 30);
         }
 
-        let filteredSales = sales.filter((s: any) => s.createdAt >= startDate && s.createdAt <= endDate);
-
+        let query = `
+          SELECT * FROM sales 
+          WHERE user_id = $1 
+          AND status = 'paid'
+          AND created_at >= $2 
+          AND created_at <= $3
+        `;
+        
+        const params: any[] = [userId, startDate, endDate];
+        
         if (productId && productId !== "all") {
-          filteredSales = filteredSales.filter((s: any) => String(s.productId) === String(productId));
+          query += ` AND product_id = $${params.length + 1}`;
+          params.push(productId);
         }
-
-        const totalRevenue = filteredSales.reduce((sum: number, s: any) => sum + (Number(s.amount) || 0), 0);
-        const conversionRate = totalViews > 0 ? (filteredSales.length / totalViews) * 100 : 0;
+        
+        const result = await client.query(query, params);
+        const sales = result.rows.map(row => toCamelCase(row));
+        
+        // Get views from checkouts
+        const checkoutsResult = await client.query(`
+          SELECT * FROM checkouts 
+          WHERE owner_id = $1
+        `, [userId]);
+        
+        let totalViews = 0;
+        checkoutsResult.rows.forEach((row: any) => {
+          if (productId && productId !== "all") {
+            if (String(row.product_id) === String(productId)) {
+              totalViews += (row.views || 0);
+            }
+          } else {
+            totalViews += (row.views || 0);
+          }
+        });
+        
+        const totalRevenue = sales.reduce((sum: number, s: any) => sum + (Number(s.amount) || 0), 0);
+        const conversionRate = totalViews > 0 ? (sales.length / totalViews) * 100 : 0;
         
         // Chart Data
         const chartData: { name: string; sales: number }[] = [];
@@ -695,22 +655,21 @@ export class NeonStorage {
         for (let i = diffDays; i >= 0; i--) {
           const d = new Date(endDate);
           d.setDate(endDate.getDate() - i);
-          const key = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
-          const dayTotal = sales
-            .filter((s: any) => {
-              const saleDate = new Date(s.createdAt);
-              return saleDate.getDate() === d.getDate() && 
-                     saleDate.getMonth() === d.getMonth() && 
-                     saleDate.getFullYear() === d.getFullYear();
-            })
-            .reduce((sum: number, s: any) => sum + (Number(s.amount) || 0), 0);
+          const key = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const daySales = sales.filter((s: any) => {
+            const saleDate = new Date(s.createdAt);
+            return saleDate.getDate() === d.getDate() && 
+                   saleDate.getMonth() === d.getMonth() && 
+                   saleDate.getFullYear() === d.getFullYear();
+          });
+          const dayTotal = daySales.reduce((sum: number, s: any) => sum + (Number(s.amount) || 0), 0);
           chartData.push({ name: key, sales: dayTotal / 100 });
         }
         
         return {
           salesToday: totalRevenue / 100,
           revenuePaid: totalRevenue / 100,
-          salesApproved: filteredSales.length,
+          salesApproved: sales.length,
           conversionRate,
           revenueTarget: 10000,
           revenueCurrent: totalRevenue / 100,
