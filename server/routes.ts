@@ -1,13 +1,13 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { firestoreStorage as storage } from "./firestore-storage";
+import { neonStorage as storage } from "./neon-storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { requireAuth } from "./middleware/auth";
-import { adminAuth, adminDb, adminStorage } from "./firebase-admin";
+import { adminAuth, adminDb } from "./firebase-admin";
 import { getVapidPublicKey, saveSubscription } from "./services/notification";
 
 import { registerTrackingRoutes } from "./trackingRoutes";
@@ -82,25 +82,8 @@ export async function registerRoutes(
       if (user?.email !== ADMIN_EMAIL) {
         return res.status(403).json({ message: "Acesso negado" });
       }
-      const snapshot = await adminDb.collection("products").get();
-      const products = snapshot.docs.map((doc: any) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ownerId: data.owner_id ?? data.ownerId ?? null,
-          name: data.name ?? '',
-          description: data.description ?? null,
-          price: data.price ?? 0,
-          imageUrl: data.image_url ?? data.imageUrl ?? null,
-          deliveryUrl: data.delivery_url ?? data.deliveryUrl ?? null,
-          whatsappUrl: data.whatsapp_url ?? data.whatsappUrl ?? null,
-          deliveryFiles: data.delivery_files ?? data.deliveryFiles ?? [],
-          noEmailDelivery: data.no_email_delivery ?? data.noEmailDelivery ?? false,
-          status: data.status ?? 'pending',
-          createdAt: data.created_at ?? data.createdAt ?? new Date(),
-        };
-      });
-      res.json(products);
+      const result = await storage.getProducts(); // No user filter for admin
+      res.json(result);
     } catch (error: any) {
       console.error("Error getting all products:", error);
       res.status(500).json({ message: error.message || "Erro ao buscar produtos" });
@@ -111,7 +94,7 @@ export async function registerRoutes(
     try {
       const userId = String((req as any).user?.id || "");
       const input = api.products.create.input.parse(req.body);
-      res.status(201).json(await storage.createProduct({ ...input, userId }));
+      res.status(201).json(await storage.createProduct({ ...input, ownerId: userId }));
     } catch (err: any) {
       res.status(400).json({ message: err.message });
     }
@@ -184,22 +167,8 @@ export async function registerRoutes(
       if (user?.email !== ADMIN_EMAIL) {
         return res.status(403).json({ message: "Acesso negado" });
       }
-      const snapshot = await adminDb.collection("checkouts").get();
-      const checkouts = snapshot.docs.map((doc: any) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ownerId: data.owner_id ?? data.ownerId ?? null,
-          productId: data.product_id ?? data.productId ?? 0,
-          name: data.name ?? '',
-          slug: data.slug ?? '',
-          views: data.views ?? 0,
-          active: data.active ?? true,
-          config: data.config ?? null,
-          createdAt: data.created_at ?? data.createdAt ?? new Date(),
-        };
-      });
-      res.json(checkouts);
+      const result = await storage.getCheckouts(); // No user filter for admin
+      res.json(result);
     } catch (error: any) {
       console.error("Error getting all checkouts:", error);
       res.status(500).json({ message: error.message || "Erro ao buscar checkouts" });
@@ -323,7 +292,7 @@ export async function registerRoutes(
       await storage.createSale({
         checkoutId: body.checkoutId,
         productId: body.productId,
-        user_id: checkout.ownerId,
+        userId: checkout.ownerId,
         amount: body.totalUsdCents,
         status: "pending",
         customerEmail: body.customerData?.email || null,

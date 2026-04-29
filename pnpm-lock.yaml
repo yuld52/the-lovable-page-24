@@ -17,6 +17,9 @@ importers:
       '@jridgewell/trace-mapping':
         specifier: ^0.3.25
         version: 0.3.31
+      '@neondatabase/serverless':
+        specifier: ^1.1.0
+        version: 1.1.0
       '@radix-ui/react-accordion':
         specifier: ^1.2.4
         version: 1.2.12(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -148,10 +151,10 @@ importers:
         version: 3.6.0
       drizzle-orm:
         specifier: ^0.39.3
-        version: 0.39.3(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0)
+        version: 0.39.3(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0)
       drizzle-zod:
         specifier: ^0.7.0
-        version: 0.7.1(drizzle-orm@0.39.3(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0))(zod@3.25.76)
+        version: 0.7.1(drizzle-orm@0.39.3(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0))(zod@3.25.76)
       embla-carousel-react:
         specifier: ^8.6.0
         version: 8.6.0(react@18.3.1)
@@ -321,9 +324,6 @@ importers:
       tailwindcss:
         specifier: ^3.4.17
         version: 3.4.19(tsx@4.21.0)
-      tsx:
-        specifier: ^4.20.5
-        version: 4.21.0
       typescript:
         specifier: 5.6.3
         version: 5.6.3
@@ -1339,6 +1339,10 @@ packages:
     resolution: {integrity: sha512-2Z0FATFHaoYJ8b+Y4y4Hgfn3FRFwuU5zRrk+9dFWp4uGAdHGqVEdP7HP+gLA3X469KXHmfupJaUbKo1b/aDKIg==}
     peerDependencies:
       three: '>= 0.159.0'
+
+  '@neondatabase/serverless@1.1.0':
+    resolution: {integrity: sha512-r3ZZhRjEcfEdKIZnoB1RusNgvHuaBRqfCzV4Gi+5A9yUX0S4HTws/ASWqt13wL4y4I+0rqsWGdA2w7EQXHi3+Q==}
+    engines: {node: '>=19.0.0'}
 
   '@nodable/entities@2.1.0':
     resolution: {integrity: sha512-nyT7T3nbMyBI/lvr6L5TyWbFJAI9FTgVRakNoBqCD+PmID8DzFrrNdLLtHMwMszOtqZa8PAOV24ZqDnQrhQINA==}
@@ -5687,6 +5691,8 @@ snapshots:
       promise-worker-transferable: 1.0.4
       three: 0.183.2
 
+  '@neondatabase/serverless@1.1.0': {}
+
   '@nodable/entities@2.1.0': {}
 
   '@nodelib/fs.scandir@2.1.5':
@@ -7338,15 +7344,16 @@ snapshots:
       esbuild: 0.25.12
       tsx: 4.21.0
 
-  drizzle-orm@0.39.3(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0):
+  drizzle-orm@0.39.3(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0):
     optionalDependencies:
+      '@neondatabase/serverless': 1.1.0
       '@opentelemetry/api': 1.9.1
       '@types/pg': 8.20.0
       pg: 8.20.0
 
-  drizzle-zod@0.7.1(drizzle-orm@0.39.3(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0))(zod@3.25.76):
+  drizzle-zod@0.7.1(drizzle-orm@0.39.3(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0))(zod@3.25.76):
     dependencies:
-      drizzle-orm: 0.39.3(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0)
+      drizzle-orm: 0.39.3(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0)
       zod: 3.25.76
 
   dunder-proto@1.0.1:
