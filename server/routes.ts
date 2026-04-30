@@ -28,7 +28,7 @@ export async function registerRoutes(
     limits: { fileSize: 64 * 1024 * 1024 }, // 64MB
   });
 
-  // ADD THIS: File Upload Route
+  // File Upload Route
   app.post("/api/upload", requireAuth, upload.single("file"), async (req: any, res) => {
     try {
       if (!req.file) {
@@ -563,11 +563,10 @@ export async function registerRoutes(
     }
   });
 
-  // Database test endpoint - FIXED: Use storage directly
+  // Database test endpoint
   app.get("/api/db-test", async (_req, res) => {
     try {
-      // Use storage to test DB connection
-      const result = await storage.getWithdrawals(); // Simple query to test connection
+      const result = await storage.getWithdrawals();
       res.json({ 
         ok: true, 
         message: "Database connection successful", 
