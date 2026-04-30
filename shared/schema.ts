@@ -20,10 +20,6 @@ export const products = pgTable("products", {
   noEmailDelivery: boolean("no_email_delivery").default(false),
   paymentMethods: jsonb("payment_methods").$type<string[]>().default(["paypal"]),
   status: text("status").notNull().default("pending"), // pending, approved, rejected
-  // Novos campos para afiliados
-  isAffiliate: boolean("is_affiliate").default(false),
-  affiliateCommission: integer("affiliate_commission"), // percentual (ex: 10 para 10%)
-  affiliateCookieDays: integer("affiliate_cookie_days").default(30),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -186,9 +182,6 @@ export const sales = pgTable("sales", {
   utmCampaign: text("utm_campaign"),
   utmContent: text("utm_content"),
   utmTerm: text("utm_term"),
-  // Campos de afiliado na venda
-  affiliateId: text("affiliate_id"),
-  affiliateCommissionPaid: integer("affiliate_commission_paid"), // in cents
 });
 
 export const pushSubscriptions = pgTable("push_subscriptions", {
@@ -209,7 +202,6 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;

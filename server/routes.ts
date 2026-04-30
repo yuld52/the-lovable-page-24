@@ -368,9 +368,6 @@ export async function registerRoutes(
         paypalOrderId: order.id,
         paypalCurrency: body.currency,
         paypalAmountMinor: body.totalMinor,
-        // Campos de afiliado
-        affiliateId: body.affiliateId || null,
-        affiliateCommissionPaid: body.affiliateCommission || null,
       });
 
       res.json({ id: order.id });

@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { useProduct, useUpdateProduct } from "@/hooks/use-products";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Check, ArrowLeft, Users, Percent, Info } from "lucide-react";
+import { Loader2, Check, Send, Image as ImageIcon, Globe, FileText, Layout as LayoutIcon, MessageCircle, ArrowLeft, Plus, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLocation, useRoute } from "wouter";
 import { useUpload } from "@/hooks/use-upload";
 
@@ -20,6 +21,7 @@ export default function EditProduct() {
   const { uploadFile, isUploading: isUploadingImage } = useUpload();
 
   const [step, setStep] = useState(1);
+  const [deliveryMethod, setDeliveryMethod] = useState<"link" | "file">("link");
   const [imagePreview, setImagePreview] = useState<string>("");
   const [formData, setFormData] = useState({
     name: "",
@@ -31,10 +33,6 @@ export default function EditProduct() {
     deliveryFiles: [] as string[],
     noEmailDelivery: false,
     paymentMethods: ["paypal"] as string[],
-    // Campos de afiliado
-    isAffiliate: false,
-    affiliateCommission: "",
-    affiliateCookieDays: "30",
   });
 
   useEffect(() => {
@@ -49,12 +47,11 @@ export default function EditProduct() {
         deliveryFiles: product.deliveryFiles || [],
         noEmailDelivery: product.noEmailDelivery || false,
         paymentMethods: product.paymentMethods || ["paypal"],
-        // Campos de afiliado
-        isAffiliate: product.isAffiliate || false,
-        affiliateCommission: product.affiliateCommission?.toString() || "",
-        affiliateCookieDays: product.affiliateCookieDays?.toString() || "30",
       });
       setImagePreview(product.imageUrl || "");
+      if (product.deliveryFiles && product.deliveryFiles.length > 0) {
+        setDeliveryMethod("file");
+      }
     }
   }, [product]);
 
@@ -77,16 +74,6 @@ export default function EditProduct() {
       return;
     }
 
-    // Validação de afiliado
-    if (formData.isAffiliate) {
-      const commission = parseInt(formData.affiliateCommission);
-      if (isNaN(commission) || commission <= 0 || commission > 100) {
-        toast({ title: "Erro", description: "Comissão do afiliado deve ser entre 1 e 100", variant: "destructive" });
-        setStep(4);
-        return;
-      }
-    }
-
     try {
       await updateProduct.mutateAsync({
         id: id!,
@@ -99,10 +86,6 @@ export default function EditProduct() {
         deliveryFiles: formData.deliveryFiles,
         noEmailDelivery: formData.noEmailDelivery,
         paymentMethods: formData.paymentMethods,
-        // Campos de afiliado
-        isAffiliate: formData.isAffiliate,
-        affiliateCommission: formData.isAffiliate ? parseInt(formData.affiliateCommission) || null : null,
-        affiliateCookieDays: formData.isAffiliate ? parseInt(formData.affiliateCookieDays) || 30 : 30,
       });
       toast({ title: "Sucesso", description: "Produto atualizado com sucesso!" });
       setLocation("/products");
@@ -128,7 +111,7 @@ export default function EditProduct() {
     return (
       <Layout title="Editar Produto">
         <div className="flex items-center justify-center p-12">
-          <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+          <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
         </div>
       </Layout>
     );
@@ -137,16 +120,14 @@ export default function EditProduct() {
   const steps = [
     { id: 1, title: "Informações Básicas" },
     { id: 2, title: "Métodos de Pagamento" },
-    { id: 3, title: "Método de entrega" },
-    { id: 4, title: "Afiliados" }
+    { id: 3, title: "Método de entrega" }
   ];
 
   return (
     <Layout title="Editar Produto" subtitle={`Editando: ${formData.name}`}>
-      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <Button variant="ghost" onClick={() => setLocation("/products")} className="text-zinc-400 hover:text-white -ml-2">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar
+      <div className="mb-6 flex justify-between items-center">
+        <Button variant="ghost" onClick={() => setLocation("/products")} className="text-zinc-400">
+          <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
         </Button>
       </div>
 
@@ -156,29 +137,36 @@ export default function EditProduct() {
           <div className="flex items-center justify-between mb-8 px-2">
             {steps.map((s, i) => (
               <div key={s.id} className="flex items-center flex-1 last:flex-none">
-                <div className={`flex flex-col items-center gap-2`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${step >= s.id ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
-                    }`}>
+                <div className="flex flex-col items-center gap-2">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                    step >= s.id ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
+                  }`}>
                     {step > s.id ? <Check className="w-4 h-4" /> : s.id}
                   </div>
-                  <span className={`text-[10px] font-medium whitespace-nowrap ${step >= s.id ? 'text-zinc-300' : 'text-zinc-500'`}>
+                  <span className={`text-[10px] font-medium whitespace-nowrap ${
+                    step >= s.id ? 'text-zinc-300' : 'text-zinc-500'
+                  }`}>
                     {s.title}
                   </span>
                 </div>
                 {i < steps.length - 1 && (
-                  <div className={`h-[1px] flex-1 mx-4 ${step > s.id ? 'bg-purple-600' : 'bg-zinc-800'`} />
+                  <div className={`h-[1px] flex-1 mx-4 ${
+                    step > s.id ? 'bg-purple-600' : 'bg-zinc-800'
+                  }`} />
                 )}
               </div>
             ))}
           </div>
 
           <div className="space-y-6">
-            {step === 1 && (
+            {step === 1 ? (
               <div className="space-y-6 animate-in fade-in">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-zinc-200">Capa do Produto</label>
                   <div
-                    className={`border-2 border-dashed border-zinc-800 rounded-2xl w-[200px] h-[200px] mx-auto overflow-hidden cursor-pointer group relative ${isUploadingImage ? 'pointer-events-none opacity-70' : ''}`}
+                    className={`border-2 border-dashed border-zinc-800 rounded-2xl w-[200px] h-[200px] mx-auto overflow-hidden cursor-pointer relative group ${
+                      isUploadingImage ? 'pointer-events-none opacity-70' : ''
+                    }`}
                     onClick={() => !isUploadingImage && document.getElementById('edit-image')?.click()}
                   >
                     {isUploadingImage && (
@@ -200,8 +188,8 @@ export default function EditProduct() {
                     <input
                       id="edit-image"
                       type="file"
-                      accept="image/*"
                       className="hidden"
+                      accept="image/*"
                       disabled={isUploadingImage}
                       onChange={(e) => {
                         const file = e.target.files?.[0];
@@ -215,7 +203,7 @@ export default function EditProduct() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 mb-1">
                       <div className="p-1.5 bg-zinc-800 rounded-lg">
-                        <FileText className="w-3.5 h-3.5 text-zinc-400" />
+                        <LayoutIcon className="w-3.5 h-3.5 text-zinc-400" />
                       </div>
                       <label className="text-sm font-bold text-zinc-200">Nome</label>
                     </div>
@@ -262,11 +250,15 @@ export default function EditProduct() {
                   </div>
                 </div>
               </div>
-            )}
-
-            {step === 2 && (
+            ) : step === 2 ? (
               <div className="space-y-6 animate-in fade-in duration-300">
-                <p className="text-sm text-zinc-400">Selecione os métodos de pagamento:</p>
+                <div className="flex items-center gap-2 text-zinc-300 font-medium pb-2 border-b border-zinc-800/50">
+                  <CreditCard className="w-4 h-4 text-purple-500" />
+                  Métodos de Pagamento
+                </div>
+
+                <p className="text-sm text-zinc-400">Selecione os métodos de pagamento que estarão disponíveis para este produto:</p>
+
                 <div className="space-y-3">
                   <div
                     className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
@@ -282,12 +274,15 @@ export default function EditProduct() {
                           ? 'bg-purple-600 border-purple-600'
                           : 'border-zinc-600'
                       }`}>
-                        {formData.paymentMethods.includes('paypal') && <Check className="w-3 h-3 text-white" />}
+                        {formData.paymentMethods.includes('paypal') && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-bold text-white">PayPal</p>
                         <p className="text-xs text-zinc-500">Pagamentos via PayPal e Cartão de Crédito</p>
                       </div>
+                      <div className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded">Ativo</div>
                     </div>
                   </div>
 
@@ -305,12 +300,15 @@ export default function EditProduct() {
                           ? 'bg-purple-600 border-purple-600'
                           : 'border-zinc-600'
                       }`}>
-                        {formData.paymentMethods.includes('stripe') && <Check className="w-3 h-3 text-white" />}
+                        {formData.paymentMethods.includes('stripe') && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-bold text-white">Stripe</p>
                         <p className="text-xs text-zinc-500">Pagamentos via Cartão de Crédito e Pix (Em breve)</p>
                       </div>
+                      <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
                     </div>
                   </div>
 
@@ -328,117 +326,105 @@ export default function EditProduct() {
                           ? 'bg-purple-600 border-purple-600'
                           : 'border-zinc-600'
                       }`}>
-                        {formData.paymentMethods.includes('pix') && <Check className="w-3 h-3 text-white" />}
+                        {formData.paymentMethods.includes('pix') && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-bold text-white">Pix</p>
                         <p className="text-xs text-zinc-500">Pagamento instantâneo via Pix (Em breve)</p>
                       </div>
+                      <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
                     </div>
                   </div>
                 </div>
               </div>
-            )}
-
-            {step === 3 && (
+            ) : (
               <div className="space-y-6 animate-in fade-in duration-300">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-zinc-200">Link de Acesso</label>
-                  <Input
-                    placeholder="https://exemplo.com/acesso"
-                    value={formData.deliveryUrl}
-                    onChange={(e) => setFormData({ ...formData, deliveryUrl: e.target.value })}
-                    className="bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500"
-                  />
+                <div className="flex gap-2">
+                  <Button variant="outline" className={`flex-1 h-11 ${deliveryMethod === "link" ? "border-purple-500 text-purple-400" : ""}`} onClick={() => setDeliveryMethod("link")}>Link</Button>
+                  <Button variant="outline" className={`flex-1 h-11 ${deliveryMethod === "file" ? "border-purple-500 text-purple-400" : ""}`} onClick={() => setDeliveryMethod("file")}>Arquivo</Button>
                 </div>
-              </div>
-            )}
-
-            {step === 4 && (
-              <div className="space-y-6 animate-in fade-in duration-300">
-                <div className="bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/50 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${formData.isAffiliate ? 'bg-purple-500/10' : 'bg-zinc-800/50'}`}>
-                        <Users className={`w-5 h-5 ${formData.isAffiliate ? 'text-purple-400' : 'text-zinc-500'}`} />
+                {deliveryMethod === "link" && (
+                  <div className="space-y-6 animate-in fade-in duration-300">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="p-1.5 bg-zinc-800 rounded-lg">
+                          <Globe className="w-3.5 h-3.5 text-zinc-400" />
+                        </div>
+                        <label className="text-sm font-bold text-zinc-200">Link de Acesso</label>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-white">Ativar Sistema de Afiliados</p>
-                        <p className="text-xs text-zinc-500">Permita que outros usuários vendam seu produto</p>
-                      </div>
+                      <Input
+                        className="bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500"
+                        placeholder="https://exemplo.com/acesso"
+                        value={formData.deliveryUrl}
+                        onChange={(e) => setFormData({ ...formData, deliveryUrl: e.target.value })}
+                      />
+                      <p className="text-[11px] text-zinc-500 ml-1 font-medium text-purple-400/80">Este é o link que o cliente receberá automaticamente no e-mail de entrega assim que o pagamento for aprovado.</p>
                     </div>
-                    <Switch
-                      checked={formData.isAffiliate}
-                      onCheckedChange={(checked) => setFormData({ ...formData, isAffiliate: checked })}
-                    />
                   </div>
-
-                  {formData.isAffiliate && (
-                    <div className="space-y-4 pl-4 border-l-2 border-purple-500/30 animate-in fade-in duration-300">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Percent className="w-4 h-4 text-purple-400" />
-                          <label className="text-sm font-bold text-zinc-200">Comissão do Afiliado (%)</label>
-                        </div>
-                        <Input
-                          type="number"
-                          min="1"
-                          max="100"
-                          className="bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500"
-                          value={formData.affiliateCommission}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val === "" || (parseInt(val) >= 0 && parseInt(val) <= 100)) {
-                              setFormData({ ...formData, affiliateCommission: val });
-                            }
-                          }}
-                          placeholder="Ex: 10 (para 10%)"
-                        />
-                        <p className="text-[11px] text-zinc-500 ml-1">Porcentagem que o afiliado receberá sobre cada venda</p>
+                )}
+                {deliveryMethod === "file" && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-zinc-200 uppercase tracking-wider">Arquivos de entrega</label>
+                      <div className="bg-black/40 border border-zinc-800 rounded-xl p-4 min-h-[100px] flex flex-col items-center justify-center gap-3">
+                        <FileText className="w-8 h-8 text-zinc-600" />
+                        <p className="text-sm text-zinc-500">O upload de novos arquivos não está disponível na edição. Os arquivos atuais serão enviados no e-mail de entrega após a compra.</p>
                       </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Info className="w-4 h-4 text-purple-400" />
-                          <label className="text-sm font-bold text-zinc-200">Dias de Cookie</label>
+                      {formData.deliveryFiles.length > 0 && (
+                        <div className="mt-4 space-y-2">
+                          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Arquivos atuais ({formData.deliveryFiles.length})</p>
+                          <div className="grid grid-cols-1 gap-2">
+                            {formData.deliveryFiles.map((file, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-3 bg-zinc-900/60 border border-zinc-800 rounded-lg group">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                  <div className="w-8 h-8 rounded bg-purple-500/10 flex items-center justify-center text-purple-400 flex-shrink-0">
+                                    <FileText className="w-4 h-4" />
+                                  </div>
+                                  <a
+                                    href={file}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-zinc-300 hover:text-purple-400 truncate underline decoration-zinc-700 hover:decoration-purple-400 transition-colors"
+                                  >
+                                    {(() => {
+                                      try {
+                                        const parts = file.split('/');
+                                        const filenameWithUuid = parts[parts.length - 1];
+                                        if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(filenameWithUuid)) {
+                                          return decodeURIComponent(filenameWithUuid.substring(37));
+                                        }
+                                        return decodeURIComponent(filenameWithUuid);
+                                      } catch {
+                                        return "Arquivo";
+                                      }
+                                    })()}
+                                  </a>
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-red-400" onClick={() => {
+                                  setFormData({
+                                    ...formData,
+                                    deliveryFiles: formData.deliveryFiles.filter((_, i) => i !== idx)
+                                  });
+                                }}>
+                                  <Plus className="w-4 h-4 rotate-45" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <Input
-                          type="number"
-                          min="1"
-                          max="365"
-                          className="bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500"
-                          value={formData.affiliateCookieDays}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val === "" || (parseInt(val) >= 1 && parseInt(val) <= 365)) {
-                              setFormData({ ...formData, affiliateCookieDays: val });
-                            }
-                          }}
-                          placeholder="30"
-                        />
-                        <p className="text-[11px] text-zinc-500 ml-1">Por quantos dias o cookie do afiliado deve ser válido</p>
-                      </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
 
             <div className="flex gap-3 pt-6 border-t border-zinc-800/50">
-              {step > 1 && (
-                <Button
-                  variant="ghost"
-                  className="flex-1"
-                  onClick={() => setStep(step - 1)}
-                >
-                  Voltar
-                </Button>
-              )}
-              <Button
-                onClick={() => step === 4 ? handleUpdate() : setStep(step + 1)}
-                className="flex-[2] bg-purple-600 hover:bg-purple-500 text-white font-bold h-12"
-              >
-                {updateProduct.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : step === 4 ? "Salvar Alterações" : "Próximo"}
+              {step > 1 && <Button variant="ghost" className="flex-1" onClick={() => setStep(step - 1)}>Voltar</Button>}
+              <Button className="flex-[2] bg-purple-600 hover:bg-purple-500 h-12" onClick={() => step === 3 ? handleUpdate() : setStep(step + 1)}>
+                {updateProduct.isPending ? <Loader2 className="animate-spin" /> : step === 3 ? "Salvar Alterações" : "Próximo"}
               </Button>
             </div>
           </div>
