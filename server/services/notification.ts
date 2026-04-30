@@ -1,17 +1,14 @@
 import webpush from "web-push";
 import { adminDb } from "../firebase-admin";
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from "url";
+import { Pool } from "pg";
+import ws from "ws";
 
-// Load .env if not already loaded (fixes timing issues with process.env)
+// Load .env
 try {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  const envPath = path.resolve(__dirname, "..", "..", ".env");
-  if (fs.existsSync(envPath)) {
-    const envConfig = fs.readFileSync(envPath, "utf8");
-    envConfig.split("\n").forEach((line) => {
+  const envPath = require("path").resolve(__dirname, "..", "..", ".env");
+  if (require("fs").existsSync(envPath)) {
+    const envConfig = require("fs").readFileSync(envPath, "utf8");
+    envConfig.split("\n").forEach((line: string) => {
       const [key, ...valueParts] = line.split("=");
       if (key && valueParts.length > 0) {
         const value = valueParts.join("=").trim().replace(/^["']|["']$/g, "");
@@ -25,184 +22,173 @@ try {
   console.error("Error loading .env in notification service:", err);
 }
 
-// Memory fallback to prevent 500 errors when DB is unreachable
-const memorySubscriptions: any[] = [];
-const memorySettings: Record<string, any> = {};
+// Configure Neon (serverless)
+const neonConfig = require("@neondatabase/serverless").neonConfig;
+neonConfig.webSocketConstructor = ws;
+
+function getPool() {
+  const url = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL || "";
+  if (!url) return null;
+  return new Pool({ connectionString: url });
+}
 
 // Initialize VAPID
 export function getVapidPublicKey() {
-    return process.env.VAPID_PUBLIC_KEY;
+  return process.env.VAPID_PUBLIC_KEY;
 }
 
-// Ensure keys are set up at start
-const publicKey = process.env.VAPID_PUBLIC_KEY;
-const privateKey = process.env.VAPID_PRIVATE_KEY;
-
-if (publicKey && privateKey) {
-    webpush.setVapidDetails(
-        "mailto:admin@meteorfy.com",
-        publicKey,
-        privateKey
-    );
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    "mailto:admin@meteorfy.com",
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
 } else {
-    console.warn("[PUSH] VAPID keys missing! Push notifications will fail if not generated.");
-    if (process.env.NODE_ENV !== 'production') {
-        const vapidKeys = webpush.generateVAPIDKeys();
-        process.env.VAPID_PUBLIC_KEY = vapidKeys.publicKey;
-        process.env.VAPID_PRIVATE_KEY = vapidKeys.privateKey;
-        webpush.setVapidDetails(
-            "mailto:admin@meteorfy.com",
-            vapidKeys.publicKey,
-            vapidKeys.privateKey
-        );
-        console.log("[PUSH] Temporary VAPID keys generated for this session.");
-    }
+  console.warn("[PUSH] VAPID keys missing! Push notifications will fail if not generated.");
 }
 
-export async function saveSubscription(userId: string, subscription: any) {
-    console.log(`[PUSH] Saving subscription for user ${userId}`);
+export async function saveSubscription(userId: string, subscription: any): Promise<boolean> {
+  console.log(`[PUSH] Saving subscription for user ${userId}`);
+  try {
+    // Save to Neon DB
+    const pool = getPool();
+    if (!pool) throw new Error("Database not configured");
+
+    const client = await pool.connect();
     try {
+      await client.query(`
+        INSERT INTO push_subscriptions (user_id, subscription, endpoint)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (endpoint) DO UPDATE
+        SET subscription = EXCLUDED.subscription, updated_at = NOW()
+      `, [
+        userId,
+        JSON.stringify(subscription),
+        subscription.endpoint
+      ]);
+      console.log(`[PUSH] Subscription saved to DB`);
+    } finally {
+      client.release();
+    }
+
+    return true;
+  } catch (err: any) {
+    console.error("[PUSH] Error saving subscription:", err);
+    return false;
+  }
+}
+
+export async function removeSubscription(userId: string): Promise<void> {
+  try {
+    const pool = getPool();
+    if (!pool) return;
+
+    const client = await pool.connect();
+    try {
+      await client.query(`DELETE FROM push_subscriptions WHERE user_id = $1`, [userId]);
+      console.log(`[PUSH] Subscription removed for user ${userId}`);
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error("[PUSH] Error removing subscription:", err);
+  }
+}
+
+export async function sendNotification({ userId, type, title, body, metadata }: any): Promise<boolean> {
+  console.log(`[PUSH] Sending notification to ${userId} (Type: ${type})`);
+  try {
+    // 1. Check User Settings
+    let salesNotificationsEnabled = true;
+    try {
+      const pool = getPool();
+      if (pool) {
+        const client = await pool.connect();
         try {
-            const docId = Buffer.from(subscription.endpoint).toString('base64url');
-            await adminDb.collection("pushSubscriptions").doc(docId).set({
-                userId,
-                subscription,
-                endpoint: subscription.endpoint,
-                updatedAt: new Date().toISOString()
-            }, { merge: true });
-            console.log(`[PUSH] Subscription saved to Firestore`);
-        } catch (dbErr) {
-            console.warn("[PUSH] Firestore unreachable during saveSubscription, falling back to memory.");
+          const result = await client.query(`SELECT sales_notifications FROM settings WHERE user_id = $1 LIMIT 1`, [userId]);
+          if (result.rows.length > 0) {
+            salesNotificationsEnabled = result.rows[0].sales_notifications !== false;
+          }
+        } finally {
+          client.release();
         }
-
-        // Always save to memory as a cache/backup
-        const idx = memorySubscriptions.findIndex(s => s.userId === userId && s.endpoint === subscription.endpoint);
-        if (idx >= 0) {
-            memorySubscriptions[idx] = { ...memorySubscriptions[idx], subscription, updatedAt: new Date() };
-        } else {
-            memorySubscriptions.push({ userId, subscription, endpoint: subscription.endpoint, createdAt: new Date() });
-        }
-        return true;
-    } catch (err) {
-        console.error("[PUSH] Critical error in saveSubscription:", err);
-        return true; // We return true because memory save usually succeeds
+      }
+    } catch (dbErr) {
+      console.warn("[PUSH] Failed to check settings:", dbErr);
     }
-}
 
-export async function getSubscriptions(userId: string) {
-    const allSubs: any[] = [];
+    if ((type === "sale_captured" || type === "PURCHASE_APPROVED") && !salesNotificationsEnabled) {
+      console.log(`[PUSH] Sales notifications disabled for user ${userId}`);
+      return false;
+    }
 
+    // 2. Generate content
+    let finalTitle = title || "Meteorfy";
+    let finalBody = body || "Nova notificação";
+
+    if (type === "sale_captured" || type === "PURCHASE_APPROVED") {
+      const amount = metadata?.amount || "0.00";
+      const currency = metadata?.currency || "USD";
+      const productName = metadata?.productName || "";
+      finalTitle = "Venda aprovada";
+      finalBody = productName
+        ? `${productName} — ${currency} ${amount}`
+        : `Valor: ${currency} ${amount}`;
+    }
+
+    // 3. Get subscription from DB
+    const pool = getPool();
+    if (!pool) throw new Error("Database not configured");
+
+    const client = await pool.connect();
+    let subscriptions: any[] = [];
     try {
-        const dbSubs = await adminDb.collection("pushSubscriptions").where("userId", "==", userId).get();
-        dbSubs.forEach(doc => {
-            allSubs.push(doc.data());
-        });
-    } catch (err) {
-        console.warn("[PUSH] Failed to fetch subscriptions from Firestore, using memory cache.");
+      const result = await client.query(`SELECT * FROM push_subscriptions WHERE user_id = $1`, [userId]);
+      subscriptions = result.rows.map((row: any) => row.subscription);
+    } finally {
+      client.release();
     }
 
-    // 2. Add from memory, avoiding duplicates by endpoint
-    memorySubscriptions.filter(s => s.userId === userId).forEach(ms => {
-        if (!allSubs.find(as => as.endpoint === ms.endpoint)) {
-            allSubs.push(ms);
-        }
+    if (subscriptions.length === 0) {
+      console.log(`[PUSH] No subscriptions found for user ${userId}`);
+      return false;
+    }
+
+    console.log(`[PUSH] Found ${subscriptions.length} push subscriptions for user`);
+
+    const payload = JSON.stringify({
+      title: finalTitle,
+      body: finalBody,
+      icon: "/notification-icon.png",
+      badge: "/notification-icon.png",
     });
 
-    return allSubs;
-}
-
-export async function sendNotification({ userId, type, title, body, metadata }: NotificationData) {
-    console.log(`[PUSH] Sending notification to ${userId} (Type: ${type})`);
-    try {
-        // 1. Check User Settings
-        let salesNotificationsEnabled = true; // Default if we can't check
-
-        try {
-            const snapshot = await adminDb.collection("settings").where("userId", "==", userId).limit(1).get();
-            if (!snapshot.empty) {
-                const dbSettings = snapshot.docs[0].data();
-                salesNotificationsEnabled = dbSettings?.salesNotifications !== false && dbSettings?.sales_notifications !== false;
-            }
-        } catch (dbErr) {
-            console.warn("[PUSH] Firestore unreachable during settings check.");
-            salesNotificationsEnabled = memorySettings[userId]?.salesNotifications !== false;
-        }
-
-        if ((type === "sale_captured" || type === "PURCHASE_APPROVED") && !salesNotificationsEnabled) {
-            console.log(`[PUSH] Sales notifications disabled for user ${userId}`);
-            return;
-        }
-
-        // 2. Generate content
-        let finalTitle = title || "Meteorfy";
-        let finalBody = body || "Nova notificação";
-
-        if (type === "sale_captured" || type === "PURCHASE_APPROVED") {
-            const amount = metadata?.amount || "0.00";
-            const currency = metadata?.currency || "USD";
-            const productName = metadata?.productName || "";
-            finalTitle = "Venda aprovada";
-            finalBody = productName
-                ? `${productName} — ${currency} ${amount}`
-                : `Valor: ${currency} ${amount}`;
-        }
-
-        // 3. Save to History (Optional)
-        try {
-             await adminDb.collection("notifications").add({
-                 userId,
-                 type,
-                 title: finalTitle,
-                 body: finalBody,
-                 createdAt: new Date().toISOString()
-             });
-        } catch (dbErr) {
-            console.warn("[PUSH] Failed to save notification history to Firestore.");
-        }
-
-        // 4. Send Push
-        const subs = await getSubscriptions(userId);
-        console.log(`[PUSH] Found ${subs.length} push subscriptions for user`);
-
-        const payload = JSON.stringify({
-            title: finalTitle,
-            body: finalBody,
-            icon: "/notification-icon.png",
-            badge: "/notification-icon.png",
-        });
-
-        const sendPromises = subs.map(async (sub) => {
+    // 4. Send to all subscriptions
+    const sendPromises = subscriptions.map(async (sub: any) => {
+      try {
+        await webpush.sendNotification(sub, payload);
+        console.log(`[PUSH] Sent successfully`);
+      } catch (error: any) {
+        console.error("[PUSH] Error sending:", error.statusCode, error.message);
+        if (error.statusCode === 410 || error.statusCode === 404) {
+          // Remove invalid subscription
+          const pool2 = getPool();
+          if (pool2) {
+            const client2 = await pool2.connect();
             try {
-                const subscription = sub.subscription;
-                // If the subscription object is a string, parse it
-                const finalSub = typeof subscription === 'string' ? JSON.parse(subscription) : subscription;
-                await webpush.sendNotification(finalSub, payload);
-                console.log(`[PUSH] Sent successfully to endpoint: ${sub.endpoint?.substring(0, 30)}...`);
-            } catch (error: any) {
-                console.error("[PUSH] Error sending to subscription:", error.statusCode, error.message);
-                if (error.statusCode === 410 || error.statusCode === 404) {
-                    try {
-                        const docId = Buffer.from(sub.endpoint).toString('base64url');
-                        await adminDb.collection("pushSubscriptions").doc(docId).delete();
-                    } catch (delErr) { /* ignore */ }
-                    const mIdx = memorySubscriptions.findIndex(ms => ms.endpoint === sub.endpoint);
-                    if (mIdx >= 0) memorySubscriptions.splice(mIdx, 1);
-                }
+              await client2.query(`DELETE FROM push_subscriptions WHERE endpoint = $1`, [sub.endpoint]);
+            } finally {
+              client2.release();
             }
-        });
+          }
+        }
+      }
+    });
 
-        await Promise.all(sendPromises);
-        return true;
-    } catch (error) {
-        console.error("[PUSH] Global error in sendNotification:", error);
-        return false;
-    }
-}
-
-interface NotificationData {
-    userId: string;
-    type: "sale_captured" | "sale_refunded" | "system" | "PURCHASE_APPROVED";
-    title?: string;
-    body?: string;
-    metadata?: any;
+    await Promise.all(sendPromises);
+    return true;
+  } catch (error: any) {
+    console.error("[PUSH] Global error in sendNotification:", error);
+    return false;
+  }
 }

@@ -1,4 +1,4 @@
-// Meteorfy Push Notification Service Worker
+// Meteorfy Pure PWA Push Service Worker (No Firebase)
 
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing...');
