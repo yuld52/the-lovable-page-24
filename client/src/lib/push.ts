@@ -1,116 +1,79 @@
+import { getToken, onMessage } from "firebase/messaging";
+import { app, auth } from "./firebase";
+import { getFirestore, doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
 
-import { apiRequest } from "@/lib/queryClient";
+// Inicializa o Firebase Messaging (apenas em ambiente de browser)
+const messaging = typeof window !== "undefined" && "serviceWorker" in navigator
+  ? (await import("firebase/messaging")).getMessaging(app)
+  : null;
 
-function urlBase64ToUint8Array(base64String: string) {
-    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding)
-        .replace(/\-/g, "+")
-        .replace(/_/g, "/");
-
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-}
-
-let cachedPublicKey: string | null = null;
+const VAPID_KEY = "BJ6r5XpCkKqdF7lNv6X1v3v3hKq5XpCkKqdF7lNv6X1v3v3hKq5XpCk"; // Substitua pela sua chave pública VAPID do Firebase
 
 export async function enablePush(user: any): Promise<boolean> {
-    if (!("serviceWorker" in navigator)) {
-        throw new Error("O seu browser não suporta notificações push.");
-    }
+  if (!messaging) {
+    throw new Error("O seu browser não suporta notificações push.");
+  }
 
-    if (!("PushManager" in window)) {
-        throw new Error("O seu browser não suporta Push API.");
-    }
+  if (!user) {
+    throw new Error("Usuário não autenticado");
+  }
 
-    // Request permission first — before registering SW
+  try {
+    // Solicita permissão
     const permission = await Notification.requestPermission();
     if (permission === "denied") {
-        throw new Error("Permissão de notificações bloqueada no browser. Desbloqueie nas definições do site.");
-    }
-    if (permission !== "granted") {
-        throw new Error("Permissão de notificações não concedida.");
+      throw new Error("Permissão de notificações bloqueada no browser. Desbloqueie nas definições do site.");
     }
 
-    // Register service worker
-    let registration: ServiceWorkerRegistration;
-    try {
-        registration = await navigator.serviceWorker.register("/sw.js");
-        console.log("[Push] SW Registered");
-    } catch (swErr: any) {
-        throw new Error(`Falha ao registar service worker: ${swErr?.message || swErr}`);
+    // Registra o Service Worker se ainda não estiver ativo
+    const registration = await navigator.serviceWorker.ready;
+
+    // Obtém o token FCM
+    const token = await getToken(messaging, {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: registration,
+    });
+
+    if (!token) {
+      throw new Error("Falha ao obter token FCM");
     }
 
-    // Wait for SW to be ready
-    await navigator.serviceWorker.ready;
+    console.log("[PUSH] Token FCM obtido:", token);
 
-    // Fetch VAPID Key from backend (use cache if available)
-    let publicKey = cachedPublicKey;
-    if (!publicKey) {
-      try {
-          const response = await apiRequest("GET", "/api/push/public-key");
-          const json = await response.json();
-          publicKey = json.publicKey;
-          if (!publicKey) throw new Error("Servidor não retornou chave pública VAPID.");
-          cachedPublicKey = publicKey;
-      } catch (keyErr: any) {
-          throw new Error(`Falha ao obter chave do servidor: ${keyErr?.message || keyErr}`);
+    // Salva o token no Firestore (para o servidor poder enviar notificações depois)
+    const db = getFirestore(app);
+    await setDoc(doc(db, "pushTokens", user.uid), {
+      token,
+      createdAt: new Date(),
+      platform: "web"
+    });
+
+    // Listener para mensagens em primeiro plano
+    onMessage(messaging, (payload) => {
+      console.log("[PUSH] Mensagem recebida em primeiro plano:", payload);
+      if (payload.notification) {
+        new Notification(payload.notification.title || "Meteorfy", {
+          body: payload.notification.body,
+          icon: "/favicon.ico",
+        });
       }
-    }
-
-    const convertedVapidKey = urlBase64ToUint8Array(publicKey);
-    const pushManager = (registration as any).pushManager as PushManager;
-
-    // Subscribe to push
-    let subscription: PushSubscription;
-    try {
-        // Check if existing subscription exists with different key
-        const existingSub = await pushManager.getSubscription();
-        if (existingSub) {
-            const currentSubKey = existingSub.options.applicationServerKey;
-            const newKey = convertedVapidKey.buffer;
-            
-            // If keys are different, we MUST unsubscribe first
-            // Note: simple buffer comparison isn't perfect in JS but good enough here
-            if (currentSubKey && currentSubKey.byteLength !== newKey.byteLength) {
-                console.log("[Push] Key mismatch detected, unsubscribing old one...");
-                await existingSub.unsubscribe();
-            }
-        }
-
-        subscription = await pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: convertedVapidKey,
-        });
-        console.log("[Push] Subscribed to push");
-    } catch (subErr: any) {
-        // If it's a key mismatch error, try one last time with force unsubscribe
-        if (subErr.name === "InvalidStateError" || subErr.message?.includes("applicationServerKey")) {
-             const existing = await pushManager.getSubscription();
-             if (existing) await existing.unsubscribe();
-             subscription = await pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: convertedVapidKey,
-             });
-        } else {
-            throw new Error(`Falha ao subscrever push: ${subErr?.message || subErr}`);
-        }
-    }
-
-    // Send subscription to backend
-    try {
-        await apiRequest("POST", "/api/push/subscribe", {
-            subscription,
-            userId: user.uid,
-        });
-        console.log("[Push] Subscription saved on server");
-    } catch (saveErr: any) {
-        throw new Error(`Falha ao guardar subscrição no servidor: ${saveErr?.message || saveErr}`);
-    }
+    });
 
     return true;
+  } catch (err: any) {
+    console.error("[PUSH] Erro ao ativar:", err);
+    throw new Error(`Falha ao ativar notificações: ${err.message}`);
+  }
+}
+
+export async function disablePush(user: any): Promise<void> {
+  if (!user) return;
+
+  try {
+    const db = getFirestore(app);
+    await deleteDoc(doc(db, "pushTokens", user.uid));
+    console.log("[PUSH] Token removido");
+  } catch (err) {
+    console.error("[PUSH] Erro ao desativar:", err);
+  }
 }

@@ -1,68 +1,58 @@
 // Meteorfy Push Notification Service Worker
+// Configurado para Firebase Cloud Messaging
 
-self.addEventListener('install', (event) => {
-  console.log('[SW] Installing...');
-  self.skipWaiting();
-});
+importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js");
 
-self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating...');
-  event.waitUntil(self.clients.claim());
-});
+// Configuração do Firebase (mesma do app)
+const firebaseConfig = {
+  apiKey: "AIzaSyD_DUO1UFAhh6bNOBWZScrVnXj3Z4GowPU",
+  authDomain: "meteorfy1.firebaseapp.com",
+  projectId: "meteorfy1",
+  storageBucket: "meteorfy1.firebasestorage.app",
+  messagingSenderId: "94841260635",
+  appId: "1:94841260635:web:6b0742b301256f644c0d7e"
+};
 
-self.addEventListener('push', (event) => {
-  console.log('[SW] Push received:', event);
+firebase.initializeApp(firebaseConfig);
 
-  let data = {
-    title: 'Meteorfy',
-    body: 'Nova notificação',
-    icon: '/favicon.ico',
-    badge: '/favicon.ico',
-  };
+// Inicializa o Firebase Messaging no Service Worker
+const messaging = firebase.messaging();
 
-  try {
-    if (event.data) {
-      const parsed = event.data.json();
-      data = { ...data, ...parsed };
-    }
-  } catch (e) {
-    console.error('[SW] Failed to parse push data:', e);
-  }
+// Lida com notificações em segundo plano
+messaging.onBackgroundMessage((payload) => {
+  console.log("[SW] Notificação em segundo plano recebida:", payload);
 
-  const options = {
-    body: data.body,
-    icon: data.icon || '/favicon.ico',
-    badge: data.badge || '/favicon.ico',
+  const notificationTitle = payload.notification?.title || "Meteorfy";
+  const notificationOptions = {
+    body: payload.notification?.body || "Nova notificação",
+    icon: "/favicon.ico",
+    badge: "/favicon.ico",
+    data: payload.data,
     vibrate: [200, 100, 200],
-    tag: 'meteorfy-notification',
+    tag: "meteorfy-notification",
     renotify: true,
-    data: {
-      url: self.location.origin,
-    },
   };
 
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
+  return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Notification clicked');
+// Lida com cliques na notificação
+self.addEventListener("notificationclick", (event) => {
+  console.log("[SW] Notificação clicada:", event);
   event.notification.close();
 
-  const urlToOpen = (event.notification.data && event.notification.data.url)
-    ? event.notification.data.url
-    : self.location.origin;
+  const urlToOpen = event.notification.data?.url || self.location.origin;
 
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
-        if (client.url === urlToOpen && 'focus' in client) {
+        if (client.url === urlToOpen && "focus" in client) {
           return client.focus();
         }
       }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(urlToOpen);
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
       }
     })
   );
