@@ -33,7 +33,7 @@ function getPool(): Pool {
 // Helper to convert snake_case to camelCase
 function toCamelCase(obj: any): any {
   if (Array.isArray(obj)) {
-    return obj.map(v => toCamelCase(v));
+    return obj.map((v: any) => toCamelCase(v));
   }
   if (obj !== null && obj !== undefined && obj.constructor === Object) {
     return Object.keys(obj).reduce((result, key) => {
@@ -48,7 +48,7 @@ function toCamelCase(obj: any): any {
 // Helper to convert camelCase to snake_case
 function toSnakeCase(obj: any): any {
   if (Array.isArray(obj)) {
-    return obj.map(v => toSnakeCase(v));
+    return obj.map((v: any) => toSnakeCase(v));
   }
   if (obj !== null && obj !== undefined && obj.constructor === Object) {
     return Object.keys(obj).reduce((result, key) => {
@@ -120,7 +120,7 @@ export class NeonStorage {
         
         const result = await client.query(`
           INSERT INTO products (name, description, price, image_url, delivery_url, whatsapp_url, delivery_files, no_email_delivery, payment_methods, status, owner_id)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
           RETURNING *
         `, [
           productData.name,
@@ -263,7 +263,7 @@ export class NeonStorage {
     try {
       const client = await getPool().connect();
       try {
-        const result = await client.query(`SELECT * FROM checkouts WHERE id = $1`, [id]);
+        const result = await client.query(`SELECT * FROM checkouts WHERE id = $1 LIMIT 1`, [id]);
         if (result.rows.length === 0) return undefined;
         return toCamelCase(result.rows[0]);
       } finally {
@@ -743,7 +743,7 @@ export class NeonStorage {
         for (let i = diffDays; i >= 0; i--) {
           const d = new Date(endDate);
           d.setDate(endDate.getDate() - i);
-          const key = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const key = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
           const daySales = sales.filter((s: any) => {
             const saleDate = new Date(s.created_at);
             return saleDate.getDate() === d.getDate() && 

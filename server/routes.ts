@@ -1,4 +1,4 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import type { Express, Request, Response, NextFunction, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { neonStorage as storage } from "./neon-storage";
 import { api } from "@shared/routes";
@@ -7,7 +7,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { requireAuth } from "./middleware/auth";
-import { adminAuth, adminDb, adminStorage } from "./firebase-admin";
+import { adminAuth, adminDb } from "./firebase-admin";
 import { getVapidPublicKey, saveSubscription } from "./services/notification";
 
 import { registerTrackingRoutes } from "./trackingRoutes";
@@ -17,7 +17,7 @@ const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
 export async function registerRoutes(
   httpServer: Server,
-  app: Express()
+  app: Express
 ): Promise<Server> {
   registerTrackingRoutes(app, storage as any);
   registerChatRoutes(app);
@@ -29,7 +29,7 @@ export async function registerRoutes(
   });
 
   // --- ROTA DE UPLOAD (Firebase Storage) ---
-  app.post("/api/upload", requireAuth, upload.single("file"), async (req: any, res) => {
+  app.post("/api/upload", requireAuth, upload.single("file"), (async (req: any, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "Nenhum arquivo enviado" });
@@ -98,7 +98,7 @@ export async function registerRoutes(
     res.json({ publicKey });
   });
 
-  app.post("/api/push/subscribe", requireAuth, async (req, res) => {
+  app.post("/api/push/subscribe", requireAuth, (async (req, res) => {
     try {
       const { subscription, userId } = req.body;
       if (!subscription || !userId) {
@@ -113,7 +113,7 @@ export async function registerRoutes(
   });
 
   // --- AUTENTICAÇÃO ---
-  app.post("/api/auth/check-email", async (req, res) => {
+  app.post("/api/auth/check-email", (async (req, res) => {
     try {
       const { email } = req.body;
       if (!email) return res.status(400).json({ message: "E-mail é obrigatório" });
@@ -129,10 +129,10 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/user", requireAuth, async (req, res) => res.json((req as any).user));
+  app.get("/api/user", requireAuth, (req, res) => res.json((req as any).user));
 
   // --- PRODUTOS (Neon DB) ---
-  app.get(api.products.list.path, requireAuth, async (req, res) => {
+  app.get(api.products.list.path, requireAuth, (async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const result = await storage.getProducts(userId);
@@ -143,13 +143,12 @@ export async function registerRoutes(
     }
   });
 
-  app.post(api.products.create.path, requireAuth, async (req, res) => {
+  app.post(api.products.create.path, requireAuth, (async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const input = api.products.create.input.parse(req.body);
       console.log("[CREATE PRODUCT] Input:", input);
       
-      // Garante que a URL da imagem seja salva
       const productData = {
         ...input,
         ownerId: userId,
@@ -165,7 +164,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get(api.products.get.path, async (req, res) => {
+  app.get(api.products.get.path, (async (req, res) => {
     try {
       const product = await storage.getProduct(parseInt(req.params.id as string));
       if (!product) return res.status(404).json({ message: "Produto não encontrado" });
@@ -176,7 +175,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch(api.products.update.path, requireAuth, async (req, res) => {
+  app.patch(api.products.update.path, requireAuth, (async (req, res) => {
     try {
       const id = parseInt(req.params.id as string);
       const input = api.products.update.input.parse(req.body);
@@ -188,7 +187,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete(api.products.delete.path, requireAuth, async (req, res) => {
+  app.delete(api.products.delete.path, requireAuth, (async (req, res) => {
     try {
       await storage.deleteProduct(parseInt(req.params.id as string));
       res.status(204).end();
@@ -199,7 +198,7 @@ export async function registerRoutes(
   });
 
   // --- CHECKOUTS (Neon DB) ---
-  app.get(api.checkouts.list.path, requireAuth, async (req, res) => {
+  app.get(api.checkouts.list.path, requireAuth, (async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const result = await storage.getCheckouts(userId);
@@ -210,7 +209,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post(api.checkouts.create.path, requireAuth, async (req, res) => {
+  app.post(api.checkouts.create.path, requireAuth, (async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const input = api.checkouts.create.input.parse(req.body);
@@ -225,7 +224,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get(api.checkouts.get.path, requireAuth, async (req, res) => {
+  app.get(api.checkouts.get.path, requireAuth, (async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const checkout = await storage.getCheckout(parseInt(req.params.id as string), userId);
@@ -237,7 +236,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch(api.checkouts.update.path, requireAuth, async (req, res) => {
+  app.patch(api.checkouts.update.path, requireAuth, (async (req, res) => {
     try {
       const id = parseInt(req.params.id as string);
       const input = api.checkouts.update.input.parse(req.body);
@@ -249,7 +248,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete(api.checkouts.delete.path, requireAuth, async (req, res) => {
+  app.delete(api.checkouts.delete.path, requireAuth, (async (req, res) => {
     try {
       await storage.deleteCheckout(parseInt(req.params.id as string), String((req as any).user?.id || ""));
       res.status(204).end();
@@ -260,7 +259,7 @@ export async function registerRoutes(
   });
 
   // --- VENDAS (Neon DB) ---
-  app.get(api.sales.list.path, requireAuth, async (req, res) => {
+  app.get(api.sales.list.path, requireAuth, (async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const result = await storage.getSales(userId);
@@ -272,7 +271,7 @@ export async function registerRoutes(
   });
 
   // --- CONFIGURAÇÕES (Neon DB) ---
-  app.get(api.settings.get.path, requireAuth, async (req, res) => {
+  app.get(api.settings.get.path, requireAuth, (async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const settings = await storage.getSettings(userId);
@@ -283,7 +282,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post(api.settings.update.path, requireAuth, async (req, res) => {
+  app.post(api.settings.update.path, requireAuth, (async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const input = api.settings.update.input.parse(req.body);
@@ -296,7 +295,7 @@ export async function registerRoutes(
   });
 
   // --- ESTATÍSTICAS (Neon DB) ---
-  app.get(api.stats.get.path, requireAuth, async (req, res) => {
+  app.get(api.stats.get.path, requireAuth, (async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const result = await storage.getDashboardStats(
@@ -314,7 +313,7 @@ export async function registerRoutes(
   });
 
   // --- PAYPAL ---
-  app.get("/api/paypal/public-config", async (req, res) => {
+  app.get("/api/paypal/public-config", (async (req, res) => {
     try {
       const slug = req.query.slug as string;
       if (!slug) return res.status(400).json({ message: "Missing slug" });
@@ -334,7 +333,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/paypal/create-order", async (req, res) => {
+  app.post("/api/paypal/create-order", (async (req, res) => {
     try {
       const { createOrderBodySchema, createOrder } = await import("./paypal");
       const body = createOrderBodySchema.parse(req.body);
@@ -377,7 +376,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/paypal/capture-order/:orderId", async (req, res) => {
+  app.post("/api/paypal/capture-order/:orderId", (async (req, res) => {
     try {
       const { captureOrder } = await import("./paypal");
       const sale = await storage.getSaleByPaypalOrderId(req.params.orderId);
@@ -403,18 +402,18 @@ export async function registerRoutes(
   });
 
   // --- USUÁRIOS (Admin) ---
-  app.get("/api/users-v2", requireAuth, async (req, res) => {
+  app.get("/api/users-v2", requireAuth, (async (req, res) => {
     if ((req as any).user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado." });
     try {
       const list = await adminAuth.listUsers(1000);
-      res.json(list.users.map(u => ({ id: u.uid, email: u.email, username: u.displayName || u.email, createdAt: u.metadata.creationTime })));
+      res.json(list.users.map((u: any) => ({ id: u.uid, email: u.email, username: u.displayName || u.email, createdAt: u.metadata.creationTime })));
     } catch (err: any) {
       console.error("Error listing users:", err);
       res.status(500).json({ message: err.message || "Erro ao listar usuários" });
     }
   });
 
-  app.delete("/api/users-v2/:uid", requireAuth, async (req, res) => {
+  app.delete("/api/users-v2/:uid", requireAuth, (async (req, res) => {
     if ((req as any).user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado." });
     try {
       const uid = Array.isArray(req.params.uid) ? req.params.uid[0] : req.params.uid;
@@ -426,7 +425,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/users-v2", requireAuth, async (req, res) => {
+  app.post("/api/users-v2", requireAuth, (async (req, res) => {
     if ((req as any).user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado." });
     try {
       const { email, password } = req.body;
@@ -439,7 +438,7 @@ export async function registerRoutes(
   });
 
   // --- SAQUES (Withdrawals) ---
-  app.post("/api/withdrawals", requireAuth, async (req, res) => {
+  app.post("/api/withdrawals", requireAuth, (async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const { amount, pixKey, pixKeyType } = req.body;
@@ -454,63 +453,69 @@ export async function registerRoutes(
         pixKey,
         pixKeyType: pixKeyType || 'email'
       });
-
+      
       res.status(201).json(withdrawal);
-    } catch (err: any) {
-      console.error("Error creating withdrawal:", err);
-      res.status(500).json({ message: err.message || "Erro ao solicitar saque" });
+    } catch (error: any) {
+      console.error("Withdrawals API error:", error);
+      res.status(500).json({ message: error.message || "Internal server error" });
     }
   });
 
   // Admin: Get ALL withdrawals
-  app.get("/api/admin/withdrawals", requireAuth, async (req, res) => {
+  app.get("/api/admin/withdrawals", requireAuth, (async (req, res) => {
     try {
-      const user = (req as any).user;
-      if (user?.email !== ADMIN_EMAIL) {
-        return res.status(403).json({ message: "Acesso negado" });
+      if (!isAdmin({ user: (req as any).user })) {
+        return res.status(403).json({ message: "Access denied" });
       }
+
       const result = await storage.getWithdrawals(); // No user filter for admin
       res.json(result);
     } catch (error: any) {
-      console.error("Error getting all withdrawals:", error);
-      res.status(500).json({ message: error.message || "Erro ao buscar saques" });
+      console.error("Withdrawals API error:", error);
+      res.status(500).json({ message: error.message || "Internal server error" });
     }
   });
 
   // Admin: Approve/Reject withdrawal
-  app.post("/api/admin/withdrawals/:id/approve", requireAuth, async (req, res) => {
+  app.post("/api/admin/withdrawals/:id/approve", requireAuth, (async (req, res) => {
     try {
-      const user = (req as any).user;
-      if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
-      const id = parseInt(req.params.id as string);
+      if (!isAdmin({ user: (req as any).user })) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const { id } = req.params;
       const { adminNote } = req.body;
-      const withdrawal = await storage.updateWithdrawalStatus(id, 'approved', adminNote);
-      res.json(withdrawal);
-    } catch (err: any) {
-      console.error("Error approving withdrawal:", err);
-      res.status(500).json({ message: err.message || "Erro ao aprovar saque" });
+      
+      const result = await storage.updateWithdrawalStatus(parseInt(id), 'approved', adminNote || null);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Approve withdrawal error:", error);
+      res.status(500).json({ message: error.message || "Internal server error" });
     }
   });
 
-  app.post("/api/admin/withdrawals/:id/reject", requireAuth, async (req, res) => {
+  app.post("/api/admin/withdrawals/:id/reject", requireAuth, (async (req, res) => {
     try {
-      const user = (req as any).user;
-      if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
-      const id = parseInt(req.params.id as string);
-      const { adminNote } = req.body;
-      const withdrawal = await storage.updateWithdrawalStatus(id, 'rejected', adminNote);
-      res.json(withdrawal);
-    } catch (err: any) {
-      console.error("Error rejecting withdrawal:", err);
-      res.status(500).json({ message: err.message || "Erro ao rejeitar saque" });
+      if (!isAdmin({ user: (req as any).user })) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const { id } = req.params;
+      
+      const result = await storage.updateWithdrawalStatus(parseInt(id), 'rejected');
+      res.json(result);
+    } catch (error: any) {
+      console.error("Reject withdrawal error:", error);
+      res.status(500).json({ message: error.message || "Internal server error" });
     }
   });
 
   // --- PRODUTOS (Admin) ---
-  app.get("/api/admin/products", requireAuth, async (req, res) => {
+  app.get("/api/admin/products", requireAuth, (async (req, res) => {
     try {
-      const user = (req as any).user;
-      if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
+      if (!isAdmin({ user: (req as any).user })) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
       const result = await storage.getProducts(); // No user filter for admin
       res.json(result);
     } catch (error: any) {
@@ -519,11 +524,12 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/products/:id/approve", requireAuth, async (req, res) => {
+  app.post("/api/products/:id/approve", requireAuth, (async (req, res) => {
     try {
-      const user = (req as any).user;
-      if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
-      const id = parseInt(req.params.id as string);
+      if (!isAdmin({ user: (req as any).user })) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      const id = parseInt(req.params.id);
       const product = await storage.approveProduct(id);
       res.json(product);
     } catch (err: any) {
@@ -532,11 +538,12 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/products/:id/reject", requireAuth, async (req, res) => {
+  app.post("/api/products/:id/reject", requireAuth, (async (req, res) => {
     try {
-      const user = (req as any).user;
-      if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
-      const id = parseInt(req.params.id as string);
+      if (!isAdmin({ user: (req as any).user })) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      const id = parseInt(req.params.id);
       const product = await storage.rejectProduct(id);
       res.json(product);
     } catch (err: any) {
@@ -546,10 +553,11 @@ export async function registerRoutes(
   });
 
   // --- CHECKOUTS (Admin) ---
-  app.get("/api/admin/checkouts", requireAuth, async (req, res) => {
+  app.get("/api/admin/checkouts", requireAuth, (async (req, res) => {
     try {
-      const user = (req as any).user;
-      if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
+      if (!isAdmin({ user: (req as any).user })) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
       const result = await storage.getCheckouts(); // No user filter for admin
       res.json(result);
     } catch (error: any) {
@@ -559,7 +567,7 @@ export async function registerRoutes(
   });
 
   // --- TESTE DE BANCO (Health Check) ---
-  app.get("/api/db-test", async (_req, res) => {
+  app.get("/api/db-test", (async (_req, res) => {
     try {
       const result = await storage.getWithdrawals();
       res.json({ 

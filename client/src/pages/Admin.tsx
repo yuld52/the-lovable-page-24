@@ -3,7 +3,7 @@ import { Layout } from "@/components/Layout";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Shield, Users, Package, ShoppingCart, BarChart3, Loader2, ArrowRight, LogOut, CheckCircle2, XCircle, Clock, ArrowDownToLine } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAdminProducts, useAdminCheckouts, useAdminApproveProduct, useAdminRejectProduct } from "@/hooks/use-admin";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,6 @@ const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
 export default function Admin() {
   const [, setLocation] = useLocation();
-  const { user, loading } = useUser();
   const { toast } = useToast();
 
   // Redirect if not admin
@@ -32,6 +31,10 @@ export default function Admin() {
   // Fetch all users (admin only endpoint)
   const { data: users, isLoading: loadingUsers } = useQuery<any[]>({
     queryKey: ["/api/users-v2"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/users-v2");
+      return res.json();
+    },
     enabled: !!user && user.email === ADMIN_EMAIL
   });
 
@@ -44,6 +47,10 @@ export default function Admin() {
   // Fetch ALL withdrawals for admin
   const { data: withdrawals, isLoading: loadingWithdrawals, refetch: refetchWithdrawals } = useQuery<any[]>({
     queryKey: ["/api/admin/withdrawals"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/withdrawals");
+      return res.json();
+    },
     enabled: !!user && user.email === ADMIN_EMAIL
   });
 
@@ -51,7 +58,7 @@ export default function Admin() {
   const rejectProduct = useAdminRejectProduct();
 
   // Withdrawal mutations
-  const approveWithdrawalMutation = useQuery<any[]>({
+  const approveWithdrawalMutation = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest("POST", `/api/admin/withdrawals/${id}/approve`);
     },
@@ -61,7 +68,7 @@ export default function Admin() {
     }
   });
 
-  const rejectWithdrawalMutation = useQuery<any[]>({
+  const rejectWithdrawalMutation = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest("POST", `/api/admin/withdrawals/${id}/reject`);
     },
@@ -314,7 +321,7 @@ export default function Admin() {
                         {pendingWithdrawals.map((w) => (
                         <tr key={w.id} className="hover:bg-zinc-800/20 transition-colors">
                             <td className="px-6 py-4">
-                            <span className="text-sm text-zinc-300">{w.username || w.user_email || 'Usuário'}</span>
+                            <span className="text-sm text-zinc-300">{w.username || w.user_email || "Usuário"}</span>
                             </td>
                             <td className="px-6 py-4">
                             <span className="text-sm font-bold text-white">
@@ -322,11 +329,11 @@ export default function Admin() {
                             </span>
                             </td>
                             <td className="px-6 py-4">
-                            <span className="text-sm text-zinc-400">{w.pix_key || w.pixKey || '-'}</span>
+                            <span className="text-sm text-zinc-400">{w.pix_key || w.pixKey || "-"}</span>
                             </td>
                             <td className="px-6 py-4">
                             <span className="text-xs text-zinc-500">
-                                {w.requested_at ? format(new Date(w.requested_at), "dd/MM/yyyy HH:mm", { locale: ptBR }) : '-'}
+                                {w.requested_at ? format(new Date(w.requested_at), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "-"}
                             </span>
                             </td>
                             <td className="px-6 py-4 text-right">
