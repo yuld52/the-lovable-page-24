@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Product } from "@shared/schema";
+import type { Product, Sale } from "@shared/schema";
 import { auth } from "@/lib/firebase";
 import { getIdToken } from "firebase/auth";
 
 // Admin: Get ALL products (no user filter)
-export function useAdminProducts() {
+export function useAdminProducts(): Promise<Product[]> {
   return useQuery({
     queryKey: ["admin", "products"],
     queryFn: async () => {
@@ -29,7 +29,7 @@ export function useAdminProducts() {
 }
 
 // Admin: Get ALL checkouts
-export function useAdminCheckouts() {
+export function useAdminCheckouts(): Promise<any[]> {
   return useQuery({
     queryKey: ["admin", "checkouts"],
     queryFn: async () => {
@@ -47,6 +47,31 @@ export function useAdminCheckouts() {
       }
 
       return response.json();
+    },
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+  });
+}
+
+// Admin: Get ALL sales
+export function useAdminSales(): Promise<Sale[]> {
+  return useQuery({
+    queryKey: ["admin", "sales"],
+    queryFn: async () => {
+      const user = auth.currentUser;
+      if (!user) return [];
+
+      const idToken = await getIdToken(user);
+      const response = await fetch("/api/admin/sales", {
+        headers: { "Authorization": `Bearer ${idToken}` }
+      });
+
+      if (!response.ok) {
+        console.error("Failed to fetch admin sales:", response.status);
+        return [];
+      }
+
+      return response.json() as Promise<Sale[]>;
     },
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,

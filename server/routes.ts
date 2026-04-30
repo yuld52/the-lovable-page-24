@@ -308,6 +308,21 @@ export async function registerRoutes(
     }
   });
 
+  // Admin: Get ALL sales
+  app.get("/api/admin/sales", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      const result = await storage.getSales(); // No user filter for admin
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error getting all sales:", error);
+      res.status(500).json({ message: error.message || "Erro ao buscar vendas" });
+    }
+  });
+
   // Settings
   app.get(api.settings.get.path, requireAuth, async (req, res) => {
     try {
