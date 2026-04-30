@@ -1,5 +1,5 @@
 import { Layout } from "@/components/Layout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useStats } from "@/hooks/use-stats";
 import { Loader2, PackageX, Eye, EyeOff, CalendarIcon, TrendingUp } from "lucide-react";
 import {
@@ -145,11 +145,9 @@ export default function Dashboard() {
 
   if (statsLoading || productsLoading) {
     return (
-      <Layout title="Dashboard" subtitle="Visão geral das suas vendas">
-        <div className="flex justify-center p-12">
-          <Loader2 className="w-8 h-8 text-primary animate-spin" />
-        </div>
-      </Layout>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
     );
   }
 
@@ -342,7 +340,7 @@ export default function Dashboard() {
                   tick={{ fill: "#a1a1aa", fontSize: 9, fontWeight: 500 }}
                   axisLine={false}
                   tickLine={false}
-                  tickInterval={0}
+                  interval={0}
                   angle={-45}
                   textAnchor="end"
                   height={70}
