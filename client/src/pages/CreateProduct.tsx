@@ -17,6 +17,9 @@ import {
   ArrowLeft,
   CreditCard,
   Wallet,
+  Users,
+  Percent,
+  Info,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
@@ -57,6 +60,10 @@ export default function CreateProduct() {
     deliveryFiles: [] as string[],
     noEmailDelivery: false,
     paymentMethods: ["paypal"] as string[],
+    // Campos de afiliado
+    isAffiliate: false,
+    affiliateCommission: "",
+    affiliateCookieDays: "30",
   });
   const [showErrors, setShowErrors] = useState(false);
 
@@ -87,12 +94,12 @@ export default function CreateProduct() {
         title: "Campos obrigatórios",
         description:
           step === 1
-            ? "Por favor, preencha todos os campos obrigatórios."
+            ? "Preencha o nome e o preço do produto para continuar."
             : step === 2
             ? "Selecione pelo menos um método de pagamento."
-            : isUrlInvalid
-              ? "Por favor, insira um link válido com domínio."
-              : "Por favor, forneça um link ou adicione arquivos para entrega.",
+            : step === 3
+            ? "Forneça um link de acesso ou adicione arquivos para entrega."
+            : "Preencha os dados do afiliado se a opção estiver ativada.",
         variant: "destructive",
       });
       return;
@@ -176,6 +183,10 @@ export default function CreateProduct() {
         deliveryFiles: deliveryFileUrls,
         noEmailDelivery: newProduct.noEmailDelivery,
         paymentMethods: newProduct.paymentMethods,
+        // Campos de afiliado
+        isAffiliate: newProduct.isAffiliate,
+        affiliateCommission: newProduct.isAffiliate ? parseInt(newProduct.affiliateCommission) || null : null,
+        affiliateCookieDays: newProduct.isAffiliate ? parseInt(newProduct.affiliateCookieDays) || 30 : 30,
       });
 
       toast({ title: "Sucesso", description: "Produto criado com sucesso!" });
@@ -205,19 +216,21 @@ export default function CreateProduct() {
 
       return true;
     }
+    if (step === 4) {
+      // Se afiliado estiver ativado, comissão é obrigatória
+      if (newProduct.isAffiliate) {
+        return newProduct.affiliateCommission !== "" && 
+               parseInt(newProduct.affiliateCommission) > 0 && 
+               parseInt(newProduct.affiliateCommission) <= 100;
+      }
+      return true;
+    }
     return true;
   };
 
   const handleNext = () => {
     if (!isStepValid()) {
       setShowErrors(true);
-
-      const hasLink = newProduct.deliveryUrl.trim() !== "";
-      const isUrlInvalid =
-        hasLink &&
-        !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(
-          newProduct.deliveryUrl.trim()
-        );
 
       toast({
         title: "Campos obrigatórios",
@@ -226,9 +239,9 @@ export default function CreateProduct() {
             ? "Preencha o nome e o preço do produto para continuar."
             : step === 2
               ? "Selecione pelo menos um método de pagamento."
-              : isUrlInvalid
-                ? "Por favor, insira um link válido com domínio."
-                : "Forneça um link de acesso ou adicione arquivos para a entrega.",
+              : step === 3
+                ? "Forneça um link de acesso ou adicione arquivos para a entrega."
+                : "Verifique os dados do afiliado.",
         variant: "destructive",
       });
       return;
@@ -240,7 +253,8 @@ export default function CreateProduct() {
   const steps = [
     { id: 1, title: "Informações básicas" },
     { id: 2, title: "Métodos de Pagamento" },
-    { id: 3, title: "Método de entrega" }
+    { id: 3, title: "Método de entrega" },
+    { id: 4, title: "Afiliados" }
   ];
 
   const renderStepIndicator = () => (
@@ -252,12 +266,12 @@ export default function CreateProduct() {
               }`}>
               {step > s.id ? <Check className="w-4 h-4" /> : s.id}
             </div>
-            <span className={`text-[10px] font-medium whitespace-nowrap ${step >= s.id ? 'text-zinc-300' : 'text-zinc-500'}`}>
+            <span className={`text-[10px] font-medium whitespace-nowrap ${step >= s.id ? 'text-zinc-300' : 'text-zinc-500'`}>
               {s.title}
             </span>
           </div>
           {i < steps.length - 1 && (
-            <div className={`h-[1px] flex-1 mx-4 ${step > s.id ? 'bg-purple-600' : 'bg-zinc-800'}`} />
+            <div className={`h-[1px] flex-1 mx-4 ${step > s.id ? 'bg-purple-600' : 'bg-zinc-800'`} />
           )}
         </div>
       ))}
@@ -385,44 +399,46 @@ export default function CreateProduct() {
                 </div>
 
                 <div className="bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/50 space-y-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="p-1.5 bg-zinc-800 rounded-lg">
-                      <span className="text-sm font-bold text-zinc-400">$</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="p-1.5 bg-zinc-800 rounded-lg">
+                        <span className="text-sm font-bold text-zinc-400">$</span>
+                      </div>
+                      <label className="text-sm font-bold text-zinc-200">Preço e Moeda</label>
                     </div>
-                    <label className="text-sm font-bold text-zinc-200">Preço e Moeda</label>
-                  </div>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-zinc-500">Moeda do produto</label>
-                    <Select defaultValue="USD" disabled>
-                      <SelectTrigger className="bg-black/40 border-zinc-800 h-11 opacity-50 cursor-not-allowed">
-                        <SelectValue placeholder="USD ($) - Dólar Americano" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
-                        <SelectItem value="USD">USD ($) - Dólar Americano</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-zinc-500">Moeda do produto</label>
+                      <Select defaultValue="USD" disabled>
+                        <SelectTrigger className="bg-black/40 border-zinc-800 h-11 opacity-50 cursor-not-allowed">
+                          <SelectValue placeholder="USD ($) - Dólar Americano" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
+                          <SelectItem value="USD">USD ($) - Dólar Americano</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-zinc-500">Valor (USD)</label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      className={`bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500 ${showErrors && !newProduct.price ? 'border-red-500/50 focus-visible:ring-red-500' : ''}`}
-                      value={newProduct.price}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === "" || Number(val) >= 0) {
-                          setNewProduct({ ...newProduct, price: val });
-                        }
-                      }}
-                      placeholder="Ex: 19.90"
-                    />
-                    {showErrors && !newProduct.price && (
-                      <p className="text-[10px] text-red-500 font-medium ml-1">Campo obrigatório</p>
-                    )}
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-zinc-500">Valor (USD)</label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className={`bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500 ${showErrors && !newProduct.price ? 'border-red-500/50 focus-visible:ring-red-500' : ''}`}
+                        value={newProduct.price}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "" || Number(val) >= 0) {
+                            setNewProduct({ ...newProduct, price: val });
+                          }
+                        }}
+                        placeholder="Ex: 19.90"
+                      />
+                      {showErrors && !newProduct.price && (
+                        <p className="text-[10px] text-red-500 font-medium ml-1">Campo obrigatório</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -541,8 +557,7 @@ export default function CreateProduct() {
                     <Input
                       className={`bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500 ${showErrors && newProduct.deliveryUrl && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(newProduct.deliveryUrl.trim())
                         ? 'border-red-500/50 focus-visible:ring-red-500'
-                        : ''
-                        }`}
+                        : ''}`}
                       placeholder="https://exemplo.com/acesso"
                       value={newProduct.deliveryUrl}
                       onChange={(e) => setNewProduct({ ...newProduct, deliveryUrl: e.target.value })}
@@ -639,11 +654,102 @@ export default function CreateProduct() {
                 </div>
               </div>
             )}
-            <div className="flex items-center gap-3 pt-6 mt-6 border-t border-zinc-800/50">
+
+            {step === 4 && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex items-center gap-2 text-zinc-300 font-medium pb-2 border-b border-zinc-800/50">
+                  <Users className="w-4 h-4 text-purple-500" />
+                  Configuração de Afiliados
+                </div>
+
+                <div className="bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/50 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${newProduct.isAffiliate ? 'bg-purple-500/10' : 'bg-zinc-800/50'}`}>
+                        <Users className={`w-5 h-5 ${newProduct.isAffiliate ? 'text-purple-400' : 'text-zinc-500'}`} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white">Ativar Sistema de Afiliados</p>
+                        <p className="text-xs text-zinc-500">Permita que outros usuários vendam seu produto</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={newProduct.isAffiliate}
+                      onCheckedChange={(checked) => setNewProduct({ ...newProduct, isAffiliate: checked })}
+                    />
+                  </div>
+
+                  {newProduct.isAffiliate && (
+                    <div className="space-y-4 pl-4 border-l-2 border-purple-500/30 animate-in fade-in duration-300">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Percent className="w-4 h-4 text-purple-400" />
+                          <label className="text-sm font-bold text-zinc-200">Comissão do Afiliado (%)</label>
+                        </div>
+                        <Input
+                          type="number"
+                          min="1"
+                          max="100"
+                          className={`bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500 ${showErrors && (!newProduct.affiliateCommission || parseInt(newProduct.affiliateCommission) <= 0 || parseInt(newProduct.affiliateCommission) > 100) ? 'border-red-500/50 focus-visible:ring-red-500' : ''}`}
+                          value={newProduct.affiliateCommission}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "" || (parseInt(val) >= 0 && parseInt(val) <= 100)) {
+                              setNewProduct({ ...newProduct, affiliateCommission: val });
+                            }
+                          }}
+                          placeholder="Ex: 10 (para 10%)"
+                        />
+                        {showErrors && (!newProduct.affiliateCommission || parseInt(newProduct.affiliateCommission) <= 0 || parseInt(newProduct.affiliateCommission) > 100) && (
+                          <p className="text-[10px] text-red-500 font-medium ml-1">Informe um valor entre 1 e 100</p>
+                        )}
+                        <p className="text-[11px] text-zinc-500 ml-1">Porcentagem que o afiliado receberá sobre cada venda</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Info className="w-4 h-4 text-purple-400" />
+                          <label className="text-sm font-bold text-zinc-200">Dias de Cookie</label>
+                        </div>
+                        <Input
+                          type="number"
+                          min="1"
+                          max="365"
+                          className="bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500"
+                          value={newProduct.affiliateCookieDays}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "" || (parseInt(val) >= 1 && parseInt(val) <= 365)) {
+                              setNewProduct({ ...newProduct, affiliateCookieDays: val });
+                            }
+                          }}
+                          placeholder="30"
+                        />
+                        <p className="text-[11px] text-zinc-500 ml-1">Por quantos dias o cookie do afiliado deve ser válido (1-365 dias)</p>
+                      </div>
+
+                      <div className="bg-purple-500/5 border border-purple-500/20 p-3 rounded-lg">
+                        <div className="flex items-start gap-2">
+                          <Info className="w-4 h-4 text-purple-400 mt-0.5" />
+                          <div>
+                            <p className="text-xs font-bold text-purple-300">Como funciona?</p>
+                            <p className="text-[11px] text-zinc-400 mt-1">
+                              Quando um cliente acessa o link de afiliado, um cookie é criado. 
+                              Se ele comprar dentro do período definido, o afiliado recebe a comissão.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            <div className="flex items-center gap-3 pt-6 border-t border-zinc-800/50">
               {step > 1 && (
                 <Button
                   variant="ghost"
-                  className="flex-1 h-12 text-zinc-400 hover:text-white"
+                  className="flex-1 h-12"
                   onClick={() => setStep(step - 1)}
                 >
                   Voltar
@@ -651,7 +757,7 @@ export default function CreateProduct() {
               )}
               <Button
                 className="flex-[2] h-12 bg-purple-600 hover:bg-purple-500 text-white font-bold border-0 shadow-none"
-                onClick={() => (step === 3 ? handleCreate() : handleNext())}
+                onClick={() => (step === 4 ? handleCreate() : handleNext())}
                 disabled={createProduct.isPending || isUploadingDeliveryFiles || isUploadingImage}
               >
                 {createProduct.isPending || isUploadingDeliveryFiles ? (
@@ -659,7 +765,7 @@ export default function CreateProduct() {
                     <Loader2 className="animate-spin w-4 h-4" />
                     Enviando...
                   </span>
-                ) : step === 3 ? (
+                ) : step === 4 ? (
                   "Finalizar e Criar Produto"
                 ) : (
                   "Próximo passo"

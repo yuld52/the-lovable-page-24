@@ -119,8 +119,8 @@ export class NeonStorage {
         const productData = toSnakeCase(product);
         
         const result = await client.query(`
-          INSERT INTO products (name, description, price, image_url, delivery_url, whatsapp_url, delivery_files, no_email_delivery, payment_methods, status, owner_id)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          INSERT INTO products (name, description, price, image_url, delivery_url, whatsapp_url, delivery_files, no_email_delivery, payment_methods, status, owner_id, is_affiliate, affiliate_commission, affiliate_cookie_days)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
           RETURNING *
         `, [
           productData.name,
@@ -133,7 +133,10 @@ export class NeonStorage {
           productData.no_email_delivery || false,
           JSON.stringify(productData.payment_methods || ["paypal"]),
           productData.status || 'pending', // Garante que o status seja salvo
-          productData.owner_id || null
+          productData.owner_id || null,
+          productData.is_affiliate || false,
+          productData.affiliate_commission || null,
+          productData.affiliate_cookie_days || 30
         ]);
         
         return toCamelCase(result.rows[0]);
@@ -316,7 +319,7 @@ export class NeonStorage {
         
         const result = await client.query(`
           INSERT INTO checkouts (product_id, owner_id, name, slug, public_url, views, active, config)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
           RETURNING *
         `, [
           checkoutData.product_id,
@@ -575,8 +578,8 @@ export class NeonStorage {
         const saleData = toSnakeCase(sale);
         
         const result = await client.query(`
-          INSERT INTO sales (checkout_id, product_id, user_id, amount, status, customer_email, paypal_order_id, paypal_currency, paypal_amount_minor, created_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+          INSERT INTO sales (checkout_id, product_id, user_id, amount, status, customer_email, paypal_order_id, paypal_currency, paypal_amount_minor, created_at, affiliate_id, affiliate_commission_paid)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
           RETURNING *
         `, [
           saleData.checkout_id || null,
@@ -587,7 +590,9 @@ export class NeonStorage {
           saleData.customer_email || null,
           saleData.paypal_order_id || null,
           saleData.paypal_currency || null,
-          saleData.paypal_amount_minor || null
+          saleData.paypal_amount_minor || null,
+          saleData.affiliate_id || null,
+          saleData.affiliate_commission_paid || null
         ]);
         
         return toCamelCase(result.rows[0]);
@@ -673,7 +678,13 @@ export class NeonStorage {
   }
 
   // Dashboard stats
-  async getDashboardStats(userId: string, period?: string, productId?: string, startDateStr?: string, endDateStr?: string): Promise<any> {
+  async getDashboardStats(
+    userId: string, 
+    period?: string, 
+    productId?: string, 
+    startDateStr?: string, 
+    endDateStr?: string
+  ): Promise<any> {
     try {
       const client = await getPool().connect();
       try {
@@ -743,7 +754,7 @@ export class NeonStorage {
         for (let i = diffDays; i >= 0; i--) {
           const d = new Date(endDate);
           d.setDate(endDate.getDate() - i);
-          const key = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const key = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
           const daySales = sales.filter((s: any) => {
             const saleDate = new Date(s.created_at);
             return saleDate.getDate() === d.getDate() && 
