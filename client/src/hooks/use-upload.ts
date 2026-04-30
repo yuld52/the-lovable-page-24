@@ -14,7 +14,7 @@ interface UploadResponse {
   /** Path inside the bucket (e.g. public/123-file.png) */
   objectPath: string;
   metadata: UploadMetadata;
-  /** Backwards-compatible alias */
+  /** Backwards-compat alias */
   url: string;
 }
 
@@ -60,17 +60,11 @@ export function useUpload(options: UseUploadOptions = {}) {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          // Tenta obter a mensagem de erro específica do servidor
-          const serverMessage = errorData.message || `Erro ${response.status}: Falha no upload`;
-          throw new Error(serverMessage);
+          throw new Error(errorData.message || "Falha no upload");
         }
 
         const data = await response.json();
         const publicUrl = data.url;
-
-        if (!publicUrl) {
-          throw new Error("URL pública não retornada pelo servidor");
-        }
 
         const uploadResponse: UploadResponse = {
           uploadURL: publicUrl,
@@ -88,7 +82,6 @@ export function useUpload(options: UseUploadOptions = {}) {
         return uploadResponse;
       } catch (err) {
         const e = err instanceof Error ? err : new Error("Upload failed");
-        console.error("[useUpload] Erro:", e);
         setError(e);
         options.onError?.(e);
         return null;

@@ -1,4 +1,4 @@
-import type { Express, Request, Response, NextFunction, RequestHandler } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { neonStorage as storage } from "./neon-storage";
 import { api } from "@shared/routes";
@@ -7,7 +7,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { requireAuth } from "./middleware/auth";
-import { adminAuth, adminDb } from "./firebase-admin";
+import { adminAuth, adminDb, adminStorage } from "./firebase-admin";
 import { getVapidPublicKey, saveSubscription } from "./services/notification";
 
 import { registerTrackingRoutes } from "./trackingRoutes";
@@ -22,36 +22,27 @@ export async function registerRoutes(
   registerTrackingRoutes(app, storage as any);
   registerChatRoutes(app);
 
-  // Configuração do Multer para upload de memória
+  // Use memory storage for multer to upload directly to Firebase
   const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    limits: { fileSize: 64 * 1024 * 1024 }, // 64MB
   });
 
-  // --- ROTA DE UPLOAD (Firebase Storage) ---
-  app.post("/api/upload", requireAuth, upload.single("file"), (async (req: any, res) => {
+  // ADD THIS: File Upload Route
+  app.post("/api/upload", requireAuth, upload.single("file"), async (req: any, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "Nenhum arquivo enviado" });
       }
 
       const file = req.file;
-      const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
+      const fileName = `${Date.now()}-${file.originalname}`;
       const filePath = `public/${fileName}`;
 
-      console.log(`[Upload] Iniciando upload para Firebase...`);
-      console.log(`[Upload] Bucket: meteorfy1.firebasestorage.app`);
-      console.log(`[Upload] Caminho: ${filePath}`);
-
-      // Garante que o adminStorage está pronto
-      if (!adminStorage) {
-        throw new Error("Firebase Admin Storage não inicializado. Verifique as credenciais no .env");
-      }
-
-      const bucket = adminStorage.bucket("meteorfy1.firebasestorage.app");
+      // Upload to Firebase Storage using admin SDK
+      const bucket = adminStorage.bucket();
       const fileUpload = bucket.file(filePath);
 
-      // Salva o buffer no Firebase
       await fileUpload.save(file.buffer, {
         metadata: {
           contentType: file.mimetype,
@@ -61,20 +52,13 @@ export async function registerRoutes(
         }
       });
 
-      console.log(`[Upload] Arquivo salvo no Storage. Tentando tornar público...`);
+      // Make the file public
+      await fileUpload.makePublic();
 
-      // Tenta tornar público (pode falhar se "Uniform Access" estiver ativo, mas o link ainda funciona)
-      try {
-        await fileUpload.makePublic();
-        console.log(`[Upload] Arquivo tornado público.`);
-      } catch (pubErr: any) {
-        console.warn(`[Upload] Aviso: Não foi possível tornar o arquivo público (Uniform Access?). Erro: ${pubErr.message}`);
-      }
-
-      // Gera a URL pública manualmente (padrão Google Cloud Storage)
+      // Get the public URL
       const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
-      
-      console.log(`[Upload] Sucesso! URL: ${publicUrl}`);
+
+      console.log(`[Upload] File uploaded: ${publicUrl}`);
 
       res.json({
         url: publicUrl,
@@ -84,12 +68,12 @@ export async function registerRoutes(
         type: file.mimetype,
       });
     } catch (err: any) {
-      console.error("[Upload] ERRO CRÍTICO:", err);
-      res.status(500).json({ message: err.message || "Falha ao carregar imagem para o servidor" });
+      console.error("Upload error:", err);
+      res.status(500).json({ message: err.message || "Falha no upload" });
     }
   });
 
-  // --- PUSH NOTIFICATIONS ---
+  // PWA Push Notification Routes
   app.get("/api/push/public-key", (req, res) => {
     const publicKey = getVapidPublicKey();
     if (!publicKey) {
@@ -98,7 +82,7 @@ export async function registerRoutes(
     res.json({ publicKey });
   });
 
-  app.post("/api/push/subscribe", requireAuth, (async (req, res) => {
+  app.post("/api/push/subscribe", requireAuth, async (req, res) => {
     try {
       const { subscription, userId } = req.body;
       if (!subscription || !userId) {
@@ -112,8 +96,7 @@ export async function registerRoutes(
     }
   });
 
-  // --- AUTENTICAÇÃO ---
-  app.post("/api/auth/check-email", (async (req, res) => {
+  app.post("/api/auth/check-email", async (req, res) => {
     try {
       const { email } = req.body;
       if (!email) return res.status(400).json({ message: "E-mail é obrigatório" });
@@ -129,10 +112,10 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/user", requireAuth, (req, res) => res.json((req as any).user));
+  app.get("/api/user", requireAuth, async (req, res) => res.json((req as any).user));
 
-  // --- PRODUTOS (Neon DB) ---
-  app.get(api.products.list.path, requireAuth, (async (req, res) => {
+  // Products
+  app.get(api.products.list.path, requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const result = await storage.getProducts(userId);
@@ -143,28 +126,36 @@ export async function registerRoutes(
     }
   });
 
-  app.post(api.products.create.path, requireAuth, (async (req, res) => {
+  // Admin: Get ALL products (no user filter)
+  app.get("/api/admin/products", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      const result = await storage.getProducts(); // No user filter for admin
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error getting all products:", error);
+      res.status(500).json({ message: error.message || "Erro ao buscar produtos" });
+    }
+  });
+
+  app.post(api.products.create.path, requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const input = api.products.create.input.parse(req.body);
-      console.log("[CREATE PRODUCT] Input:", input);
-      
-      const productData = {
-        ...input,
-        ownerId: userId,
-        status: 'pending' // Mantém o status padrão de pendente
-      };
-      
-      const result = await storage.createProduct(productData);
-      console.log("[CREATE PRODUCT] Sucesso:", result);
+      console.log("[CREATE PRODUCT] Input:", input, "UserId:", userId);
+      const result = await storage.createProduct({ ...input, ownerId: userId });
+      console.log("[CREATE PRODUCT] Success:", result);
       res.status(201).json(result);
     } catch (err: any) {
-      console.error("[CREATE PRODUCT] Erro:", err);
+      console.error("[CREATE PRODUCT] Error:", err);
       res.status(400).json({ message: err.message });
     }
   });
 
-  app.get(api.products.get.path, (async (req, res) => {
+  app.get(api.products.get.path, async (req, res) => {
     try {
       const product = await storage.getProduct(parseInt(req.params.id as string));
       if (!product) return res.status(404).json({ message: "Produto não encontrado" });
@@ -175,7 +166,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch(api.products.update.path, requireAuth, (async (req, res) => {
+  app.patch(api.products.update.path, requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id as string);
       const input = api.products.update.input.parse(req.body);
@@ -187,7 +178,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete(api.products.delete.path, requireAuth, (async (req, res) => {
+  app.delete(api.products.delete.path, requireAuth, async (req, res) => {
     try {
       await storage.deleteProduct(parseInt(req.params.id as string));
       res.status(204).end();
@@ -197,8 +188,39 @@ export async function registerRoutes(
     }
   });
 
-  // --- CHECKOUTS (Neon DB) ---
-  app.get(api.checkouts.list.path, requireAuth, (async (req, res) => {
+  // Product Approval Routes (Admin only)
+  app.post("/api/products/:id/approve", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      const id = parseInt(req.params.id as string);
+      const product = await storage.approveProduct(id);
+      res.json(product);
+    } catch (err: any) {
+      console.error("Error approving product:", err);
+      res.status(500).json({ message: err.message || "Erro ao aprovar produto" });
+    }
+  });
+
+  app.post("/api/products/:id/reject", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      const id = parseInt(req.params.id as string);
+      const product = await storage.rejectProduct(id);
+      res.json(product);
+    } catch (err: any) {
+      console.error("Error rejecting product:", err);
+      res.status(500).json({ message: err.message || "Erro ao rejeitar produto" });
+    }
+  });
+
+  // Checkouts
+  app.get(api.checkouts.list.path, requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const result = await storage.getCheckouts(userId);
@@ -209,22 +231,37 @@ export async function registerRoutes(
     }
   });
 
-  app.post(api.checkouts.create.path, requireAuth, (async (req, res) => {
+  // Admin: Get ALL checkouts
+  app.get("/api/admin/checkouts", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+      const result = await storage.getCheckouts(); // No user filter for admin
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error getting all checkouts:", error);
+      res.status(500).json({ message: error.message || "Erro ao buscar checkouts" });
+    }
+  });
+
+  app.post(api.checkouts.create.path, requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const input = api.checkouts.create.input.parse(req.body);
-      console.log("[CREATE CHECKOUT] Input:", input);
+      console.log("[CREATE CHECKOUT] Input:", input, "UserId:", userId);
       const baseUrl = `${req.headers['x-forwarded-proto'] || req.protocol}://${req.headers.host}`;
       const result = await storage.createCheckout({ ...input, ownerId: userId, publicUrl: `${baseUrl}/checkout/${input.slug}` });
-      console.log("[CREATE CHECKOUT] Sucesso:", result);
+      console.log("[CREATE CHECKOUT] Success:", result);
       res.status(201).json(result);
     } catch (err: any) {
-      console.error("[CREATE CHECKOUT] Erro:", err);
+      console.error("[CREATE CHECKOUT] Error:", err);
       res.status(400).json({ message: err.message });
     }
   });
 
-  app.get(api.checkouts.get.path, requireAuth, (async (req, res) => {
+  app.get(api.checkouts.get.path, requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const checkout = await storage.getCheckout(parseInt(req.params.id as string), userId);
@@ -236,11 +273,11 @@ export async function registerRoutes(
     }
   });
 
-  app.patch(api.checkouts.update.path, requireAuth, (async (req, res) => {
+  app.patch(api.checkouts.update.path, requireAuth, async (req, res) => {
     try {
-      const id = parseInt(req.params.id as string);
+      const userId = String((req as any).user?.id || "");
       const input = api.checkouts.update.input.parse(req.body);
-      const result = await storage.updateCheckout(id, String((req as any).user?.id || ""), input);
+      const result = await storage.updateCheckout(parseInt(req.params.id as string), userId, input);
       res.json(result);
     } catch (err: any) {
       console.error("Error updating checkout:", err);
@@ -248,9 +285,10 @@ export async function registerRoutes(
     }
   });
 
-  app.delete(api.checkouts.delete.path, requireAuth, (async (req, res) => {
+  app.delete(api.checkouts.delete.path, requireAuth, async (req, res) => {
     try {
-      await storage.deleteCheckout(parseInt(req.params.id as string), String((req as any).user?.id || ""));
+      const userId = String((req as any).user?.id || "");
+      await storage.deleteCheckout(parseInt(req.params.id as string), userId);
       res.status(204).end();
     } catch (err: any) {
       console.error("Error deleting checkout:", err);
@@ -258,8 +296,8 @@ export async function registerRoutes(
     }
   });
 
-  // --- VENDAS (Neon DB) ---
-  app.get(api.sales.list.path, requireAuth, (async (req, res) => {
+  // Sales
+  app.get(api.sales.list.path, requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const result = await storage.getSales(userId);
@@ -270,8 +308,8 @@ export async function registerRoutes(
     }
   });
 
-  // --- CONFIGURAÇÕES (Neon DB) ---
-  app.get(api.settings.get.path, requireAuth, (async (req, res) => {
+  // Settings
+  app.get(api.settings.get.path, requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const settings = await storage.getSettings(userId);
@@ -282,7 +320,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post(api.settings.update.path, requireAuth, (async (req, res) => {
+  app.post(api.settings.update.path, requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const input = api.settings.update.input.parse(req.body);
@@ -294,8 +332,8 @@ export async function registerRoutes(
     }
   });
 
-  // --- ESTATÍSTICAS (Neon DB) ---
-  app.get(api.stats.get.path, requireAuth, (async (req, res) => {
+  // Stats
+  app.get(api.stats.get.path, requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const result = await storage.getDashboardStats(
@@ -312,8 +350,8 @@ export async function registerRoutes(
     }
   });
 
-  // --- PAYPAL ---
-  app.get("/api/paypal/public-config", (async (req, res) => {
+  // PayPal
+  app.get("/api/paypal/public-config", async (req, res) => {
     try {
       const slug = req.query.slug as string;
       if (!slug) return res.status(400).json({ message: "Missing slug" });
@@ -333,7 +371,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/paypal/create-order", (async (req, res) => {
+  app.post("/api/paypal/create-order", async (req, res) => {
     try {
       const { createOrderBodySchema, createOrder } = await import("./paypal");
       const body = createOrderBodySchema.parse(req.body);
@@ -341,6 +379,7 @@ export async function registerRoutes(
       const product = await storage.getProduct(body.productId);
       if (!checkout || !product) return res.status(404).json({ message: "Checkout/Produto não encontrado" });
 
+      // Check if product is approved
       if (product.status !== 'approved') {
         return res.status(403).json({ message: "Produto não aprovado" });
       }
@@ -376,7 +415,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/paypal/capture-order/:orderId", (async (req, res) => {
+  app.post("/api/paypal/capture-order/:orderId", async (req, res) => {
     try {
       const { captureOrder } = await import("./paypal");
       const sale = await storage.getSaleByPaypalOrderId(req.params.orderId);
@@ -401,19 +440,19 @@ export async function registerRoutes(
     }
   });
 
-  // --- USUÁRIOS (Admin) ---
-  app.get("/api/users-v2", requireAuth, (async (req, res) => {
+  // User Management
+  app.get("/api/users-v2", requireAuth, async (req, res) => {
     if ((req as any).user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado." });
     try {
       const list = await adminAuth.listUsers(1000);
-      res.json(list.users.map((u: any) => ({ id: u.uid, email: u.email, username: u.displayName || u.email, createdAt: u.metadata.creationTime })));
+      res.json(list.users.map(u => ({ id: u.uid, email: u.email, username: u.displayName || u.email, createdAt: u.metadata.creationTime })));
     } catch (err: any) {
       console.error("Error listing users:", err);
       res.status(500).json({ message: err.message || "Erro ao listar usuários" });
     }
   });
 
-  app.delete("/api/users-v2/:uid", requireAuth, (async (req, res) => {
+  app.delete("/api/users-v2/:uid", requireAuth, async (req, res) => {
     if ((req as any).user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado." });
     try {
       const uid = Array.isArray(req.params.uid) ? req.params.uid[0] : req.params.uid;
@@ -425,7 +464,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/users-v2", requireAuth, (async (req, res) => {
+  app.post("/api/users-v2", requireAuth, async (req, res) => {
     if ((req as any).user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado." });
     try {
       const { email, password } = req.body;
@@ -437,8 +476,8 @@ export async function registerRoutes(
     }
   });
 
-  // --- SAQUES (Withdrawals) ---
-  app.post("/api/withdrawals", requireAuth, (async (req, res) => {
+  // Withdrawals
+  app.post("/api/withdrawals", requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const { amount, pixKey, pixKeyType } = req.body;
@@ -449,127 +488,71 @@ export async function registerRoutes(
 
       const withdrawal = await storage.createWithdrawal({
         userId,
-        amount: Math.round(parseFloat(amount) * 100),
+        amount: Math.round(parseFloat(amount) * 100), // Convert to cents
         pixKey,
         pixKeyType: pixKeyType || 'email'
       });
-      
+
       res.status(201).json(withdrawal);
-    } catch (error: any) {
-      console.error("Withdrawals API error:", error);
-      res.status(500).json({ message: error.message || "Internal server error" });
+    } catch (err: any) {
+      console.error("Error creating withdrawal:", err);
+      res.status(500).json({ message: err.message || "Erro ao solicitar saque" });
     }
   });
 
   // Admin: Get ALL withdrawals
-  app.get("/api/admin/withdrawals", requireAuth, (async (req, res) => {
+  app.get("/api/admin/withdrawals", requireAuth, async (req, res) => {
     try {
-      if (!isAdmin({ user: (req as any).user })) {
-        return res.status(403).json({ message: "Access denied" });
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) {
+        return res.status(403).json({ message: "Acesso negado" });
       }
-
       const result = await storage.getWithdrawals(); // No user filter for admin
       res.json(result);
     } catch (error: any) {
-      console.error("Withdrawals API error:", error);
-      res.status(500).json({ message: error.message || "Internal server error" });
+      console.error("Error getting all withdrawals:", error);
+      res.status(500).json({ message: error.message || "Erro ao buscar saques" });
     }
   });
 
   // Admin: Approve/Reject withdrawal
-  app.post("/api/admin/withdrawals/:id/approve", requireAuth, (async (req, res) => {
+  app.post("/api/admin/withdrawals/:id/approve", requireAuth, async (req, res) => {
     try {
-      if (!isAdmin({ user: (req as any).user })) {
-        return res.status(403).json({ message: "Access denied" });
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) {
+        return res.status(403).json({ message: "Acesso negado" });
       }
-
-      const { id } = req.params;
+      const id = parseInt(req.params.id as string);
       const { adminNote } = req.body;
-      
-      const result = await storage.updateWithdrawalStatus(parseInt(id), 'approved', adminNote || null);
-      res.json(result);
-    } catch (error: any) {
-      console.error("Approve withdrawal error:", error);
-      res.status(500).json({ message: error.message || "Internal server error" });
-    }
-  });
-
-  app.post("/api/admin/withdrawals/:id/reject", requireAuth, (async (req, res) => {
-    try {
-      if (!isAdmin({ user: (req as any).user })) {
-        return res.status(403).json({ message: "Access denied" });
-      }
-
-      const { id } = req.params;
-      
-      const result = await storage.updateWithdrawalStatus(parseInt(id), 'rejected');
-      res.json(result);
-    } catch (error: any) {
-      console.error("Reject withdrawal error:", error);
-      res.status(500).json({ message: error.message || "Internal server error" });
-    }
-  });
-
-  // --- PRODUTOS (Admin) ---
-  app.get("/api/admin/products", requireAuth, (async (req, res) => {
-    try {
-      if (!isAdmin({ user: (req as any).user })) {
-        return res.status(403).json({ message: "Acesso negado" });
-      }
-      const result = await storage.getProducts(); // No user filter for admin
-      res.json(result);
-    } catch (error: any) {
-      console.error("Error getting all products:", error);
-      res.status(500).json({ message: error.message || "Erro ao buscar produtos" });
-    }
-  });
-
-  app.post("/api/products/:id/approve", requireAuth, (async (req, res) => {
-    try {
-      if (!isAdmin({ user: (req as any).user })) {
-        return res.status(403).json({ message: "Acesso negado" });
-      }
-      const id = parseInt(req.params.id);
-      const product = await storage.approveProduct(id);
-      res.json(product);
+      const withdrawal = await storage.updateWithdrawalStatus(id, 'approved', adminNote);
+      res.json(withdrawal);
     } catch (err: any) {
-      console.error("Error approving product:", err);
-      res.status(500).json({ message: err.message || "Erro ao aprovar produto" });
+      console.error("Error approving withdrawal:", err);
+      res.status(500).json({ message: err.message || "Erro ao aprovar saque" });
     }
   });
 
-  app.post("/api/products/:id/reject", requireAuth, (async (req, res) => {
+  app.post("/api/admin/withdrawals/:id/reject", requireAuth, async (req, res) => {
     try {
-      if (!isAdmin({ user: (req as any).user })) {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) {
         return res.status(403).json({ message: "Acesso negado" });
       }
-      const id = parseInt(req.params.id);
-      const product = await storage.rejectProduct(id);
-      res.json(product);
+      const id = parseInt(req.params.id as string);
+      const { adminNote } = req.body;
+      const withdrawal = await storage.updateWithdrawalStatus(id, 'rejected', adminNote);
+      res.json(withdrawal);
     } catch (err: any) {
-      console.error("Error rejecting product:", err);
-      res.status(500).json({ message: err.message || "Erro ao rejeitar produto" });
+      console.error("Error rejecting withdrawal:", err);
+      res.status(500).json({ message: err.message || "Erro ao rejeitar saque" });
     }
   });
 
-  // --- CHECKOUTS (Admin) ---
-  app.get("/api/admin/checkouts", requireAuth, (async (req, res) => {
+  // Database test endpoint - FIXED: Use storage directly
+  app.get("/api/db-test", async (_req, res) => {
     try {
-      if (!isAdmin({ user: (req as any).user })) {
-        return res.status(403).json({ message: "Acesso negado" });
-      }
-      const result = await storage.getCheckouts(); // No user filter for admin
-      res.json(result);
-    } catch (error: any) {
-      console.error("Error getting all checkouts:", error);
-      res.status(500).json({ message: error.message || "Erro ao buscar checkouts" });
-    }
-  });
-
-  // --- TESTE DE BANCO (Health Check) ---
-  app.get("/api/db-test", (async (_req, res) => {
-    try {
-      const result = await storage.getWithdrawals();
+      // Use storage to test DB connection
+      const result = await storage.getWithdrawals(); // Simple query to test connection
       res.json({ 
         ok: true, 
         message: "Database connection successful", 

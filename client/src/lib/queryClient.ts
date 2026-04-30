@@ -24,7 +24,7 @@ export async function apiRequest(
   // In Vercel, API routes are at the same domain
   const baseUrl = process.env.NODE_ENV === "production" 
     ? "" // Same domain in production
-    : "http://localhost:3000"; // Local development;
+    : "http://localhost:3000"; // Local development
 
   const res = await fetch(`${baseUrl}${url}`, {
     method,

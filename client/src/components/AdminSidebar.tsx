@@ -7,7 +7,6 @@ import {
   LogOut,
   Shield,
   BarChart3,
-  ArrowDownToLine,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
@@ -89,20 +88,6 @@ export function AdminSidebar() {
             >
               <Users size={18} strokeWidth={2.5} />
               Gerenciar Usuários
-            </button>
-          </Link>
-
-          <Link to="/admin/withdrawals">
-            <button
-              className={cn(
-                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-                location === "/admin/withdrawals"
-                  ? "bg-red-600 text-white shadow-lg"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              )}
-            >
-              <ArrowDownToLine size={18} strokeWidth={2.5} />
-              Aprovação de Saques
             </button>
           </Link>
 

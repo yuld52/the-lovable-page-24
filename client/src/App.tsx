@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, useRoute } from "wouter";
 import { useEffect } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
@@ -24,7 +24,6 @@ import AdminLogin from "@/pages/AdminLogin";
 import AdminProducts from "@/pages/AdminProducts";
 import AdminUsers from "@/pages/AdminUsers";
 import AdminSettings from "@/pages/AdminSettings";
-import AdminWithdrawals from "@/pages/AdminWithdrawals";
 import Profile from "@/pages/Profile";
 import MembersArea from "@/pages/MembersArea";
 import FAQ from "@/pages/FAQ";
@@ -32,19 +31,20 @@ import { ChatSupport } from "@/components/ChatSupport";
 import { useUser } from "@/hooks/use-user";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { useNotifications } from "@/hooks/use-notifications";
 
 function Router() {
-  const [params, setLocation] = useLocation();
+  const [params, setLocation] = useRoute("/:any*");
 
   useEffect(() => {
     const hostname = window.location.hostname;
     const path = window.location.pathname;
     
+    // Only redirect if on the payment subdomain and NOT accessing a checkout
     if (hostname === "pay.meteorfy.online" && !path.startsWith("/checkout")) {
       window.location.href = "https://app.meteorfy.online";
     }
 
+    // Set default title
     if (!path.startsWith("/checkout") && !path.startsWith("/admin") && !path.startsWith("/faq")) {
       document.title = "Meteorfy - Plataforma de Vendas";
     } else if (path.startsWith("/admin")) {
@@ -81,7 +81,6 @@ function Router() {
       <Route path="/admin" component={Admin} />
       <Route path="/admin/products" component={AdminProducts} />
       <Route path="/admin/users" component={AdminUsers} />
-      <Route path="/admin/withdrawals" component={AdminWithdrawals} />
       <Route path="/admin/settings" component={AdminSettings} />
       
       {/* Fallback to 404 */}
@@ -93,10 +92,6 @@ function Router() {
 function App() {
   const { user, loading } = useUser();
   
-  // Inicia o hook de notificações (Polling)
-  // Ele só começa a rodar de fato se o usuário tiver 'salesNotifications: true' nas configurações
-  useNotifications(user?.uid, !!user);
-
   if (loading) {
     return <LoadingScreen />;
   }
