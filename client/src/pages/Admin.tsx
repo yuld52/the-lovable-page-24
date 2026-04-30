@@ -4,7 +4,7 @@ import { AdminSidebar } from "@/components/AdminSidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Shield, Users, Package, ShoppingCart, BarChart3, Loader2, ArrowRight, LogOut, CheckCircle2, XCircle, Clock, ArrowDownToLine } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useAdminProducts, useAdminCheckouts, useAdminSales, useAdminApproveProduct, useAdminRejectProduct } from "@/hooks/use-admin";
+import { useAdminProducts, useAdminCheckouts, useAdminApproveProduct, useAdminRejectProduct } from "@/hooks/use-admin";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
@@ -19,6 +19,7 @@ const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
 export default function Admin() {
   const [, setLocation] = useLocation();
+  const { user, loading } = useUser();
   const { toast } = useToast();
 
   // Redirect if not admin
@@ -39,9 +40,6 @@ export default function Admin() {
 
   // Fetch ALL checkouts for admin
   const { data: checkouts, isLoading: loadingCheckouts } = useAdminCheckouts();
-
-  // Fetch ALL sales for admin
-  const { data: allSales, isLoading: loadingSales } = useAdminSales();
 
   // Fetch ALL withdrawals for admin
   const { data: withdrawals, isLoading: loadingWithdrawals, refetch: refetchWithdrawals } = useQuery<any[]>({
@@ -73,7 +71,7 @@ export default function Admin() {
     }
   });
 
-  const isLoading = loading || loadingUsers || loadingProducts || loadingCheckouts || loadingSales || loadingWithdrawals;
+  const isLoading = loading || loadingUsers || loadingProducts || loadingCheckouts || loadingWithdrawals;
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -103,9 +101,6 @@ export default function Admin() {
   const pendingProducts = allProducts?.filter(p => p.status === 'pending') || [];
   // Filter pending withdrawals
   const pendingWithdrawals = withdrawals?.filter(w => w.status === 'pending') || [];
-  
-  // Count approved sales
-  const approvedSalesCount = allSales?.filter(s => s.status === 'paid').length || 0;
 
   if (isLoading) {
     return (
@@ -160,12 +155,14 @@ export default function Admin() {
 
                 <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">QUANTIDADE DE VENDAS</CardTitle>
-                    <BarChart3 className="w-4 h-4 text-purple-500" />
+                    <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">SAQUES PENDENTES</CardTitle>
+                    <ArrowDownToLine className="w-4 h-4 text-purple-500" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-3xl font-bold text-white">{approvedSalesCount}</div>
-                    <p className="text-xs text-zinc-500 mt-1">Vendas aprovadas</p>
+                    <div className="text-3xl font-bold text-white">
+                      {pendingWithdrawals.length}
+                    </div>
+                    <p className="text-xs text-zinc-500 mt-1">Aguardando aprovação</p>
                 </CardContent>
                 </Card>
             </div>
@@ -173,27 +170,27 @@ export default function Admin() {
             {/* Product Approval Section */}
             <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg mb-8">
                 <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
-                                <Clock className="w-5 h-5 text-amber-500" />
-                            </div>
-                            <div>
-                                <CardTitle className="text-base text-white">Aprovação de Produtos</CardTitle>
-                                <CardDescription className="text-xs text-zinc-500">
-                                    Aprove ou rejeite produtos pendentes
-                                </CardDescription>
-                            </div>
-                        </div>
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => refetchProducts()}
-                            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-                        >
-                            Atualizar
-                        </Button>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+                        <Clock className="w-5 h-5 text-amber-500" />
                     </div>
+                    <div>
+                        <CardTitle className="text-base text-white">Aprovação de Produtos</CardTitle>
+                        <CardDescription className="text-xs text-zinc-500">
+                          Aprove ou rejeite produtos pendentes
+                        </CardDescription>
+                    </div>
+                    </div>
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => refetchProducts()}
+                        className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                    >
+                        Atualizar
+                    </Button>
+                </div>
                 </CardHeader>
                 <CardContent>
                 {pendingProducts.length === 0 ? (
@@ -204,66 +201,66 @@ export default function Admin() {
                 ) : (
                   <div className="rounded-xl border border-zinc-800/50 overflow-hidden">
                     <table className="w-full text-left border-collapse">
-                      <thead>
+                    <thead>
                         <tr className="bg-zinc-950/50 border-b border-zinc-800/50">
-                            <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Produto</th>
-                            <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Preço</th>
-                            <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Status</th>
-                            <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-right">Ações</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Produto</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Preço</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-right">Ações</th>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-800/30">
+                    </thead>
+                    <tbody className="divide-y divide-zinc-800/30">
                         {pendingProducts.map((p) => (
-                          <tr key={p.id} className="hover:bg-zinc-800/20 transition-colors group">
+                        <tr key={p.id} className="hover:bg-zinc-800/20 transition-colors">
                             <td className="px-6 py-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded bg-zinc-900 flex items-center justify-center">
-                                        {p.imageUrl ? (
-                                            <img src={p.imageUrl} alt="" className="w-full h-full object-cover rounded" />
-                                        ) : (
-                                            <Package className="w-5 h-5 text-zinc-600" />
-                                        )}
-                                    </div>
-                                    <span className="text-sm text-zinc-300">{p.name}</span>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded bg-zinc-900 flex items-center justify-center">
+                                {p.imageUrl ? (
+                                    <img src={p.imageUrl} alt="" className="w-full h-full object-cover rounded" />
+                                ) : (
+                                    <Package className="w-5 h-5 text-zinc-600" />
+                                )}
                                 </div>
+                                <span className="text-sm text-zinc-300">{p.name}</span>
+                            </div>
                             </td>
                             <td className="px-6 py-4">
-                                <span className="text-sm text-zinc-400">
-                                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(p.price / 100)}
-                                </span>
+                            <span className="text-sm text-zinc-400">
+                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(p.price / 100)}
+                            </span>
                             </td>
                             <td className="px-6 py-4">
-                                <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 px-3 py-1 rounded-full w-fit">
-                                    <Clock className="w-3 h-3" />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider">Pendente</span>
-                                </div>
+                            <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 px-3 py-1 rounded-full w-fit">
+                                <Clock className="w-3 h-3" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider">Pendente</span>
+                            </div>
                             </td>
                             <td className="px-6 py-4 text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                    <Button
-                                        size="sm"
-                                        className="bg-emerald-600 hover:bg-emerald-500 text-white h-8"
-                                        onClick={() => handleApprove(p.id)}
-                                        disabled={approveProduct.isPending}
-                                    >
-                                        {approveProduct.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-                                        Aprovar
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="border-red-500/50 text-red-400 hover:bg-red-500/10 h-8"
-                                        onClick={() => handleReject(p.id)}
-                                        disabled={rejectProduct.isPending}
-                                    >
-                                        {rejectProduct.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
-                                        Rejeitar
-                                    </Button>
-                                </div>
+                            <div className="flex items-center justify-end gap-2">
+                                <Button
+                                size="sm"
+                                className="bg-emerald-600 hover:bg-emerald-500 text-white h-8"
+                                onClick={() => handleApprove(p.id)}
+                                disabled={approveProduct.isPending}
+                                >
+                                {approveProduct.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                                Aprovar
+                                </Button>
+                                <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-red-500/50 text-red-400 hover:bg-red-500/10 h-8"
+                                onClick={() => handleReject(p.id)}
+                                disabled={rejectProduct.isPending}
+                                >
+                                {rejectProduct.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
+                                Rejeitar
+                                </Button>
+                            </div>
                             </td>
-                          </tr>
+                        </tr>
                         ))}
-                      </tbody>
+                    </tbody>
                     </table>
                   </div>
                 )}
@@ -273,27 +270,27 @@ export default function Admin() {
             {/* Withdrawal Approval Section */}
             <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg mb-8">
                 <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
-                                <ArrowDownToLine className="w-5 h-5 text-purple-500" />
-                            </div>
-                            <div>
-                                <CardTitle className="text-base text-white">Aprovação de Saques</CardTitle>
-                                <CardDescription className="text-xs text-zinc-500">
-                                    Aprove ou rejeite solicitações de saque via PIX
-                                </CardDescription>
-                            </div>
-                        </div>
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => refetchWithdrawals()}
-                            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-                        >
-                            Atualizar
-                        </Button>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+                        <ArrowDownToLine className="w-5 h-5 text-purple-500" />
                     </div>
+                    <div>
+                        <CardTitle className="text-base text-white">Aprovação de Saques</CardTitle>
+                        <CardDescription className="text-xs text-zinc-500">
+                          Aprove ou rejeite solicitações de saque via PIX
+                        </CardDescription>
+                    </div>
+                    </div>
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => refetchWithdrawals()}
+                        className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                    >
+                        Atualizar
+                    </Button>
+                </div>
                 </CardHeader>
                 <CardContent>
                 {pendingWithdrawals.length === 0 ? (
@@ -304,60 +301,60 @@ export default function Admin() {
                 ) : (
                   <div className="rounded-xl border border-zinc-800/50 overflow-hidden">
                     <table className="w-full text-left border-collapse">
-                      <thead>
+                    <thead>
                         <tr className="bg-zinc-950/50 border-b border-zinc-800/50">
-                            <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Usuário</th>
-                            <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Valor</th>
-                            <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Chave PIX</th>
-                            <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Data</th>
-                            <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-right">Ações</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Usuário</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Valor</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Chave PIX</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Data</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-right">Ações</th>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-800/30">
+                    </thead>
+                    <tbody className="divide-y divide-zinc-800/30">
                         {pendingWithdrawals.map((w) => (
-                          <tr key={w.id} className="hover:bg-zinc-800/20 transition-colors">
+                        <tr key={w.id} className="hover:bg-zinc-800/20 transition-colors">
                             <td className="px-6 py-4">
-                                <span className="text-sm text-zinc-300">{w.username || w.user_email || 'Usuário'}</span>
+                            <span className="text-sm text-zinc-300">{w.username || w.user_email || 'Usuário'}</span>
                             </td>
                             <td className="px-6 py-4">
-                                <span className="text-sm font-bold text-white">
-                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((w.amount || 0) / 100)}
-                                </span>
+                            <span className="text-sm font-bold text-white">
+                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((w.amount || 0) / 100)}
+                            </span>
                             </td>
                             <td className="px-6 py-4">
-                                <span className="text-sm text-zinc-400">{w.pix_key || w.pixKey || '-'}</span>
+                            <span className="text-sm text-zinc-400">{w.pix_key || w.pixKey || '-'}</span>
                             </td>
                             <td className="px-6 py-4">
-                                <span className="text-xs text-zinc-500">
-                                    {w.requested_at ? format(new Date(w.requested_at), "dd/MM/yyyy HH:mm", { locale: ptBR }) : '-'}
-                                </span>
+                            <span className="text-xs text-zinc-500">
+                                {w.requested_at ? format(new Date(w.requested_at), "dd/MM/yyyy HH:mm", { locale: ptBR }) : '-'}
+                            </span>
                             </td>
                             <td className="px-6 py-4 text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                    <Button
-                                        size="sm"
-                                        className="bg-emerald-600 hover:bg-emerald-500 text-white h-8"
-                                        onClick={() => approveWithdrawalMutation.mutate(w.id)}
-                                        disabled={approveWithdrawalMutation.isPending}
-                                    >
-                                        {approveWithdrawalMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-                                        Aprovar
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="border-red-500/50 text-red-400 hover:bg-red-500/10 h-8"
-                                        onClick={() => rejectWithdrawalMutation.mutate(w.id)}
-                                        disabled={rejectWithdrawalMutation.isPending}
-                                    >
-                                        {rejectWithdrawalMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
-                                        Rejeitar
-                                    </Button>
-                                </div>
+                            <div className="flex items-center justify-end gap-2">
+                                <Button
+                                size="sm"
+                                className="bg-emerald-600 hover:bg-emerald-500 text-white h-8"
+                                onClick={() => approveWithdrawalMutation.mutate(w.id)}
+                                disabled={approveWithdrawalMutation.isPending}
+                                >
+                                {approveWithdrawalMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                                Aprovar
+                                </Button>
+                                <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-red-500/50 text-red-400 hover:bg-red-500/10 h-8"
+                                onClick={() => rejectWithdrawalMutation.mutate(w.id)}
+                                disabled={rejectWithdrawalMutation.isPending}
+                                >
+                                {rejectWithdrawalMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
+                                Rejeitar
+                                </Button>
+                            </div>
                             </td>
-                          </tr>
+                        </tr>
                         ))}
-                      </tbody>
+                    </tbody>
                     </table>
                   </div>
                 )}

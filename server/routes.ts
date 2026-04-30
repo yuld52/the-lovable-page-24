@@ -25,10 +25,10 @@ export async function registerRoutes(
   // Use memory storage for multer to upload directly to Firebase
   const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit for images
+    limits: { fileSize: 64 * 1024 * 1024 }, // 64MB
   });
 
-  // File Upload Route
+  // ADD THIS: File Upload Route
   app.post("/api/upload", requireAuth, upload.single("file"), async (req: any, res) => {
     try {
       if (!req.file) {
@@ -36,52 +36,39 @@ export async function registerRoutes(
       }
 
       const file = req.file;
-      const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
+      const fileName = `${Date.now()}-${file.originalname}`;
       const filePath = `public/${fileName}`;
 
-      console.log(`[Upload] Iniciando upload para Firebase: ${filePath}`);
-
-      // Explicitly use the bucket name from config to avoid "no bucket" errors
-      const bucketName = "meteorfy1.firebasestorage.app";
-      const bucket = adminStorage.bucket(bucketName);
+      // Upload to Firebase Storage using admin SDK
+      const bucket = adminStorage.bucket();
       const fileUpload = bucket.file(filePath);
 
-      try {
-        await fileUpload.save(file.buffer, {
+      await fileUpload.save(file.buffer, {
+        metadata: {
+          contentType: file.mimetype,
           metadata: {
-            contentType: file.mimetype,
-            metadata: {
-              originalName: file.originalname,
-            }
+            originalName: file.originalname,
           }
-        });
-
-        // Tentativa de tornar público. Se falhar (devido a Uniform Access), 
-        // ainda retornamos a URL, pois o Firebase costuma lidar com isso via regras.
-        try {
-          await fileUpload.makePublic();
-        } catch (pubErr) {
-          console.warn("[Upload] Não foi possível tornar o arquivo público via ACL (Uniform Access pode estar ativo):", pubErr);
         }
+      });
 
-        // URL pública padrão do Google Cloud Storage
-        const publicUrl = `https://storage.googleapis.com/${bucketName}/${filePath}`;
+      // Make the file public
+      await fileUpload.makePublic();
 
-        console.log(`[Upload] Sucesso: ${publicUrl}`);
+      // Get the public URL
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
 
-        res.json({
-          url: publicUrl,
-          path: filePath,
-          name: file.originalname,
-          size: file.size,
-          type: file.mimetype,
-        });
-      } catch (saveErr: any) {
-        console.error("[Upload] Erro ao salvar no Firebase Storage:", saveErr);
-        throw new Error(`Erro no Firebase Storage: ${saveErr.message}`);
-      }
+      console.log(`[Upload] File uploaded: ${publicUrl}`);
+
+      res.json({
+        url: publicUrl,
+        path: filePath,
+        name: file.originalname,
+        size: file.size,
+        type: file.mimetype,
+      });
     } catch (err: any) {
-      console.error("[Upload] Erro geral:", err);
+      console.error("Upload error:", err);
       res.status(500).json({ message: err.message || "Falha no upload" });
     }
   });
@@ -317,21 +304,6 @@ export async function registerRoutes(
       res.json(result);
     } catch (error: any) {
       console.error("Error getting sales:", error);
-      res.status(500).json({ message: error.message || "Erro ao buscar vendas" });
-    }
-  });
-
-  // Admin: Get ALL sales
-  app.get("/api/admin/sales", requireAuth, async (req, res) => {
-    try {
-      const user = (req as any).user;
-      if (user?.email !== ADMIN_EMAIL) {
-        return res.status(403).json({ message: "Acesso negado" });
-      }
-      const result = await storage.getSales(); // No user filter for admin
-      res.json(result);
-    } catch (error: any) {
-      console.error("Error getting all sales:", error);
       res.status(500).json({ message: error.message || "Erro ao buscar vendas" });
     }
   });
@@ -576,10 +548,11 @@ export async function registerRoutes(
     }
   });
 
-  // Database test endpoint
+  // Database test endpoint - FIXED: Use storage directly
   app.get("/api/db-test", async (_req, res) => {
     try {
-      const result = await storage.getWithdrawals();
+      // Use storage to test DB connection
+      const result = await storage.getWithdrawals(); // Simple query to test connection
       res.json({ 
         ok: true, 
         message: "Database connection successful", 
