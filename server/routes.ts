@@ -25,7 +25,7 @@ export async function registerRoutes(
   // Use memory storage for multer to upload directly to Firebase
   const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 64 * 1024 * 1024 }, // 64MB
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit for images
   });
 
   // File Upload Route
@@ -36,39 +36,52 @@ export async function registerRoutes(
       }
 
       const file = req.file;
-      const fileName = `${Date.now()}-${file.originalname}`;
+      const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
       const filePath = `public/${fileName}`;
 
-      // Upload to Firebase Storage using admin SDK
-      const bucket = adminStorage.bucket();
+      console.log(`[Upload] Iniciando upload para Firebase: ${filePath}`);
+
+      // Explicitly use the bucket name from config to avoid "no bucket" errors
+      const bucketName = "meteorfy1.firebasestorage.app";
+      const bucket = adminStorage.bucket(bucketName);
       const fileUpload = bucket.file(filePath);
 
-      await fileUpload.save(file.buffer, {
-        metadata: {
-          contentType: file.mimetype,
+      try {
+        await fileUpload.save(file.buffer, {
           metadata: {
-            originalName: file.originalname,
+            contentType: file.mimetype,
+            metadata: {
+              originalName: file.originalname,
+            }
           }
+        });
+
+        // Tentativa de tornar público. Se falhar (devido a Uniform Access), 
+        // ainda retornamos a URL, pois o Firebase costuma lidar com isso via regras.
+        try {
+          await fileUpload.makePublic();
+        } catch (pubErr) {
+          console.warn("[Upload] Não foi possível tornar o arquivo público via ACL (Uniform Access pode estar ativo):", pubErr);
         }
-      });
 
-      // Make the file public
-      await fileUpload.makePublic();
+        // URL pública padrão do Google Cloud Storage
+        const publicUrl = `https://storage.googleapis.com/${bucketName}/${filePath}`;
 
-      // Get the public URL
-      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+        console.log(`[Upload] Sucesso: ${publicUrl}`);
 
-      console.log(`[Upload] File uploaded: ${publicUrl}`);
-
-      res.json({
-        url: publicUrl,
-        path: filePath,
-        name: file.originalname,
-        size: file.size,
-        type: file.mimetype,
-      });
+        res.json({
+          url: publicUrl,
+          path: filePath,
+          name: file.originalname,
+          size: file.size,
+          type: file.mimetype,
+        });
+      } catch (saveErr: any) {
+        console.error("[Upload] Erro ao salvar no Firebase Storage:", saveErr);
+        throw new Error(`Erro no Firebase Storage: ${saveErr.message}`);
+      }
     } catch (err: any) {
-      console.error("Upload error:", err);
+      console.error("[Upload] Erro geral:", err);
       res.status(500).json({ message: err.message || "Falha no upload" });
     }
   });

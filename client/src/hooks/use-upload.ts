@@ -24,7 +24,7 @@ interface UseUploadOptions {
 }
 
 /**
- * Hook de upload usando API local (não requer Firebase Storage)
+ * Hook de upload usando API local (não requer Firebase Storage no client)
  */
 export function useUpload(options: UseUploadOptions = {}) {
   const [isUploading, setIsUploading] = useState(false);
@@ -60,7 +60,7 @@ export function useUpload(options: UseUploadOptions = {}) {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || "Falha no upload");
+          throw new Error(errorData.message || `Erro ${response.status}: Falha no upload`);
         }
 
         const data = await response.json();
@@ -82,6 +82,7 @@ export function useUpload(options: UseUploadOptions = {}) {
         return uploadResponse;
       } catch (err) {
         const e = err instanceof Error ? err : new Error("Upload failed");
+        console.error("[useUpload] Erro:", e);
         setError(e);
         options.onError?.(e);
         return null;

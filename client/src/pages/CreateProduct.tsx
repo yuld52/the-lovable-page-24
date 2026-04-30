@@ -35,7 +35,7 @@ export default function CreateProduct() {
   const [, setLocation] = useLocation();
   const createProduct = useCreateProduct();
   const { toast } = useToast();
-  const { uploadFile, isUploading: isUploadingImage } = useUpload();
+  const { uploadFile, isUploading: isUploadingImage, error: uploadError } = useUpload();
   const [isUploadingDeliveryFiles, setIsUploadingDeliveryFiles] = useState(false);
   const [deliveryUpload, setDeliveryUpload] = useState<{
     total: number;
@@ -68,7 +68,11 @@ export default function CreateProduct() {
       toast({ title: "Imagem carregada", description: "A imagem foi salva com sucesso!" });
     } else {
       setImagePreview("");
-      toast({ title: "Erro", description: "Falha ao carregar imagem", variant: "destructive" });
+      toast({ 
+        title: "Erro no upload", 
+        description: uploadError?.message || "Falha ao carregar imagem para o servidor.", 
+        variant: "destructive" 
+      });
     }
   };
 
