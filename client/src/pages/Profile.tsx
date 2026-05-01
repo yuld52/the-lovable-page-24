@@ -6,7 +6,7 @@ import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { UserCircle, Mail, Calendar, LogOut, Settings, HelpCircle, Shield, Crown, CheckCircle2, Clock, ArrowLeft } from "lucide-react";
+import { UserCircle, Mail, Calendar, LogOut, HelpCircle, Crown, CheckCircle2, Clock, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 
@@ -128,97 +128,84 @@ export default function Profile() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Account Info */}
-            <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg md:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-white">
-                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                    <Mail className="w-4 h-4 text-blue-400" />
-                  </div>
-                  Informações da Conta
-                </CardTitle>
-                <CardDescription className="text-zinc-500">
-                  Detalhes da sua conta
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between py-3 border-b border-zinc-800/50">
-                  <div className="flex items-center gap-3">
-                    <Mail className="w-4 h-4 text-zinc-500" />
-                    <div>
-                      <p className="text-sm font-medium text-white">E-mail</p>
-                      <p className="text-xs text-zinc-500">Seu endereço de e-mail principal</p>
-                    </div>
-                  </div>
-                  <span className="text-sm text-zinc-300 font-mono">{user.email}</span>
+          {/* Account Info */}
+          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 text-white">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <Mail className="w-4 h-4 text-blue-400" />
                 </div>
-
-                <div className="flex items-center justify-between py-3 border-b border-zinc-800/50">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-4 h-4 text-zinc-500" />
-                    <div>
-                      <p className="text-sm font-medium text-white">Membro desde</p>
-                      <p className="text-xs text-zinc-500">Data de criação da conta</p>
-                    </div>
+                Informações da Conta
+              </CardTitle>
+              <CardDescription className="text-zinc-500">
+                Detalhes da sua conta
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between py-3 border-b border-zinc-800/50">
+                <div className="flex items-center gap-3">
+                  <Mail className="w-4 h-4 text-zinc-500" />
+                  <div>
+                    <p className="text-sm font-medium text-white">E-mail</p>
+                    <p className="text-xs text-zinc-500">Seu endereço de e-mail principal</p>
                   </div>
-                  <span className="text-sm text-zinc-300">{memberSince}</span>
                 </div>
+                <span className="text-sm text-zinc-300 font-mono">{user.email}</span>
+              </div>
 
-                <div className="flex items-center justify-between py-3">
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-4 h-4 text-zinc-500" />
-                    <div>
-                      <p className="text-sm font-medium text-white">Último acesso</p>
-                      <p className="text-xs text-zinc-500">Data e hora do último login</p>
-                    </div>
+              <div className="flex items-center justify-between py-3 border-b border-zinc-800/50">
+                <div className="flex items-center gap-3">
+                  <Calendar className="w-4 h-4 text-zinc-500" />
+                  <div>
+                    <p className="text-sm font-medium text-white">Membro desde</p>
+                    <p className="text-xs text-zinc-500">Data de criação da conta</p>
                   </div>
-                  <span className="text-sm text-zinc-300 text-right">{lastLogin}</span>
                 </div>
-              </CardContent>
-            </Card>
+                <span className="text-sm text-zinc-300">{memberSince}</span>
+              </div>
 
-            {/* Quick Actions Sidebar */}
-            <div className="space-y-6">
-              <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-3">
-                    <Settings className="w-4 h-4 text-purple-400" />
-                    Ações Rápidas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
-                    onClick={() => setLocation("/settings")}
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Configurações
-                  </Button>
+              <div className="flex items-center justify-between py-3 border-b border-zinc-800/50">
+                <div className="flex items-center gap-3">
+                  <Clock className="w-4 h-4 text-zinc-500" />
+                  <div>
+                    <p className="text-sm font-medium text-white">Último acesso</p>
+                    <p className="text-xs text-zinc-500">Data e hora do último login</p>
+                  </div>
+                </div>
+                <span className="text-sm text-zinc-300 text-right">{lastLogin}</span>
+              </div>
 
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
-                    onClick={() => toast({ title: "Em breve", description: "Central de ajuda será implementada em breve." })}
-                  >
-                    <HelpCircle className="w-4 h-4 mr-2" />
-                    Ajuda & Suporte
-                  </Button>
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-3">
+                  <HelpCircle className="w-4 h-4 text-zinc-500" />
+                  <div>
+                    <p className="text-sm font-medium text-white">Suporte</p>
+                    <p className="text-xs text-zinc-500">Precisa de ajuda? Fale conosco</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                  onClick={() => setLocation("/help")}
+                >
+                  <HelpCircle className="w-3.5 h-3.5 mr-1.5" />
+                  Suporte
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-                  <div className="h-px bg-zinc-800/50 mx-1 my-2"></div>
-
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-red-500/30 text-red-400 hover:bg-red-500/10"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sair da Conta
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+          {/* Logout */}
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+              onClick={handleLogout}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair da Conta
+            </Button>
           </div>
         </div>
       </div>
