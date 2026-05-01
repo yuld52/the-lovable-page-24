@@ -11,7 +11,7 @@ import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { NotificationModal } from "./NotificationModal";
+import { NotificationModal } from "@/components/NotificationModal";
 
 const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
@@ -150,7 +150,7 @@ export default function Settings() {
 
           <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">UTMify</CardTitle>
+              <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">UTMIFY</CardTitle>
               <SettingsIcon className="w-4 h-4 text-blue-500" />
             </CardHeader>
             <CardContent>

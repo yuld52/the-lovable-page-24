@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UpdateSettingsRequest } from "@shared/schema";
-import type { SettingsModel } from "./use-settings";
+import type { Settings } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -10,7 +10,7 @@ export function useSettings() {
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/settings");
       const data = await res.json();
-      return data as SettingsModel | null;
+      return data as Settings | null;
     },
     staleTime: 1000 * 60 * 5,
     retry: false,
@@ -25,7 +25,7 @@ export function useUpdateSettings() {
     mutationFn: async (updates: UpdateSettingsRequest) => {
       const res = await apiRequest("POST", "/api/settings", updates);
       const data = await res.json();
-      return data as SettingsModel;
+      return data as Settings;
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["api", "settings"], data);
