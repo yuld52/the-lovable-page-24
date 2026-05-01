@@ -6,13 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import {
-  Loader2, Clock, CheckCircle2, XCircle, Check, ArrowLeft, Package,
+  Loader2, Clock, CheckCircle2, XCircle, Check, Package,
   Link, MessageCircle, CreditCard, FileText, Image, Tag, AlignLeft,
   RefreshCw, Eye, Download
 } from "lucide-react";
 import { useAdminProducts, useAdminApproveProduct, useAdminRejectProduct } from "@/hooks/use-admin";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   paypal: "PayPal",
@@ -250,7 +249,6 @@ function ProductDetailDialog({
 }
 
 export default function AdminProducts() {
-  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"pending" | "approved" | "rejected" | "all">("pending");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -318,16 +316,8 @@ export default function AdminProducts() {
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="flex items-center gap-4 mb-8">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setLocation("/admin")}
-              className="text-zinc-400 hover:text-white"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <div className="flex-1">
+          <div className="flex items-center justify-between mb-8">
+            <div>
               <h1 className="text-3xl font-bold text-white">Aprovação de Produtos</h1>
               <p className="text-sm text-muted-foreground">Analise e aprove ou rejeite os produtos enviados</p>
             </div>
