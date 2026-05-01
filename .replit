@@ -48,6 +48,7 @@ outputType = "webview"
 [agent]
 integrations = ["javascript_object_storage:2.0.0"]
 stack = "GAMESTACK_JS"
+expertMode = true
 
 [userenv]
 
