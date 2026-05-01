@@ -324,55 +324,62 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent className="pt-6">
           <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#a855f7" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} opacity={0.5} />
-                <XAxis
-                  dataKey="name"
-                  tickFormatter={formatXAxisTick}
-                  stroke="#52525b"
-                  tick={{ fill: "#a1a1aa", fontSize: 9, fontWeight: 500 }}
-                  axisLine={false}
-                  tickLine={false}
-                  interval={0}
-                  angle={-45}
-                  textAnchor="end"
-                  height={70}
-                  dy={10}
-                  padding={{ left: 10, right: 10 }}
-                />
-                <YAxis
-                  stroke="#52525b"
-                  tick={{ fill: "#71717a", fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(value) => {
-                    const minor = Number(value);
-                    return formatMoney(
-                      { currency: resolvedCurrency, minor },
-                      typeof navigator !== "undefined" ? navigator.language : undefined
-                    );
-                  }}
-                  dx={-10}
-                />
-                <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#a855f7", strokeWidth: 1 }} />
-                <Area
-                  type="monotone"
-                  dataKey="sales"
-                  stroke="#a855f7"
-                  strokeWidth={3}
-                  fillOpacity={1}
-                  fill="url(#colorSales)"
-                  animationDuration={1500}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {chartData.length === 0 || chartData.every((d: any) => !d.sales || d.sales === 0) ? (
+              <div className="h-full flex flex-col items-center justify-center gap-3 text-muted-foreground">
+                <TrendingUp className="w-10 h-10 opacity-20" />
+                <p className="text-sm font-medium opacity-60">Nenhuma venda no período selecionado</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#a855f7" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} opacity={0.5} />
+                  <XAxis
+                    dataKey="name"
+                    tickFormatter={formatXAxisTick}
+                    stroke="#52525b"
+                    tick={{ fill: "#a1a1aa", fontSize: 9, fontWeight: 500 }}
+                    axisLine={false}
+                    tickLine={false}
+                    interval={0}
+                    angle={-45}
+                    textAnchor="end"
+                    height={70}
+                    dy={10}
+                    padding={{ left: 10, right: 10 }}
+                  />
+                  <YAxis
+                    stroke="#52525b"
+                    tick={{ fill: "#71717a", fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(value) => {
+                      const minor = Number(value);
+                      return formatMoney(
+                        { currency: resolvedCurrency, minor },
+                        typeof navigator !== "undefined" ? navigator.language : undefined
+                      );
+                    }}
+                    dx={-10}
+                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#a855f7", strokeWidth: 1 }} />
+                  <Area
+                    type="monotone"
+                    dataKey="sales"
+                    stroke="#a855f7"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorSales)"
+                    animationDuration={1500}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </CardContent>
       </Card>
