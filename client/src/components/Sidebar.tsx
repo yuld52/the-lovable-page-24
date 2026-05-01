@@ -96,9 +96,9 @@ export function Sidebar() {
                 <span className="text-[10px] font-normal text-white block">Faturamento</span>
                 <div className="flex items-center gap-1 mb-1">
                   <span className="text-xs font-bold text-foreground whitespace-nowrap">
-                    {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(currentRevenue)}
+                    {new Intl.NumberFormat("pt-MZ", { style: "currency", currency: "MZN" }).format(currentRevenue)}
                   </span>
-                  <span className="text-xs font-bold text-foreground whitespace-nowrap">/ R$ {currentGoal.label}</span>
+                  <span className="text-xs font-bold text-foreground whitespace-nowrap">/ MT {currentGoal.label}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 bg-muted/50 rounded-full h-1.5 overflow-hidden border border-border/50 relative">

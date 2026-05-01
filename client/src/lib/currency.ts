@@ -14,6 +14,7 @@ export type SupportedCurrencyCode =
   | "JPY"
   | "MYR"
   | "MXN"
+  | "MZN"
   | "TWD"
   | "NZD"
   | "NOK"
@@ -40,6 +41,7 @@ export const SUPPORTED_CURRENCIES: SupportedCurrencyCode[] = [
   "JPY",
   "MYR",
   "MXN",
+  "MZN",
   "TWD",
   "NZD",
   "NOK",
@@ -118,11 +120,11 @@ export function currencyFromCountry(countryCode?: string | null): SupportedCurre
 
     // Middle East
     IL: "ILS", // Israel
+
+    // Africa
+    MZ: "MZN", // Mozambique
   };
 
-  // Note: All other countries (e.g., MZ-Mozambique, AO-Angola, AR-Argentina, etc.)
-  // use currencies not in our PayPal-supported list and will return null,
-  // which triggers USD fallback in the calling code for universal coverage
   return map[cc] ?? null;
 }
 

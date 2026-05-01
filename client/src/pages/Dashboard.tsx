@@ -40,7 +40,7 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const [selectedPeriod, setSelectedPeriod] = useState("0");
   const [selectedProduct, setSelectedProduct] = useState("all");
-  const [selectedCurrency, setSelectedCurrency] = useState<string>("AUTO");
+  const [selectedCurrency, setSelectedCurrency] = useState<string>("MZN");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   
   // Prepare query params for custom range
@@ -176,6 +176,7 @@ export default function Dashboard() {
               <SelectValue placeholder="Moeda" />
             </SelectTrigger>
             <SelectContent className="bg-popover border-border text-popover-foreground max-h-[300px]">
+              <SelectItem value="MZN">MZN - Metical Moçambicano</SelectItem>
               <SelectItem value="AUTO">Automático ({autoCurrency || 'USD'})</SelectItem>
               <SelectItem value="USD">USD - Dólar Americano</SelectItem>
               <SelectItem value="BRL">BRL - Real Brasileiro</SelectItem>
