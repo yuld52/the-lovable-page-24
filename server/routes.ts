@@ -1,7 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { neonStorage as storage } from "./neon-storage";
-import { api } from "@shared/routes";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -39,11 +38,6 @@ export async function registerRoutes(
       const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
       const filePath = `public/${fileName}`;
 
-      console.log(`[Upload] Iniciando upload para Firebase...`);
-      console.log(`[Upload] Bucket: meteorfy1.firebasestorage.app`);
-      console.log(`[Upload] Caminho: ${filePath}`);
-
-      // Garante que o adminStorage está pronto
       if (!adminStorage) {
         throw new Error("Firebase Admin Storage não inicializado. Verifique as credenciais no .env");
       }
@@ -51,7 +45,6 @@ export async function registerRoutes(
       const bucket = adminStorage.bucket("meteorfy1.firebasestorage.app");
       const fileUpload = bucket.file(filePath);
 
-      // Salva o buffer no Firebase
       await fileUpload.save(file.buffer, {
         metadata: {
           contentType: file.mimetype,
@@ -61,20 +54,13 @@ export async function registerRoutes(
         }
       });
 
-      console.log(`[Upload] Arquivo salvo no Storage. Tentando tornar público...`);
-
-      // Tenta tornar público (pode falhar se "Uniform Access" estiver ativo, mas o link ainda funciona)
       try {
         await fileUpload.makePublic();
-        console.log(`[Upload] Arquivo tornado público.`);
       } catch (pubErr: any) {
-        console.warn(`[Upload] Aviso: Não foi possível tornar o arquivo público (Uniform Access?). Erro: ${pubErr.message}`);
+        console.warn(`[Upload] Aviso: Não foi possível tornar o arquivo público: ${pubErr.message}`);
       }
 
-      // Gera a URL pública manualmente (padrão Google Cloud Storage)
       const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
-      
-      console.log(`[Upload] Sucesso! URL: ${publicUrl}`);
 
       res.json({
         url: publicUrl,
@@ -129,10 +115,16 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/user", requireAuth, async (req, res) => res.json((req as any).user));
+  app.get("/api/user", requireAuth, async (req, res) => {
+    try {
+      res.json((req as any).user);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
 
-  // --- PRODUTOS (Neon DB) ---
-  app.get(api.products.list.path, requireAuth, async (req, res) => {
+  // --- PRODUTOS ---
+  app.get("/api/products", requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const result = await storage.getProducts(userId);
@@ -143,20 +135,15 @@ export async function registerRoutes(
     }
   });
 
-  app.post(api.products.create.path, requireAuth, async (req, res) => {
+  app.post("/api/products", requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
-      const input = api.products.create.input.parse(req.body);
-      console.log("[CREATE PRODUCT] Input:", input);
-      
       const productData = {
-        ...input,
+        ...req.body,
         ownerId: userId,
         status: 'pending'
       };
-      
       const result = await storage.createProduct(productData);
-      console.log("[CREATE PRODUCT] Sucesso:", result);
       res.status(201).json(result);
     } catch (err: any) {
       console.error("[CREATE PRODUCT] Erro:", err);
@@ -164,7 +151,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get(api.products.get.path, async (req, res) => {
+  app.get("/api/products/:id", async (req, res) => {
     try {
       const product = await storage.getProduct(parseInt(req.params.id as string));
       if (!product) return res.status(404).json({ message: "Produto não encontrado" });
@@ -175,11 +162,10 @@ export async function registerRoutes(
     }
   });
 
-  app.patch(api.products.update.path, requireAuth, async (req, res) => {
+  app.patch("/api/products/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id as string);
-      const input = api.products.update.input.parse(req.body);
-      const result = await storage.updateProduct(id, input);
+      const result = await storage.updateProduct(id, req.body);
       res.json(result);
     } catch (err: any) {
       console.error("Error updating product:", err);
@@ -187,7 +173,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete(api.products.delete.path, requireAuth, async (req, res) => {
+  app.delete("/api/products/:id", requireAuth, async (req, res) => {
     try {
       await storage.deleteProduct(parseInt(req.params.id as string));
       res.status(204).end();
@@ -197,8 +183,8 @@ export async function registerRoutes(
     }
   });
 
-  // --- CHECKOUTS (Neon DB) ---
-  app.get(api.checkouts.list.path, requireAuth, async (req, res) => {
+  // --- CHECKOUTS ---
+  app.get("/api/checkouts", requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const result = await storage.getCheckouts(userId);
@@ -209,14 +195,11 @@ export async function registerRoutes(
     }
   });
 
-  app.post(api.checkouts.create.path, requireAuth, async (req, res) => {
+  app.post("/api/checkouts", requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
-      const input = api.checkouts.create.input.parse(req.body);
-      console.log("[CREATE CHECKOUT] Input:", input);
       const baseUrl = `${req.headers['x-forwarded-proto'] || req.protocol}://${req.headers.host}`;
-      const result = await storage.createCheckout({ ...input, ownerId: userId, publicUrl: `${baseUrl}/checkout/${input.slug}` });
-      console.log("[CREATE CHECKOUT] Sucesso:", result);
+      const result = await storage.createCheckout({ ...req.body, ownerId: userId, publicUrl: `${baseUrl}/checkout/${req.body.slug}` });
       res.status(201).json(result);
     } catch (err: any) {
       console.error("[CREATE CHECKOUT] Erro:", err);
@@ -224,7 +207,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get(api.checkouts.get.path, requireAuth, async (req, res) => {
+  app.get("/api/checkouts/:id", requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const checkout = await storage.getCheckout(parseInt(req.params.id as string), userId);
@@ -236,11 +219,10 @@ export async function registerRoutes(
     }
   });
 
-  app.patch(api.checkouts.update.path, requireAuth, async (req, res) => {
+  app.patch("/api/checkouts/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id as string);
-      const input = api.checkouts.update.input.parse(req.body);
-      const result = await storage.updateCheckout(id, String((req as any).user?.id || ""), input);
+      const result = await storage.updateCheckout(id, String((req as any).user?.id || ""), req.body);
       res.json(result);
     } catch (err: any) {
       console.error("Error updating checkout:", err);
@@ -248,7 +230,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete(api.checkouts.delete.path, requireAuth, async (req, res) => {
+  app.delete("/api/checkouts/:id", requireAuth, async (req, res) => {
     try {
       await storage.deleteCheckout(parseInt(req.params.id as string), String((req as any).user?.id || ""));
       res.status(204).end();
@@ -258,8 +240,8 @@ export async function registerRoutes(
     }
   });
 
-  // --- VENDAS (Neon DB) ---
-  app.get(api.sales.list.path, requireAuth, async (req, res) => {
+  // --- VENDAS ---
+  app.get("/api/sales", requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const result = await storage.getSales(userId);
@@ -270,23 +252,42 @@ export async function registerRoutes(
     }
   });
 
-  // --- CONFIGURAÇÕES (Neon DB) ---
-  app.get(api.settings.get.path, requireAuth, async (req, res) => {
+  // --- CONFIGURAÇÕES ---
+  app.get("/api/settings", requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const settings = await storage.getSettings(userId);
-      res.json(settings || { environment: "production" });
+      if (!settings) {
+        // Return default settings instead of 404
+        return res.json({
+          id: userId,
+          userId,
+          paypalClientId: null,
+          paypalClientSecret: null,
+          paypalWebhookId: null,
+          facebookPixelId: null,
+          facebookAccessToken: null,
+          utmfyToken: null,
+          salesNotifications: false,
+          environment: "production",
+          metaEnabled: true,
+          utmfyEnabled: true,
+          trackTopFunnel: true,
+          trackCheckout: true,
+          trackPurchaseRefund: true,
+        });
+      }
+      res.json(settings);
     } catch (error: any) {
       console.error("Error getting settings:", error);
       res.status(500).json({ message: error.message || "Erro ao buscar configurações" });
     }
   });
 
-  app.post(api.settings.update.path, requireAuth, async (req, res) => {
+  app.post("/api/settings", requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
-      const input = api.settings.update.input.parse(req.body);
-      const result = await storage.updateSettings(userId, input);
+      const result = await storage.updateSettings(userId, req.body);
       res.json(result);
     } catch (err: any) {
       console.error("Error updating settings:", err);
@@ -294,13 +295,13 @@ export async function registerRoutes(
     }
   });
 
-  // --- ESTATÍSTICAS (Neon DB) ---
-  app.get(api.stats.get.path, requireAuth, async (req, res) => {
+  // --- ESTATÍSTICAS ---
+  app.get("/api/stats", requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
       const result = await storage.getDashboardStats(
-        userId, 
-        req.query.period as string, 
+        userId,
+        req.query.period as string,
         req.query.productId as string,
         req.query.startDate as string,
         req.query.endDate as string
@@ -442,7 +443,7 @@ export async function registerRoutes(
     try {
       const userId = String((req as any).user?.id || "");
       const { amount, pixKey, pixKeyType } = req.body;
-      
+
       if (!amount || !pixKey) {
         return res.status(400).json({ message: "Amount and pixKey are required" });
       }
@@ -461,7 +462,6 @@ export async function registerRoutes(
     }
   });
 
-  // Admin: Get ALL withdrawals
   app.get("/api/admin/withdrawals", requireAuth, async (req, res) => {
     try {
       const user = (req as any).user;
@@ -476,7 +476,6 @@ export async function registerRoutes(
     }
   });
 
-  // Admin: Approve/Reject withdrawal
   app.post("/api/admin/withdrawals/:id/approve", requireAuth, async (req, res) => {
     try {
       const user = (req as any).user;
@@ -561,10 +560,10 @@ export async function registerRoutes(
   app.get("/api/db-test", async (_req, res) => {
     try {
       const result = await storage.getWithdrawals();
-      res.json({ 
-        ok: true, 
-        message: "Database connection successful", 
-        withdrawalCount: result.length 
+      res.json({
+        ok: true,
+        message: "Database connection successful",
+        withdrawalCount: result.length
       });
     } catch (err: any) {
       console.error("Database test failed:", err);

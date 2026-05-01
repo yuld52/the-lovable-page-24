@@ -17,15 +17,15 @@ export async function apiRequest(
   const user = auth.currentUser;
   const headers: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
   if (user) {
-    const idToken = await getIdToken(user);
-    headers["Authorization"] = `Bearer ${idToken}`;
+    try {
+      const idToken = await getIdToken(user);
+      headers["Authorization"] = `Bearer ${idToken}`;
+    } catch (err) {
+      console.warn("Failed to get ID token:", err);
+    }
   }
 
-  const baseUrl = process.env.NODE_ENV === "production" 
-    ? ""
-    : "http://localhost:3000";
-
-  const res = await fetch(`${baseUrl}${url}`, {
+  const res = await fetch(url, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
@@ -44,17 +44,17 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }): Promise<T> => {
     const user = auth.currentUser;
     const headers: Record<string, string> = {};
-    
+
     if (user) {
-      const idToken = await getIdToken(user);
-      headers["Authorization"] = `Bearer ${idToken}`;
+      try {
+        const idToken = await getIdToken(user);
+        headers["Authorization"] = `Bearer ${idToken}`;
+      } catch (err) {
+        console.warn("Failed to get ID token for query:", err);
+      }
     }
 
-    const baseUrl = process.env.NODE_ENV === "production" 
-      ? "" 
-      : "http://localhost:3000";
-
-    const res = await fetch(`${baseUrl}${queryKey.join("/")}`, {
+    const res = await fetch(queryKey.join("/"), {
       credentials: "include",
       headers,
     });

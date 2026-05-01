@@ -1,19 +1,14 @@
-import { useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { useSettings, useUpdateSettings } from "@/hooks/use-settings";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, Settings as SettingsIcon, ArrowLeft, Bell, HelpCircle, LogOut } from "lucide-react";
+import { Loader2, Settings as SettingsIcon, ArrowLeft, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { useUser } from "@/hooks/use-user";
-import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NotificationModal } from "@/components/NotificationModal";
-
-const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
 export default function Settings() {
   const [, setLocation] = useLocation();
@@ -24,39 +19,39 @@ export default function Settings() {
   const { data: settings, isLoading: isLoadingSettings } = useSettings();
   const updateSettings = useUpdateSettings();
 
-  useEffect(() => {
-    if (!loading && (!user || user.email !== ADMIN_EMAIL)) {
-      setLocation("/settings?tab=integracao");
-    }
-  }, [user, loading, setLocation]);
+  const [localSettings, setLocalSettings] = useState({
+    paypalClientId: "",
+    paypalClientSecret: "",
+    paypalWebhookId: "",
+    facebookPixelId: "",
+    facebookAccessToken: "",
+    utmfyToken: "",
+    environment: "production",
+  });
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      setLocation("/");
-    } catch (error) {
-      console.error("Erro ao sair:", error);
+  useEffect(() => {
+    if (settings) {
+      setLocalSettings({
+        paypalClientId: settings.paypalClientId || "",
+        paypalClientSecret: settings.paypalClientSecret || "",
+        paypalWebhookId: settings.paypalWebhookId || "",
+        facebookPixelId: settings.facebookPixelId || "",
+        facebookAccessToken: settings.facebookAccessToken || "",
+        utmfyToken: settings.utmfyToken || "",
+        environment: settings.environment || "production",
+      });
     }
-  };
+  }, [settings]);
 
   const handleSave = async () => {
     try {
-      await updateSettings.mutateAsync({
-        paypalClientId: settings?.paypalClientId || "",
-        paypalClientSecret: settings?.paypalClientSecret || "",
-        paypalWebhookId: settings?.paypalWebhookId || "",
-        facebookPixelId: settings?.facebookPixelId || "",
-        facebookAccessToken: settings?.facebookAccessToken || "",
-        utmfyToken: settings?.utmfyToken || "",
-        environment: settings?.environment || "production",
-      });
-      toast({ title: "Configurações salvas!" });
+      await updateSettings.mutateAsync(localSettings);
     } catch (error: any) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     }
   };
 
-  if (loading || isLoadingSettings) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -85,33 +80,33 @@ export default function Settings() {
               <SettingsIcon className="w-4 h-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <div className="space-y-1">
+              <div className="space-y-4">
+                <div className="space-y-2">
                   <label className="text-xs font-bold text-zinc-400 uppercase">Client ID</label>
-                  <Input 
-                    value={settings?.paypalClientId || ""}
-                    onChange={(e) => updateSettings.mutate({ paypalClientId: e.target.value })}
-                    placeholder="PayPal Client ID" 
-                    className="bg-zinc-900 border-zinc-800" 
+                  <Input
+                    value={localSettings.paypalClientId}
+                    onChange={(e) => setLocalSettings({ ...localSettings, paypalClientId: e.target.value })}
+                    placeholder="PayPal Client ID"
+                    className="bg-zinc-900 border-zinc-800"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <label className="text-xs font-bold text-zinc-400 uppercase">Client Secret</label>
-                  <Input 
+                  <Input
                     type="password"
-                    value={settings?.paypalClientSecret || ""}
-                    onChange={(e) => updateSettings.mutate({ paypalClientSecret: e.target.value })}
-                    placeholder="PayPal Client Secret" 
-                    className="bg-zinc-900 border-zinc-800" 
+                    value={localSettings.paypalClientSecret}
+                    onChange={(e) => setLocalSettings({ ...localSettings, paypalClientSecret: e.target.value })}
+                    placeholder="PayPal Client Secret"
+                    className="bg-zinc-900 border-zinc-800"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <label className="text-xs font-bold text-zinc-400 uppercase">Webhook ID</label>
-                  <Input 
-                    value={settings?.paypalWebhookId || ""}
-                    onChange={(e) => updateSettings.mutate({ paypalWebhookId: e.target.value })}
-                    placeholder="PayPal Webhook ID" 
-                    className="bg-zinc-900 border-zinc-800" 
+                  <Input
+                    value={localSettings.paypalWebhookId}
+                    onChange={(e) => setLocalSettings({ ...localSettings, paypalWebhookId: e.target.value })}
+                    placeholder="PayPal Webhook ID"
+                    className="bg-zinc-900 border-zinc-800"
                   />
                 </div>
               </div>
@@ -124,24 +119,24 @@ export default function Settings() {
               <SettingsIcon className="w-4 h-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <div className="space-y-1">
+              <div className="space-y-4">
+                <div className="space-y-2">
                   <label className="text-xs font-bold text-zinc-400 uppercase">Pixel ID</label>
-                  <Input 
-                    value={settings?.facebookPixelId || ""}
-                    onChange={(e) => updateSettings.mutate({ facebookPixelId: e.target.value })}
-                    placeholder="Ex: 123456789012345" 
-                    className="bg-zinc-900 border-zinc-800" 
+                  <Input
+                    value={localSettings.facebookPixelId}
+                    onChange={(e) => setLocalSettings({ ...localSettings, facebookPixelId: e.target.value })}
+                    placeholder="Ex: 123456789012345"
+                    className="bg-zinc-900 border-zinc-800"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <label className="text-xs font-bold text-zinc-400 uppercase">Access Token</label>
-                  <Input 
+                  <Input
                     type="password"
-                    value={settings?.facebookAccessToken || ""}
-                    onChange={(e) => updateSettings.mutate({ facebookAccessToken: e.target.value })}
-                    placeholder="Cole aqui o token" 
-                    className="bg-zinc-900 border-zinc-800" 
+                    value={localSettings.facebookAccessToken}
+                    onChange={(e) => setLocalSettings({ ...localSettings, facebookAccessToken: e.target.value })}
+                    placeholder="Cole aqui o token"
+                    className="bg-zinc-900 border-zinc-800"
                   />
                 </div>
               </div>
@@ -154,14 +149,14 @@ export default function Settings() {
               <SettingsIcon className="w-4 h-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <div className="space-y-1">
+              <div className="space-y-4">
+                <div className="space-y-2">
                   <label className="text-xs font-bold text-zinc-400 uppercase">UTMify Token</label>
-                  <Input 
-                    value={settings?.utmfyToken || ""}
-                    onChange={(e) => updateSettings.mutate({ utmfyToken: e.target.value })}
-                    placeholder="Insira seu token UTMify" 
-                    className="bg-zinc-900 border-zinc-800" 
+                  <Input
+                    value={localSettings.utmfyToken}
+                    onChange={(e) => setLocalSettings({ ...localSettings, utmfyToken: e.target.value })}
+                    placeholder="Insira seu token UTMify"
+                    className="bg-zinc-900 border-zinc-800"
                   />
                 </div>
               </div>
@@ -170,20 +165,24 @@ export default function Settings() {
         </div>
 
         <div className="flex justify-end">
-          <Button 
+          <Button
             onClick={handleSave}
             disabled={updateSettings.isPending}
             className="bg-purple-600 hover:bg-purple-500 text-white"
           >
-            {updateSettings.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            {updateSettings.isPending ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4 mr-2" />
+            )}
             Salvar Configurações
           </Button>
         </div>
       </div>
 
-      <NotificationModal 
-        isOpen={isNotificationOpen} 
-        onClose={() => setIsNotificationOpen(false)} 
+      <NotificationModal
+        isOpen={isNotificationOpen}
+        onClose={() => setIsNotificationOpen(false)}
       />
     </Layout>
   );
