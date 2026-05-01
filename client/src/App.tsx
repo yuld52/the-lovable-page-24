@@ -28,6 +28,7 @@ import AdminWithdrawals from "@/pages/AdminWithdrawals";
 import Profile from "@/pages/Profile";
 import MembersArea from "@/pages/MembersArea";
 import FAQ from "@/pages/FAQ";
+import Help from "@/pages/Help";
 import { ChatSupport } from "@/components/ChatSupport";
 import { useUser } from "@/hooks/use-user";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -46,12 +47,14 @@ function Router() {
     }
 
     // Set default title
-    if (!path.startsWith("/checkout") && !path.startsWith("/admin") && !path.startsWith("/faq")) {
+    if (!path.startsWith("/checkout") && !path.startsWith("/admin") && !path.startsWith("/faq") && !path.startsWith("/help")) {
       document.title = "Meteorfy - Plataforma de Vendas";
     } else if (path.startsWith("/admin")) {
       document.title = "Meteorfy - Painel Admin";
     } else if (path.startsWith("/faq")) {
       document.title = "Meteorfy - Central de Ajuda";
+    } else if (path.startsWith("/help")) {
+      document.title = "Meteorfy - Suporte";
     }
   }, []);
 
@@ -62,6 +65,7 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/help" component={Help} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/products" component={Products} />
       <Route path="/products/new" component={CreateProduct} />
