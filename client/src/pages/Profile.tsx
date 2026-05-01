@@ -5,10 +5,9 @@ import { useLocation, Link } from "wouter";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { UserCircle, Mail, Calendar, LogOut, Settings, HelpCircle, Shield, Crown, CheckCircle2, Clock, ArrowLeft } from "lucide-react";
+import { UserCircle, Mail, Calendar, LogOut, Settings, Crown, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
-import { Badge } from "@/components/ui/badge";
 
 export default function Profile() {
   const { user, loading } = useUser();
@@ -83,7 +82,7 @@ export default function Profile() {
       <div className="max-w-4xl mx-auto">
         <Button
           variant="ghost"
-          className="mb-6 text-zinc-400 hover:text-white -ml-2"
+          className="text-zinc-400 hover:text-white -ml-2"
           onClick={() => setLocation("/dashboard")}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -114,18 +113,9 @@ export default function Profile() {
                     {user.displayName || user.email?.split('@')[0] || "Usuário"}
                   </h2>
                   <div className="flex items-center justify-center sm:justify-start gap-2">
-                    <Badge variant={user.emailVerified ? "default" : "secondary"} className={user.emailVerified ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-amber-500/20 text-amber-400 border-amber-500/30"}>
-                      {user.emailVerified ? (
-                        <>
-                          <CheckCircle2 className="w-3 h-3 mr-1" />
-                          E-mail verificado
-                        </>
-                      ) : (
-                        <>
-                          <Clock className="w-3 h-3 mr-1" />
-                          Pendente
-                        </>
-                      )}
+                    <Badge variant="default" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      E-mail verificado
                     </Badge>
                     {isAdmin && (
                       <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
@@ -227,28 +217,6 @@ export default function Profile() {
                     <LogOut className="w-4 h-4 mr-2" />
                     Sair da Conta
                   </Button>
-                </CardContent>
-              </Card>
-
-              {/* Security Card */}
-              <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-3">
-                    <Shield className="w-4 h-4 text-emerald-400" />
-                    Segurança
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-zinc-400">Autenticação de dois fatores</span>
-                      <Badge variant="secondary" className="bg-zinc-800 text-zinc-500">Indisponível</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-zinc-400">Sessões ativas</span>
-                      <span className="text-sm text-zinc-300">1</span>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
             </div>
