@@ -1,6 +1,22 @@
 import { Layout } from "@/components/Layout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { DollarSign, ArrowDownToLine, History, Loader2, PieChart, CreditCard, Plus, Trash2, Check, Clock, AlertCircle, ArrowLeft } from "lucide-react";
+import {
+  DollarSign,
+  ArrowDownToLine,
+  History,
+  Loader2,
+  TrendingUp,
+  CreditCard,
+  Plus,
+  Check,
+  Clock,
+  AlertCircle,
+  Wallet,
+  Banknote,
+  Shield,
+  Zap,
+  ChevronRight,
+  BarChart3,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -11,7 +27,6 @@ import { useProducts } from "@/hooks/use-products";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { apiRequest } from "@/lib/queryClient";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -23,15 +38,11 @@ import {
 
 export default function Financeiro() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [amount, setAmount] = useState("");
   const [pixKey, setPixKey] = useState("");
+  const [pixKeyType, setPixKeyType] = useState("email");
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"visao" | "historico" | "contas">("visao");
-  const [showAddAccount, setShowAddAccount] = useState(false);
-  const [newAccount, setNewAccount] = useState<{ bank: string; agency: string; account: string; type: "checking" | "savings" }>({ bank: "", agency: "", account: "", type: "checking" });
-  
-  // Withdrawal dialog state
+  const [activeTab, setActiveTab] = useState<"visao" | "historico" | "saque">("visao");
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
 
@@ -39,70 +50,45 @@ export default function Financeiro() {
   const { data: sales, isLoading: salesLoading } = useSales();
   const { data: products } = useProducts();
 
-  // Calculate real financial data
-  const totalEarnings = sales?.filter(s => s.status === 'paid').reduce((sum, s) => sum + (s.amount || 0), 0) || 0;
-  const availableBalance = totalEarnings; // In a real app, this would subtract fees/withdrawals
-  const pendingWithdrawals = 0; // Would come from a withdrawals table
+  const totalEarnings = sales?.filter(s => s.status === "paid").reduce((sum, s) => sum + (s.amount || 0), 0) || 0;
+  const availableBalance = totalEarnings;
+  const pendingWithdrawals = 0;
+  const salesCount = sales?.filter(s => s.status === "paid").length || 0;
 
   const handleWithdraw = async () => {
     if (!amount || !pixKey) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Preencha o valor e a chave PIX.",
-        variant: "destructive",
-      });
+      toast({ title: "Campos obrigatórios", description: "Preencha o valor e a chave PIX.", variant: "destructive" });
       return;
     }
-
     const amountCents = Math.round(parseFloat(amount) * 100);
     if (amountCents > availableBalance) {
-      toast({
-        title: "Saldo insuficiente",
-        description: "O valor solicitado excede o saldo disponível.",
-        variant: "destructive",
-      });
+      toast({ title: "Saldo insuficiente", description: "O valor solicitado excede o saldo disponível.", variant: "destructive" });
       return;
     }
-
     setIsLoading(true);
     try {
-      // In production, this would call a real withdrawal API
-      await apiRequest("POST", "/api/withdrawals", {
-        amount: amountCents,
-        pixKey,
-        method: "pix"
-      });
-      
+      await apiRequest("POST", "/api/withdrawals", { amount: amountCents, pixKey, pixKeyType });
       setWithdrawSuccess(true);
+      setShowWithdrawDialog(false);
       setAmount("");
       setPixKey("");
     } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message || "Falha ao solicitar saque",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: error.message || "Falha ao solicitar saque", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const addAccountMutation = useMutation({
-    mutationFn: async (account: typeof newAccount) => {
-      return apiRequest("POST", "/api/bank-accounts", account);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bank-accounts"] });
-      toast({ title: "Conta adicionada!" });
-      setShowAddAccount(false);
-      setNewAccount({ bank: "", agency: "", account: "", type: "checking" });
-    }
-  });
+  const tabs = [
+    { id: "visao", label: "Visão Geral", icon: BarChart3 },
+    { id: "historico", label: "Histórico", icon: History },
+    { id: "saque", label: "Solicitar Saque", icon: ArrowDownToLine },
+  ] as const;
 
   if (statsLoading || salesLoading) {
     return (
       <Layout title="Financeiro" subtitle="Gerencie seus saques e saldo">
-        <div className="flex justify-center p-12">
+        <div className="flex justify-center items-center p-24">
           <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
         </div>
       </Layout>
@@ -111,449 +97,428 @@ export default function Financeiro() {
 
   return (
     <Layout title="Financeiro" subtitle="Gerencie seus saques e saldo">
-      {/* Sub-navigation */}
-      <div className="flex gap-1 p-1 rounded-xl bg-zinc-900/50 border border-zinc-800 mb-6 w-fit">
-        <button 
-          className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all font-medium flex-1 min-w-0 ${
-            activeTab === 'visao' 
-              ? 'bg-purple-600 text-white shadow-lg scale-105' 
-              : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-          }`}
-          onClick={() => setActiveTab('visao')}
-        >
-          <PieChart className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-          <span className="text-xs sm:hidden truncate">Visão</span>
-          <span className="text-sm hidden sm:inline">Visão Geral</span>
-        </button>
-        <button 
-          className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all font-medium flex-1 min-w-0 ${
-            activeTab === 'historico' 
-              ? 'bg-purple-600 text-white shadow-lg scale-105' 
-              : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-          }`}
-          onClick={() => setActiveTab('historico')}
-        >
-          <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-          <span className="text-xs sm:hidden truncate">Histórico</span>
-          <span className="text-sm hidden sm:inline">Histórico</span>
-        </button>
-        <button 
-          className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all font-medium flex-1 min-w-0 ${
-            activeTab === 'contas' 
-              ? 'bg-purple-600 text-white shadow-lg scale-105' 
-              : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-          }`}
-          onClick={() => setActiveTab('contas')}
-        >
-          <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-          <span className="text-xs sm:hidden truncate">Contas</span>
-          <span className="text-sm hidden sm:inline">Contas</span>
-        </button>
+
+      {/* Tab Navigation */}
+      <div className="flex gap-1 p-1 rounded-2xl bg-zinc-900/60 border border-zinc-800/60 mb-8 w-fit backdrop-blur-sm">
+        {tabs.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setActiveTab(id)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm ${
+              activeTab === id
+                ? "bg-purple-600 text-white shadow-lg shadow-purple-900/40"
+                : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
+            }`}
+          >
+            <Icon className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">{label}</span>
+          </button>
+        ))}
       </div>
 
-      {activeTab === 'visao' && (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">SALDO DISPONÍVEL</CardTitle>
-                <DollarSign className="w-4 h-4 text-green-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-white">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(availableBalance / 100)}
-                </div>
-                <p className="text-xs text-zinc-500 mt-1">Disponível para saque</p>
-              </CardContent>
-            </Card>
+      {/* ======================== VISÃO GERAL ======================== */}
+      {activeTab === "visao" && (
+        <div className="space-y-6">
 
-            <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">TOTAL GANHO</CardTitle>
-                <History className="w-4 h-4 text-zinc-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-white">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalEarnings / 100)}
-                </div>
-                <p className="text-xs text-zinc-500 mt-1">Histórico de vendas</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">SAQUES PENDENTES</CardTitle>
-                <ArrowDownToLine className="w-4 h-4 text-amber-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-white">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pendingWithdrawals / 100)}
-                </div>
-                <p className="text-xs text-zinc-500 mt-1">Aguardando processamento</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-1">
-              <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg sticky top-8">
-                <CardHeader>
-                  <CardTitle className="text-base font-bold text-white">Solicitar Saque</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-zinc-400 uppercase">Valor (R$)</label>
-                    <Input 
-                      type="number" 
-                      placeholder="0,00" 
-                      value={amount} 
-                      onChange={(e) => setAmount(e.target.value)}
-                      className="bg-zinc-900/50 border-zinc-800 h-11 text-white" 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-zinc-400 uppercase">Chave PIX</label>
-                    <Input 
-                      placeholder="E-mail, CPF ou telefone" 
-                      value={pixKey} 
-                      onChange={(e) => setPixKey(e.target.value)}
-                      className="bg-zinc-900/50 border-zinc-800 h-11 text-white" 
-                    />
-                  </div>
-                  <Button 
-                    onClick={() => setShowWithdrawDialog(true)}
-                    disabled={isLoading || !amount || !pixKey}
-                    className="w-full bg-purple-600 hover:bg-purple-500 text-white h-11"
-                  >
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Solicitar Saque"}
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="md:col-span-2">
-              <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-base font-bold text-white">Histórico de Saques</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mb-4">
-                      <ArrowDownToLine className="w-8 h-8 text-zinc-400" />
-                    </div>
-                    <h3 className="text-lg font-medium text-white mb-2">Nenhum saque realizado</h3>
-                    <p className="text-sm text-zinc-500 max-w-sm">
-                      Quando você realizar saques, eles aparecerão aqui. O processamento leva até 3 dias úteis.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </>
-      )}
-
-      {activeTab === 'historico' && (
-        <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-base font-bold text-white">Histórico Completo</CardTitle>
-            <CardDescription className="text-xs text-zinc-500">
-              {sales?.length || 0} transação(ões) encontrada(s)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!sales || sales.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
-                  <History className="w-8 h-8 text-zinc-500" />
-                </div>
-                <h3 className="text-lg font-medium text-white mb-2">Nenhum histórico</h3>
-                <p className="text-sm text-zinc-500 max-w-sm">
-                  O histórico de transações aparecerá aqui.
-                </p>
+          {/* Hero Balance Card */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-900/80 via-purple-800/60 to-zinc-900 border border-purple-700/40 p-8 shadow-2xl">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(139,92,246,0.3),_transparent_60%)]" />
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-purple-500/10 rounded-full blur-2xl" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-1">
+                <Wallet className="w-4 h-4 text-purple-300" />
+                <span className="text-sm font-medium text-purple-300 uppercase tracking-widest">Saldo Disponível</span>
               </div>
-            ) : (
-              <div className="rounded-xl border border-zinc-800/50 overflow-hidden">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-zinc-950/50 border-b border-zinc-800/50">
-                      <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">ID</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Produto</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Cliente</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Valor</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Data</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-800/30">
-                    {sales.map((sale) => {
-                      const product = products?.find(p => p.id === sale.productId);
-                      return (
-                        <tr key={sale.id} className="hover:bg-zinc-800/20 transition-colors">
-                          <td className="px-6 py-4">
-                            <span className="text-xs font-medium text-zinc-500">
-                              #{sale.paypalOrderId ? sale.paypalOrderId.slice(-8) : String(sale.id).padStart(8, '0')}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="text-sm font-bold text-white truncate block max-w-[200px]">
-                              {product?.name || "Produto Removido"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="text-sm text-zinc-300 truncate block max-w-[150px]">
-                              {sale.customerEmail?.split('@')[0] || "Cliente"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="text-sm font-bold text-white">
-                              {new Intl.NumberFormat('pt-BR', { 
-                                style: 'currency', 
-                                currency: 'BRL' 
-                              }).format((sale.amount || 0) / 100)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            {sale.status === 'paid' ? (
-                              <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-3 py-1 rounded-full w-fit">
-                                <Check className="w-3 h-3" />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">Aprovada</span>
-                              </div>
-                            ) : sale.status === 'pending' ? (
-                              <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 px-3 py-1 rounded-full w-fit">
-                                <Clock className="w-3 h-3" />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">Pendente</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1.5 bg-zinc-500/10 text-zinc-500 border border-zinc-500/20 px-3 py-1 rounded-full w-fit">
-                                <AlertCircle className="w-3 h-3" />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">{sale.status}</span>
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="text-xs font-medium text-zinc-400">
-                              {sale.createdAt ? format(new Date(sale.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "-"}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              <div className="text-5xl font-black text-white mt-2 mb-4">
+                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(availableBalance / 100)}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {activeTab === 'contas' && (
-        <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-base font-bold text-white">Contas Bancárias</CardTitle>
-              <CardDescription className="text-xs text-zinc-500">
-                Cadastre suas contas para receber pagamentos.
-              </CardDescription>
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center gap-2 bg-white/10 rounded-xl px-3 py-1.5">
+                  <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-xs text-white/80">{salesCount} venda{salesCount !== 1 ? "s" : ""} aprovada{salesCount !== 1 ? "s" : ""}</span>
+                </div>
+                {pendingWithdrawals > 0 && (
+                  <div className="flex items-center gap-2 bg-amber-500/20 rounded-xl px-3 py-1.5">
+                    <Clock className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="text-xs text-amber-300">
+                      {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(pendingWithdrawals / 100)} em processamento
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-            <Button 
-              onClick={() => setShowAddAccount(true)}
-              className="bg-purple-600 hover:bg-purple-500 text-white"
-              size="sm"
+            <Button
+              onClick={() => setActiveTab("saque")}
+              className="absolute bottom-6 right-6 bg-white text-purple-900 hover:bg-purple-50 font-bold rounded-xl shadow-lg hidden sm:flex items-center gap-2"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Adicionar Conta
+              <ArrowDownToLine className="w-4 h-4" />
+              Sacar
             </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
-                <CreditCard className="w-8 h-8 text-zinc-500" />
+          </div>
+
+          {/* Stats Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="relative group bg-zinc-900/60 border border-zinc-800/60 rounded-2xl p-5 hover:border-emerald-700/50 hover:bg-emerald-900/10 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-emerald-400" />
+                </div>
+                <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Total Ganho</span>
               </div>
-              <h3 className="text-lg font-medium text-white mb-2">Nenhuma conta cadastrada</h3>
-              <p className="text-sm text-zinc-500 max-w-sm">
-                Cadastre suas contas bancárias para receber pagamentos via PIX ou transferência.
+              <div className="text-2xl font-black text-white">
+                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totalEarnings / 100)}
+              </div>
+              <p className="text-xs text-zinc-500 mt-1">Histórico total de vendas</p>
+            </div>
+
+            <div className="relative group bg-zinc-900/60 border border-zinc-800/60 rounded-2xl p-5 hover:border-amber-700/50 hover:bg-amber-900/10 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-amber-400" />
+                </div>
+                <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Em Processamento</span>
+              </div>
+              <div className="text-2xl font-black text-white">
+                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(pendingWithdrawals / 100)}
+              </div>
+              <p className="text-xs text-zinc-500 mt-1">Saques aguardando aprovação</p>
+            </div>
+
+            <div className="relative group bg-zinc-900/60 border border-zinc-800/60 rounded-2xl p-5 hover:border-purple-700/50 hover:bg-purple-900/10 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-purple-400" />
+                </div>
+                <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Vendas</span>
+              </div>
+              <div className="text-2xl font-black text-white">{salesCount}</div>
+              <p className="text-xs text-zinc-500 mt-1">Transações confirmadas</p>
+            </div>
+          </div>
+
+          {/* Info Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-5 flex items-start gap-4">
+              <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center shrink-0">
+                <Zap className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white mb-1">Saque via PIX</h4>
+                <p className="text-xs text-zinc-500">Receba em até 3 dias úteis diretamente na sua chave PIX cadastrada.</p>
+              </div>
+            </div>
+            <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-5 flex items-start gap-4">
+              <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center shrink-0">
+                <Shield className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white mb-1">100% Seguro</h4>
+                <p className="text-xs text-zinc-500">Todas as transações são criptografadas e protegidas contra fraudes.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA to withdraw on mobile */}
+          <div className="sm:hidden">
+            <Button
+              onClick={() => setActiveTab("saque")}
+              className="w-full bg-purple-600 hover:bg-purple-500 text-white h-12 rounded-2xl font-bold shadow-lg shadow-purple-900/30 flex items-center gap-2"
+            >
+              <ArrowDownToLine className="w-5 h-5" />
+              Solicitar Saque
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ======================== HISTÓRICO ======================== */}
+      {activeTab === "historico" && (
+        <div className="bg-zinc-900/60 border border-zinc-800/60 rounded-2xl overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-800/60">
+            <div>
+              <h3 className="text-base font-bold text-white">Histórico de Transações</h3>
+              <p className="text-xs text-zinc-500 mt-0.5">
+                {sales?.length || 0} transação(ões) encontrada(s)
               </p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="w-9 h-9 bg-purple-500/10 rounded-xl flex items-center justify-center">
+              <History className="w-4 h-4 text-purple-400" />
+            </div>
+          </div>
+
+          {!sales || sales.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center px-6">
+              <div className="relative mb-6">
+                <div className="w-20 h-20 bg-zinc-800/60 rounded-full flex items-center justify-center">
+                  <Banknote className="w-9 h-9 text-zinc-600" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-zinc-700 rounded-full flex items-center justify-center border-2 border-zinc-900">
+                  <Plus className="w-3.5 h-3.5 text-zinc-400" />
+                </div>
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Nenhuma transação ainda</h3>
+              <p className="text-sm text-zinc-500 max-w-xs">
+                Quando você realizar vendas, elas aparecerão aqui com todos os detalhes.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-zinc-800/40">
+              {sales.map((sale) => {
+                const product = products?.find(p => p.id === sale.productId);
+                return (
+                  <div key={sale.id} className="flex items-center gap-4 px-6 py-4 hover:bg-zinc-800/20 transition-colors">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      sale.status === "paid"
+                        ? "bg-emerald-500/10"
+                        : sale.status === "pending"
+                        ? "bg-amber-500/10"
+                        : "bg-zinc-700/30"
+                    }`}>
+                      {sale.status === "paid" ? (
+                        <Check className="w-5 h-5 text-emerald-400" />
+                      ) : sale.status === "pending" ? (
+                        <Clock className="w-5 h-5 text-amber-400" />
+                      ) : (
+                        <AlertCircle className="w-5 h-5 text-zinc-500" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-white truncate">
+                          {product?.name || "Produto Removido"}
+                        </span>
+                        {sale.status === "paid" ? (
+                          <span className="shrink-0 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase">
+                            Pago
+                          </span>
+                        ) : sale.status === "pending" ? (
+                          <span className="shrink-0 text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full uppercase">
+                            Pendente
+                          </span>
+                        ) : (
+                          <span className="shrink-0 text-[10px] font-bold text-zinc-500 bg-zinc-700/30 border border-zinc-700/40 px-2 py-0.5 rounded-full uppercase">
+                            {sale.status}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-zinc-500 truncate">
+                          {sale.customerEmail || "Cliente"}
+                        </span>
+                        <span className="text-zinc-700">·</span>
+                        <span className="text-xs text-zinc-600 shrink-0">
+                          {sale.createdAt ? format(new Date(sale.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "-"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-sm font-black text-white">
+                        {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format((sale.amount || 0) / 100)}
+                      </div>
+                      <div className="text-[10px] text-zinc-600 mt-0.5">
+                        #{sale.paypalOrderId ? sale.paypalOrderId.slice(-6) : String(sale.id).padStart(6, "0")}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
 
-      {/* Withdrawal Confirmation Dialog */}
+      {/* ======================== SOLICITAR SAQUE ======================== */}
+      {activeTab === "saque" && (
+        <div className="max-w-lg space-y-5">
+
+          {/* Balance preview */}
+          <div className="bg-gradient-to-br from-purple-900/60 to-zinc-900/60 border border-purple-700/30 rounded-2xl p-5 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-purple-300 font-medium uppercase tracking-wider mb-1">Saldo Disponível</p>
+              <p className="text-2xl font-black text-white">
+                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(availableBalance / 100)}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-purple-500/20 rounded-2xl flex items-center justify-center">
+              <Wallet className="w-6 h-6 text-purple-300" />
+            </div>
+          </div>
+
+          {/* Withdrawal Form */}
+          <div className="bg-zinc-900/60 border border-zinc-800/60 rounded-2xl p-6 space-y-5">
+            <div>
+              <h3 className="text-base font-bold text-white mb-1">Solicitar Saque</h3>
+              <p className="text-xs text-zinc-500">O valor será transferido para sua chave PIX em até 3 dias úteis.</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Valor do Saque (R$)</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-bold text-sm">R$</span>
+                <Input
+                  type="number"
+                  placeholder="0,00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="bg-zinc-800/50 border-zinc-700/60 h-12 text-white text-base pl-10 rounded-xl focus:border-purple-500 focus:ring-purple-500/20"
+                />
+              </div>
+              {amount && (
+                <p className="text-xs text-zinc-500 mt-1 flex items-center gap-1">
+                  <Check className="w-3 h-3 text-emerald-400" />
+                  Você receberá{" "}
+                  <span className="text-white font-bold">
+                    {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(parseFloat(amount) || 0)}
+                  </span>
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Tipo de Chave PIX</label>
+              <div className="grid grid-cols-3 gap-2">
+                {["email", "cpf", "phone"].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setPixKeyType(type)}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border ${
+                      pixKeyType === type
+                        ? "bg-purple-600/20 border-purple-500/60 text-purple-300"
+                        : "bg-zinc-800/40 border-zinc-700/40 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600"
+                    }`}
+                  >
+                    {type === "email" ? "E-mail" : type === "cpf" ? "CPF" : "Telefone"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Chave PIX</label>
+              <Input
+                placeholder={
+                  pixKeyType === "email"
+                    ? "seu@email.com"
+                    : pixKeyType === "cpf"
+                    ? "000.000.000-00"
+                    : "(00) 00000-0000"
+                }
+                value={pixKey}
+                onChange={(e) => setPixKey(e.target.value)}
+                className="bg-zinc-800/50 border-zinc-700/60 h-12 text-white rounded-xl focus:border-purple-500 focus:ring-purple-500/20"
+              />
+            </div>
+
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-3">
+              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-300/80">
+                Confira a chave PIX antes de confirmar. Saques incorretos não podem ser estornados automaticamente.
+              </p>
+            </div>
+
+            <Button
+              onClick={() => setShowWithdrawDialog(true)}
+              disabled={isLoading || !amount || !pixKey}
+              className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white h-12 rounded-xl font-bold shadow-lg shadow-purple-900/30 flex items-center justify-center gap-2 transition-all"
+            >
+              {isLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <ArrowDownToLine className="w-5 h-5" />
+                  Solicitar Saque
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ======================== CONFIRM DIALOG ======================== */}
       <Dialog open={showWithdrawDialog} onOpenChange={setShowWithdrawDialog}>
-        <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm">
+        <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ArrowDownToLine className="w-5 h-5 text-purple-400" />
+            <DialogTitle className="flex items-center gap-2.5 text-base">
+              <div className="w-8 h-8 bg-purple-500/15 rounded-xl flex items-center justify-center">
+                <ArrowDownToLine className="w-4 h-4 text-purple-400" />
+              </div>
               Confirmar Saque
             </DialogTitle>
-            <DialogDescription className="text-zinc-400">
-              Revise os dados antes de confirmar o saque via PIX.
+            <DialogDescription className="text-zinc-400 text-sm">
+              Revise os dados antes de confirmar.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="bg-zinc-900/50 rounded-lg p-4 space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-zinc-400">Valor:</span>
-                <span className="text-lg font-bold text-white">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(amount) || 0)}
+          <div className="space-y-4 py-2">
+            <div className="bg-zinc-900 rounded-xl p-4 space-y-3 border border-zinc-800/50">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-zinc-400">Valor</span>
+                <span className="text-xl font-black text-white">
+                  {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(parseFloat(amount) || 0)}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-zinc-400">Chave PIX:</span>
-                <span className="text-sm font-medium text-white">{pixKey}</span>
+              <div className="h-px bg-zinc-800" />
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-zinc-400">Chave PIX</span>
+                <span className="text-sm font-medium text-white truncate max-w-[180px] text-right">{pixKey}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-zinc-400">Método:</span>
-                <span className="text-sm font-medium text-purple-400">PIX Instantâneo</span>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-zinc-400">Tipo</span>
+                <span className="text-sm font-medium text-purple-400">
+                  {pixKeyType === "email" ? "E-mail" : pixKeyType === "cpf" ? "CPF" : "Telefone"}
+                </span>
               </div>
-            </div>
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
-              <p className="text-xs text-amber-400">
-                ⚠️ O processamento leva até 3 dias úteis. Certifique-se que a chave PIX está correta.
-              </p>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-zinc-400">Prazo</span>
+                <span className="text-sm font-medium text-zinc-300">Até 3 dias úteis</span>
+              </div>
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowWithdrawDialog(false)}
-              className="border-zinc-700 text-zinc-300"
-            >
+            <Button variant="outline" onClick={() => setShowWithdrawDialog(false)} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 rounded-xl">
               Cancelar
             </Button>
-            <Button 
-              onClick={() => {
-                setShowWithdrawDialog(false);
-                handleWithdraw();
-              }}
-              disabled={isLoading}
-              className="bg-purple-600 hover:bg-purple-500 text-white"
-            >
-              {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Confirmar Saque"}
+            <Button onClick={handleWithdraw} disabled={isLoading} className="bg-purple-600 hover:bg-purple-500 text-white rounded-xl flex items-center gap-2">
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              Confirmar
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Success Dialog */}
+      {/* ======================== SUCCESS DIALOG ======================== */}
       <Dialog open={withdrawSuccess} onOpenChange={setWithdrawSuccess}>
-        <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm">
-          <div className="flex flex-col items-center text-center p-6">
-            <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6">
-              <Check className="w-10 h-10 text-emerald-500" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Saquue Solicitado!</h2>
-            <p className="text-zinc-400 mb-6">
-              Seu saque de{' '}
-              <span className="text-white font-bold">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(amount) || 0)}
-              </span>
-              {' '}foi solicitado com sucesso via PIX.
-            </p>
-            <div className="bg-zinc-900/50 rounded-lg p-4 w-full mb-6">
-              <div className="flex justify-between mb-2">
-                <span className="text-sm text-zinc-400">Chave PIX:</span>
-                <span className="text-sm font-medium text-white">{pixKey}</span>
+        <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm rounded-2xl">
+          <div className="flex flex-col items-center text-center p-4">
+            <div className="relative mb-6">
+              <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                <Check className="w-10 h-10 text-emerald-400" />
               </div>
+              <div className="absolute inset-0 rounded-full bg-emerald-400/5 animate-ping" />
+            </div>
+            <h2 className="text-2xl font-black text-white mb-2">Saque Solicitado!</h2>
+            <p className="text-zinc-400 text-sm mb-6">
+              Seu saque foi enviado para análise e será processado em até 3 dias úteis.
+            </p>
+            <div className="bg-zinc-900 rounded-2xl p-4 w-full mb-6 border border-zinc-800/50 text-left space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-zinc-400">Status:</span>
-                <span className="text-sm font-medium text-amber-400">Pendente</span>
+                <span className="text-sm text-zinc-500">Chave PIX</span>
+                <span className="text-sm font-medium text-white truncate max-w-[160px] text-right">{pixKey}</span>
+              </div>
+              <div className="h-px bg-zinc-800" />
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-zinc-500">Status</span>
+                <span className="flex items-center gap-1.5 text-sm font-bold text-amber-400">
+                  <Clock className="w-3.5 h-3.5" /> Pendente
+                </span>
               </div>
             </div>
-            <p className="text-xs text-zinc-500 mb-6">
-              O processamento leva até 3 dias úteis. Você receberá uma notificação quando o valor for enviado.
-            </p>
-            <Button 
-              onClick={() => setWithdrawSuccess(false)}
-              className="w-full bg-purple-600 hover:bg-purple-500 text-white"
-            >
-              Entendi
+            <Button onClick={() => setWithdrawSuccess(false)} className="w-full bg-purple-600 hover:bg-purple-500 text-white h-11 rounded-xl font-bold">
+              Entendido
             </Button>
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Add Account Dialog */}
-      {showAddAccount && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[#18181b] border border-zinc-800 rounded-2xl p-6 max-w-sm w-full mx-4">
-            <h3 className="text-lg font-bold text-white mb-4">Nova Conta Bancária</h3>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-400 uppercase">Banco</label>
-                <Input 
-                  placeholder="Ex: Nubank, Itaú..." 
-                  value={newAccount.bank}
-                  onChange={(e) => setNewAccount({ ...newAccount, bank: e.target.value })}
-                  className="bg-zinc-900 border-zinc-800" 
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase">Agência</label>
-                  <Input 
-                    placeholder="0000" 
-                    value={newAccount.agency}
-                    onChange={(e) => setNewAccount({ ...newAccount, agency: e.target.value })}
-                    className="bg-zinc-900 border-zinc-800" 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase">Conta</label>
-                  <Input 
-                    placeholder="00000-0" 
-                    value={newAccount.account}
-                    onChange={(e) => setNewAccount({ ...newAccount, account: e.target.value })}
-                    className="bg-zinc-900 border-zinc-800" 
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-400 uppercase">Tipo</label>
-                <div className="flex gap-2">
-                  <button
-                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-                        newAccount.type === 'checking' 
-                          ? 'bg-purple-600 text-white' 
-                          : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800'
-                    }`}
-                    onClick={() => setNewAccount({ ...newAccount, type: 'checking' })}
-                  >
-                    Conta Corrente
-                  </button>
-                  <button
-                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-                        newAccount.type === 'savings' 
-                          ? 'bg-purple-600 text-white' 
-                          : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800'
-                    }`}
-                    onClick={() => setNewAccount({ ...newAccount, type: 'savings' })}
-                  >
-                    Poupança
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <Button 
-                variant="ghost" 
-                onClick={() => setShowAddAccount(false)}
-                className="flex-1"
-              >
-                Cancelar
-              </Button>
-              <Button 
-                onClick={() => addAccountMutation.mutate(newAccount)}
-                disabled={addAccountMutation.isPending}
-                className="flex-1 bg-purple-600 hover:bg-purple-500 text-white"
-              >
-                {addAccountMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Adicionar"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </Layout>
   );
 }
