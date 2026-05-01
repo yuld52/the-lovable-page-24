@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { Layout } from "@/components/Layout";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Clock, CheckCircle2, XCircle, Check, ArrowLeft, Package } from "lucide-react";
@@ -5,6 +7,11 @@ import { useAdminProducts, useAdminApproveProduct, useAdminRejectProduct } from 
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useUser } from "@/hooks/use-user";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
+
+const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
 export default function AdminProducts() {
   const [, setLocation] = useLocation();
@@ -52,7 +59,12 @@ export default function AdminProducts() {
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-4 mb-8">
-            <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")} className="text-zinc-400 hover:text-white">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setLocation("/admin")}
+              className="text-zinc-400 hover:text-white"
+            >
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div>
@@ -75,7 +87,12 @@ export default function AdminProducts() {
                     </CardDescription>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => refetch()} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => refetch()}
+                  className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                >
                   Atualizar
                 </Button>
               </div>
@@ -125,11 +142,22 @@ export default function AdminProducts() {
                           </td>
                           <td className="px-6 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-500 text-white h-8" onClick={() => handleApprove(Number(p.id))} disabled={approveProduct.isPending}>
+                              <Button
+                                size="sm"
+                                className="bg-emerald-600 hover:bg-emerald-500 text-white h-8"
+                                onClick={() => handleApprove(p.id)}
+                                disabled={approveProduct.isPending}
+                              >
                                 {approveProduct.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
                                 Aprovar
                               </Button>
-                              <Button size="sm" variant="outline" className="border-red-500/50 text-red-400 hover:bg-red-500/10 h-8" onClick={() => handleReject(Number(p.id))} disabled={rejectProduct.isPending}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-red-500/50 text-red-400 hover:bg-red-500/10 h-8"
+                                onClick={() => handleReject(p.id)}
+                                disabled={rejectProduct.isPending}
+                              >
                                 {rejectProduct.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
                                 Rejeitar
                               </Button>

@@ -1,14 +1,17 @@
 import { useEffect } from "react";
+import { Layout } from "@/components/Layout";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Settings as SettingsIcon, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { useUser } from "@/hooks/use-user";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { useSettings, useUpdateSettings } from "@/hooks/use-settings";
+import { apiRequest } from "@/lib/queryClient";
 
 const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
@@ -16,9 +19,6 @@ export default function AdminSettings() {
   const [, setLocation] = useLocation();
   const { user, loading } = useUser();
   const { toast } = useToast();
-  
-  const { data: settings, isLoading } = useSettings();
-  const updateSettings = useUpdateSettings();
   
   const [paypalClientId, setPaypalClientId] = useState("");
   const [paypalClientSecret, setPaypalClientSecret] = useState("");
@@ -30,17 +30,19 @@ export default function AdminSettings() {
     }
   }, [user, loading, setLocation]);
 
-  useEffect(() => {
-    if (settings) {
-      setPaypalClientId(settings.paypalClientId || "");
-      setPaypalClientSecret(settings.paypalClientSecret || "");
-    }
-  }, [settings]);
+  const handleLogout = async () => {
+    await signOut(auth);
+    setLocation("/admin-login");
+  };
 
   const handleSaveSystemSettings = async () => {
     setIsSaving(true);
     try {
-      await updateSettings.mutateAsync({ paypalClientId, paypalClientSecret });
+      // Save system-wide settings (admin only)
+      await apiRequest("POST", "/api/admin/settings", {
+        paypalClientId,
+        paypalClientSecret,
+      });
       toast({ title: "Sucesso", description: "Configurações do sistema salvas!" });
     } catch (error: any) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -49,7 +51,7 @@ export default function AdminSettings() {
     }
   };
 
-  if (loading || isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#09090b] flex">
         <AdminSidebar />
@@ -66,7 +68,12 @@ export default function AdminSettings() {
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-4 mb-8">
-            <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")} className="text-zinc-400 hover:text-white">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setLocation("/admin")}
+              className="text-zinc-400 hover:text-white"
+            >
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div>
@@ -91,11 +98,22 @@ export default function AdminSettings() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-zinc-400 uppercase">Client ID</label>
-                  <Input value={paypalClientId} onChange={(e) => setPaypalClientId(e.target.value)} placeholder="PayPal Client ID" className="bg-zinc-900 border-zinc-800" />
+                  <Input 
+                    value={paypalClientId}
+                    onChange={(e) => setPaypalClientId(e.target.value)}
+                    placeholder="PayPal Client ID" 
+                    className="bg-zinc-900 border-zinc-800" 
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-zinc-400 uppercase">Client Secret</label>
-                  <Input type="password" value={paypalClientSecret} onChange={(e) => setPaypalClientSecret(e.target.value)} placeholder="PayPal Client Secret" className="bg-zinc-900 border-zinc-800" />
+                  <Input 
+                    type="password"
+                    value={paypalClientSecret}
+                    onChange={(e) => setPaypalClientSecret(e.target.value)}
+                    placeholder="PayPal Client Secret" 
+                    className="bg-zinc-900 border-zinc-800" 
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -115,15 +133,19 @@ export default function AdminSettings() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <p className="text-sm text-zinc-300">Versão: 1.0.0</p>
-                  <p className="text-sm text-zinc-300">Ambiente: {settings?.environment || "sandbox"}</p>
-                  <p className="text-sm text-zinc-300">Banco de Dados: LocalStorage (Navegador)</p>
+                  <p className="text-sm text-zinc-300">Ambiente: {process.env.NODE_ENV || "development"}</p>
+                  <p className="text-sm text-zinc-300">Banco de Dados: Firebase Firestore</p>
                 </div>
               </CardContent>
             </Card>
           </div>
 
           <div className="mt-6 flex justify-end">
-            <Button onClick={handleSaveSystemSettings} disabled={isSaving} className="bg-red-600 hover:bg-red-500 text-white">
+            <Button 
+              onClick={handleSaveSystemSettings}
+              disabled={isSaving}
+              className="bg-red-600 hover:bg-red-500 text-white"
+            >
               {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Salvar Configurações
             </Button>

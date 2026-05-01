@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Loader2, ArrowRight, Shield, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { loginUser } from "@/lib/queryClient";
+import { auth } from "@/lib/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
@@ -22,17 +23,32 @@ export default function AdminLogin() {
     setIsLoading(true);
 
     try {
+      // Only allow the specific admin email
       if (email.toLowerCase().trim() !== ADMIN_EMAIL) {
         throw new Error("Acesso restrito. Apenas o administrador pode acessar.");
       }
 
-      await loginUser(email, password);
-      toast({ title: "Sucesso", description: "Acesso administrativo realizado!" });
+      await signInWithEmailAndPassword(auth, email, password);
+      
+      toast({
+        title: "Sucesso",
+        description: "Acesso administrativo realizado!",
+      });
       setLocation("/admin");
     } catch (err: any) {
+      let errorMessage = 'Falha ao fazer login administrativo.';
+      
+      if (err.code?.includes('auth/wrong-password') || err.code?.includes('auth/invalid-credential')) {
+        errorMessage = 'Senha incorreta.';
+      } else if (err.code?.includes('auth/user-not-found')) {
+        errorMessage = 'Usuário não encontrado.';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
       toast({
         title: "Erro de Acesso",
-        description: err.message || "Falha ao fazer login administrativo.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -42,6 +58,7 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
+      {/* Background decorations */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
         <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-red-500/5 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-red-500/5 rounded-full blur-[100px]" />
@@ -118,9 +135,9 @@ export default function AdminLogin() {
 
         <div className="mt-4 bg-card/60 backdrop-blur-xl p-4 rounded-xl flex items-center justify-center gap-1 shadow-2xl ring-0 border-none outline-none">
           <p className="text-sm text-muted-foreground">
-            <button onClick={() => setLocation("/login")} className="text-sm text-primary hover:text-primary/90 font-medium transition-colors">
+            <Link to="/login" className="text-sm text-primary hover:text-primary/90 font-medium transition-colors">
               ← Voltar para o login normal
-            </button>
+            </Link>
           </p>
         </div>
 

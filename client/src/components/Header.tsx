@@ -8,9 +8,10 @@ import {
 } from "@/components/ui/popover";
 import { useUser } from "@/hooks/use-user";
 import { useLocation } from "wouter";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationModal } from "./NotificationModal";
-import { logoutUser } from "@/lib/queryClient";
 
 export function Header({ title, subtitle }: { title: string; subtitle?: string }) {
   const { user } = useUser();
@@ -20,7 +21,7 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
 
   const handleLogout = async () => {
     try {
-      await logoutUser();
+      await signOut(auth);
       setLocation("/");
     } catch (error) {
       console.error("Erro ao sair:", error);
@@ -35,6 +36,7 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Notification Bell */}
         <Button
           variant="ghost"
           size="icon"
@@ -45,6 +47,7 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
           <Bell className="h-5 w-5" />
         </Button>
 
+        {/* User Profile Popover */}
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -62,6 +65,7 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
             sideOffset={8}
           >
             <div className="flex flex-col">
+              {/* User Info */}
               <div className="flex items-center gap-3 p-3 mb-2">
                 <div className="w-12 h-12 rounded-full bg-purple-600/10 flex items-center justify-center border border-purple-500/20">
                   <UserCircle className="w-6 h-6 text-purple-400" />
@@ -78,6 +82,7 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
 
               <div className="h-px bg-border/50 mx-1 my-1"></div>
 
+              {/* Menu Items */}
               <div className="space-y-1 mt-1">
                 <button
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-accent text-foreground"
@@ -98,6 +103,7 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
 
               <div className="h-px bg-border/50 mx-1 my-1"></div>
 
+              {/* Logout */}
               <button
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-red-500/10 text-red-400"
                 onClick={handleLogout}
@@ -110,6 +116,7 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
         </Popover>
       </div>
 
+      {/* Notification Modal */}
       <NotificationModal 
         isOpen={isNotificationOpen} 
         onClose={() => setIsNotificationOpen(false)} 

@@ -1,20 +1,25 @@
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard,
+  Package,
   ShoppingCart,
   Receipt,
   Settings,
   LogOut,
   Trophy,
   ChevronDown,
+  User,
+  BarChart3,
   DollarSign,
   Folder,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStats } from "@/hooks/use-stats";
 import { useState } from "react";
 import { useUser } from "@/hooks/use-user";
-import { logoutUser } from "@/lib/queryClient";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
 
 const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
@@ -22,6 +27,9 @@ export function Sidebar() {
   const [location, setLocation] = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(location.startsWith("/settings"));
   const [productsOpen, setProductsOpen] = useState(location.startsWith("/products") || location.startsWith("/members-area"));
+
+  const searchParams = new URLSearchParams(window.location.search);
+  const currentTab = searchParams.get("tab") || "integracao";
 
   const { user } = useUser();
   const isAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL;
@@ -39,7 +47,7 @@ export function Sidebar() {
   ];
 
   const settingSubItems = [
-    { href: "/settings?tab=integracao", label: "Integração", icon: LayoutDashboard },
+    { href: "/settings?tab=integracao", label: "Integração", icon: BarChart3 },
   ];
 
   const { data: stats } = useStats();
@@ -59,7 +67,7 @@ export function Sidebar() {
 
   const handleLogout = async () => {
     try {
-      await logoutUser();
+      await signOut(auth);
       setLocation("/");
     } catch (error) {
       console.error("Erro ao sair:", error);
@@ -114,17 +122,19 @@ export function Sidebar() {
         </div>
 
         <nav className="px-4 py-2 space-y-1">
-          <button
-            onClick={() => setLocation("/dashboard")}
-            className={cn(
-              "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-              location === "/dashboard" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
-            )}
-          >
-            <LayoutDashboard size={18} strokeWidth={2.5} />
-            Dashboard
-          </button>
+          <Link href="/dashboard">
+            <button
+              className={cn(
+                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+                location === "/dashboard" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+              )}
+            >
+              <LayoutDashboard size={18} strokeWidth={2.5} />
+              Dashboard
+            </button>
+          </Link>
 
+          {/* Collapsible Products Menu */}
           <div className="space-y-1">
             <button
               onClick={() => setProductsOpen(!productsOpen)}
@@ -145,54 +155,57 @@ export function Sidebar() {
                 {productSubItems.map((item) => {
                   const isActive = location === item.href;
                   return (
-                    <button
-                      key={item.href}
-                      onClick={() => setLocation(item.href)}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm",
-                        isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
-                      )}
-                    >
-                      {item.label}
-                    </button>
+                    <Link key={item.href} href={item.href}>
+                      <button
+                        className={cn(
+                          "w-full flex items-center gap-3 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm",
+                          isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                        )}
+                      >
+                        {item.label}
+                      </button>
+                    </Link>
                   );
                 })}
               </div>
             )}
           </div>
 
-          <button
-            onClick={() => setLocation("/checkouts")}
-            className={cn(
-              "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-              location === "/checkouts" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
-            )}
-          >
-            <ShoppingCart size={18} strokeWidth={2.5} />
-            Checkouts
-          </button>
+          <Link href="/checkouts">
+            <button
+              className={cn(
+                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+                location === "/checkouts" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+              )}
+            >
+              <ShoppingCart size={18} strokeWidth={2.5} />
+              Checkouts
+            </button>
+          </Link>
 
-          <button
-            onClick={() => setLocation("/sales")}
-            className={cn(
-              "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-              location === "/sales" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
-            )}
-          >
-            <Receipt size={18} strokeWidth={2.5} />
-            Vendas
-          </button>
+          <Link href="/sales">
+            <button
+              className={cn(
+                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+                location === "/sales" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+              )}
+            >
+              <Receipt size={18} strokeWidth={2.5} />
+              Vendas
+            </button>
+          </Link>
 
-          <button
-            onClick={() => setLocation("/financeiro")}
-            className={cn(
-              "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-              location === "/financeiro" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
-            )}
-          >
-            <DollarSign size={18} strokeWidth={2.5} />
-            Financeiro
-          </button>
+          <Link href="/financeiro">
+            <button
+              className={cn(
+                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+                location === "/financeiro" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+              )}
+            >
+              <DollarSign size={18} strokeWidth={2.5} />
+              Financeiro
+            </button>
+          </Link>
 
           <div className="space-y-1">
             <button
@@ -214,20 +227,20 @@ export function Sidebar() {
                 {settingSubItems.map((item) => {
                   const Icon = item.icon;
                   const itemTab = new URLSearchParams(item.href.split("?")[1]).get("tab");
-                  const isActive = location === "/settings" && new URLSearchParams(window.location.search).get("tab") === itemTab;
+                  const isActive = location === "/settings" && currentTab === itemTab;
 
                   return (
-                    <button
-                      key={item.href}
-                      onClick={() => setLocation(item.href)}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm",
-                        isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
-                      )}
-                    >
-                      <Icon size={14} />
-                      {item.label}
-                    </button>
+                    <Link key={item.href} href={item.href}>
+                      <button
+                        className={cn(
+                          "w-full flex items-center gap-3 px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm",
+                          isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                        )}
+                      >
+                        <Icon size={14} />
+                        {item.label}
+                      </button>
+                    </Link>
                   );
                 })}
               </div>

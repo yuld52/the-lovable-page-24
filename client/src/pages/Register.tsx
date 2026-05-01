@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Loader2, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { registerUser, checkEmailExists } from "@/lib/queryClient";
+import { auth } from "@/lib/firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -13,25 +14,57 @@ export default function Register() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const exists = await checkEmailExists(email);
-      if (exists) {
+      // First, check if email already exists in the system
+      const checkResponse = await fetch("/api/auth/check-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (checkResponse.status === 409) {
         throw new Error("Este e-mail já está cadastrado no sistema. Faça login ou recupere sua senha.");
       }
 
-      await registerUser(email, password);
-      toast({ title: "Sucesso", description: "Conta criada! Você já pode fazer login." });
+      if (!checkResponse.ok) {
+        // If the check fails, we still proceed but log the error
+        console.error("Email check failed, proceeding with registration anyway");
+      }
+
+      await createUserWithEmailAndPassword(auth, email, password);
+
+      toast({
+        title: "Sucesso",
+        description: "Conta criada! Você já pode fazer login.",
+      });
       setLocation("/login");
     } catch (err: any) {
-      toast({
-        title: "Erro",
-        description: err.message || "Erro ao criar conta",
-        variant: "destructive",
-      });
+      // Check if the error is due to user already existing
+      const errorMessage = err.message?.toLowerCase() || "";
+      if (
+        errorMessage.includes('email-already-in-use') ||
+        errorMessage.includes('already registered') ||
+        errorMessage.includes('already exists')
+      ) {
+        toast({
+          title: "Erro",
+          description: "Este e-mail já está cadastrado no sistema. Faça login ou recupere sua senha.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: err.message || "Erro ao criar conta",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -47,8 +80,8 @@ export default function Register() {
       <div className="w-full max-w-sm p-6 relative z-10">
         <div className="text-center mb-6">
           <h1 className="text-4xl font-extrabold tracking-tight mb-2">
-            <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Meteor</span>
-            <span className="text-foreground">fy</span>
+            <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Berry</span>
+            <span className="text-foreground">Pay</span>
           </h1>
           <p className="text-muted-foreground text-sm">Crie sua conta</p>
         </div>
@@ -102,9 +135,9 @@ export default function Register() {
         <div className="mt-4 bg-card/60 backdrop-blur-xl p-4 rounded-xl flex items-center justify-center gap-1 shadow-2xl ring-0 border-none outline-none">
           <p className="text-sm text-muted-foreground">
             Já tem uma conta?{" "}
-            <button onClick={() => setLocation("/login")} className="text-sm text-primary hover:text-primary/90 font-medium transition-colors">
+            <Link to="/login" className="text-sm text-primary hover:text-primary/90 font-medium transition-colors">
               Entre agora
-            </button>
+            </Link>
           </p>
         </div>
 

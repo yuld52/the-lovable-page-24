@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Layout } from "@/components/Layout";
 import { AdminSidebar } from "@/components/AdminSidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Users, UserPlus, Trash2, ArrowLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { auth } from "@/lib/firebase";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/queryClient";
+import { cn } from "@/lib/utils";
 
 const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
@@ -22,62 +24,14 @@ export default function AdminUsers() {
   const [newUserPassword, setNewUserPassword] = useState("");
   const [isCreatingUser, setIsCreatingUser] = useState(false);
 
-  const { data: users, isLoading: loadingUsers, refetch } = useQuery({
+  const { data: users, isLoading: loadingUsers, refetch } = useQuery<any[]>({
     queryKey: ["/api/users-v2"],
-    query<dyad-write path="client/src/pages/AdminUsers.tsx" description="Rewriting AdminUsers to use localStorage">
-import { useState } from "react";
-import { AdminSidebar } from "@/components/AdminSidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Users, UserPlus, Trash2, ArrowLeft, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
-import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/queryClient";
-
-const ADMIN_EMAIL = "yuldchissico11@gmail.com";
-
-export default function AdminUsers() {
-  const [,<dyad-write path="client/src/pages/AdminUsers.tsx" description="Rewriting AdminUsers to use localStorage">
-import { useState } from "react";
-import { AdminSidebar } from "@/components/AdminSidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Users, UserPlus, Trash2, ArrowLeft, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
-import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/queryClient";
-
-const ADMIN_EMAIL = "yuldchissico11@gmail.com";
-
-export default function AdminUsers() {
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
-  const [newUserEmail, setNewUserEmail] = useState("");
-  const [newUserPassword, setNewUserPassword] = useState("");
-  const [isCreatingUser, setIsCreatingUser] = useState(false);
-
-  const { data: users, isLoading: loadingUsers, refetch } = useQuery({
-    queryKey: ["/api/users-v2"],
-    queryFn: async () => {
-      const user = getCurrentUser();
-      if (!user || user.email !== ADMIN_EMAIL) return [];
-      return db.users.getAll();
-    },
     enabled: true
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: async (id: string) => {
-      db.users.delete(id);
+    mutationFn: async (uid: string | number) => {
+      await apiRequest("DELETE", `/api/users-v2/${uid}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users-v2"] });
@@ -92,7 +46,7 @@ export default function AdminUsers() {
     }
     setIsCreatingUser(true);
     try {
-      db.users.create({ email: newUserEmail, password: newUserPassword });
+      await apiRequest("POST", "/api/users-v2", { email: newUserEmail, password: newUserPassword });
       toast({ title: "Usuário Criado" });
       setIsAddUserOpen(false);
       setNewUserEmail("");
@@ -106,7 +60,7 @@ export default function AdminUsers() {
   };
 
   const filteredUsers = users?.filter(u => 
-    (u.email || "").toLowerCase().includes(searchTerm.toLowerCase())
+    (u.username || u.email || "").toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
   if (loadingUsers) {
@@ -127,7 +81,12 @@ export default function AdminUsers() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")} className="text-zinc-400 hover:text-white">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLocation("/admin")}
+                className="text-zinc-400 hover:text-white"
+              >
                 <ArrowLeft className="w-4 h-4" />
               </Button>
               <div>
@@ -135,7 +94,10 @@ export default function AdminUsers() {
                 <p className="text-sm text-muted-foreground">Visualize e gerencie usuários</p>
               </div>
             </div>
-            <Button onClick={() => setIsAddUserOpen(true)} className="bg-red-600 hover:bg-red-500 text-white">
+            <Button 
+              onClick={() => setIsAddUserOpen(true)}
+              className="bg-red-600 hover:bg-red-500 text-white"
+            >
               <UserPlus size={18} className="mr-2" /> Adicionar Usuário
             </Button>
           </div>
@@ -172,7 +134,7 @@ export default function AdminUsers() {
                     {filteredUsers.map((u) => (
                       <tr key={u.id} className="hover:bg-zinc-800/20 transition-colors">
                         <td className="px-6 py-4">
-                          <span className="text-sm text-zinc-400">{u.email}</span>
+                          <span className="text-sm text-zinc-400">{u.username || u.email}</span>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <Button 
@@ -198,6 +160,7 @@ export default function AdminUsers() {
         </div>
       </main>
 
+      {/* Add User Dialog */}
       {isAddUserOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-[#18181b] border border-zinc-800 rounded-2xl p-6 max-w-sm w-full mx-4">
@@ -205,16 +168,37 @@ export default function AdminUsers() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-zinc-400 uppercase">E-mail</label>
-                <Input placeholder="email@exemplo.com" value={newUserEmail} onChange={(e) => setNewUserEmail(e.target.value)} className="bg-zinc-900 border-zinc-800" />
+                <Input 
+                  placeholder="email@exemplo.com" 
+                  value={newUserEmail}
+                  onChange={(e) => setNewUserEmail(e.target.value)}
+                  className="bg-zinc-900 border-zinc-800" 
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-zinc-400 uppercase">Senha</label>
-                <Input type="password" placeholder="••••••••" value={newUserPassword} onChange={(e) => setNewUserPassword(e.target.value)} className="bg-zinc-900 border-zinc-800" />
+                <Input 
+                  type="password" 
+                  placeholder="••••••••" 
+                  value={newUserPassword}
+                  onChange={(e) => setNewUserPassword(e.target.value)}
+                  className="bg-zinc-900 border-zinc-800" 
+                />
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <Button variant="ghost" onClick={() => setIsAddUserOpen(false)} className="flex-1">Cancelar</Button>
-              <Button onClick={handleAddUser} disabled={isCreatingUser} className="flex-1 bg-red-600 hover:bg-red-500 text-white">
+              <Button 
+                variant="ghost" 
+                onClick={() => setIsAddUserOpen(false)}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleAddUser}
+                disabled={isCreatingUser}
+                className="flex-1 bg-red-600 hover:bg-red-500 text-white"
+              >
                 {isCreatingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : "Criar Usuário"}
               </Button>
             </div>
