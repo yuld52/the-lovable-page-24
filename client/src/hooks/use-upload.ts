@@ -1,20 +1,9 @@
 import { useState, useCallback } from "react";
-import { auth } from "@/lib/firebase";
-import { getIdToken } from "firebase/auth";
-
-interface UploadMetadata {
-  name: string;
-  size: number;
-  contentType: string;
-}
 
 interface UploadResponse {
-  /** Public URL to access the uploaded file */
   uploadURL: string;
-  /** Path inside the bucket (e.g. public/123-file.png) */
   objectPath: string;
-  metadata: UploadMetadata;
-  /** Backwards-compatible alias */
+  metadata: { name: string; size: number; contentType: string };
   url: string;
 }
 
@@ -23,9 +12,6 @@ interface UseUploadOptions {
   onError?: (error: Error) => void;
 }
 
-/**
- * Hook de upload usando API local (não requer Firebase Storage)
- */
 export function useUpload(options: UseUploadOptions = {}) {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -38,74 +24,47 @@ export function useUpload(options: UseUploadOptions = {}) {
       setProgress(0);
 
       try {
-        const user = auth.currentUser;
-        if (!user) {
-          throw new Error("Usuário não autenticado");
-        }
-
-        // Use local API endpoint for upload
-        const formData = new FormData();
-        formData.append("file", file);
-
-        setProgress(30);
-        const idToken = await getIdToken(user);
-        
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${idToken}`
-          },
-          body: formData,
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            setProgress(100);
+            const uploadResponse: UploadResponse = {
+              uploadURL: reader.result as string,
+              objectPath: `local/${Date.now()}-${file.name}`,
+              metadata: {
+                name: file.name,
+                size: file.size,
+                contentType: file.type || "application/octet-stream",
+              },
+              url: reader.result as string,
+            };
+            options.onSuccess?.(uploadResponse);
+            setIsUploading(false);
+            resolve(uploadResponse);
+          };
+          reader.onerror = () => {
+            const e = new Error("Falha ao ler arquivo");
+            setError(e);
+            options.onError?.(e);
+            setIsUploading(false);
+            reject(e);
+          };
+          setProgress(50);
+          reader.readAsDataURL(file);
         });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          // Tenta obter a mensagem de erro específica do servidor
-          const serverMessage = errorData.message || `Erro ${response.status}: Falha no upload`;
-          throw new Error(serverMessage);
-        }
-
-        const data = await response.json();
-        const publicUrl = data.url;
-
-        if (!publicUrl) {
-          throw new Error("URL pública não retornada pelo servidor");
-        }
-
-        const uploadResponse: UploadResponse = {
-          uploadURL: publicUrl,
-          objectPath: data.path || publicUrl,
-          metadata: {
-            name: file.name,
-            size: file.size,
-            contentType: file.type || "application/octet-stream",
-          },
-          url: publicUrl,
-        };
-
-        setProgress(100);
-        options.onSuccess?.(uploadResponse);
-        return uploadResponse;
       } catch (err) {
         const e = err instanceof Error ? err : new Error("Upload failed");
-        console.error("[useUpload] Erro:", e);
         setError(e);
         options.onError?.(e);
-        return null;
-      } finally {
         setIsUploading(false);
+        return null;
       }
     },
     [options]
   );
 
-  /**
-   * Mantido por compatibilidade com o ObjectUploader/Uppy.
-   */
   const getUploadParameters = useCallback(async () => {
-    throw new Error(
-      "getUploadParameters não está disponível: use uploadFile(file)"
-    );
+    throw new Error("getUploadParameters not available: use uploadFile(file)");
   }, []);
 
   return {

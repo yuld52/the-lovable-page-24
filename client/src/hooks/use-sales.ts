@@ -1,28 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import type { Sale } from "@shared/schema";
-import { auth } from "@/lib/firebase";
-import { getIdToken } from "firebase/auth";
+import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/queryClient";
 
 export function useSales() {
   return useQuery({
-    queryKey: ["sales"],
+    queryKey: ["api/sales"],
     queryFn: async () => {
-      const user = auth.currentUser;
-      if (!user) return [] as Sale[];
-
-      const idToken = await getIdToken(user);
-      const response = await fetch("/api/sales", {
-        headers: {
-          "Authorization": `Bearer ${idToken}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error("Erro ao carregar vendas");
-      }
-
-      return response.json() as Promise<Sale[]>;
+      const user = getCurrentUser();
+      if (!user) return [];
+      return db.sales.getAll(user.id);
     },
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: 0,
+    refetchOnWindowFocus: false,
   });
 }

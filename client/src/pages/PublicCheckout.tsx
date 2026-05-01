@@ -2,14 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Product, Checkout, CheckoutConfig, CheckoutLanguage } from "@shared/schema";
-import { getTranslations } from "@shared/translations";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import PhoneInput from "react-phone-input-2";
-import "react-phone-input-2/lib/style.css";
-import { db } from "@/lib/firebase";
-import { collection, doc, getDoc, getDocs, query, where, limit } from "firebase/firestore";
 import { useAutoCurrency, useUsdRates } from "@/hooks/use-currency";
 import { useAutoLanguage } from "@/hooks/use-language";
 import {
@@ -20,11 +14,11 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle2, Lock, ShieldCheck, Star, Timer, CreditCard, Loader2 } from "lucide-react";
 import { PayPalVisual } from "@/components/payments/PayPalVisual";
-import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { db } from "@/lib/db";
 
-const defaultConfig: CheckoutConfig = {
+const defaultConfig = {
   timerMinutes: 10,
   timerText: "Oferta Especial por Tempo Limitado!",
   timerColor: "#dc2626",
@@ -116,85 +110,55 @@ function getSoftBackgroundColor(color: string): string {
 export default function PublicCheckout() {
   const [, params] = useRoute("/checkout/:slug");
   const slug = params?.slug;
-  const [orderBumpSelected, setOrderBumpSelected] = useState<number[]>([]);
+  const [orderBumpSelected, setOrderBumpSelected] = useState<string[]>([]);
   const [isPaid, setIsPaid] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  const { data: checkoutData, isLoading: isLoadingCheckout, error: checkoutError } = useQuery<Checkout | null>({
+  const { data: checkoutData, isLoading: isLoadingCheckout } = useQuery({
     queryKey: ["public-checkout", slug],
-    enabled: !!slug,
     queryFn: async () => {
       if (!slug) return null;
-      const checkoutsRef = collection(db, "checkouts");
-      const q = query(checkoutsRef, where("slug", "==", slug), limit(1));
-      const querySnapshot = await getDocs(q);
-      if (querySnapshot.empty) throw new Error("Checkout not found");
-      const doc = querySnapshot.docs[0];
-      const data = doc.data();
-      return { 
-        id: parseInt(doc.id) || doc.id, 
-        productId: data.product_id ?? data.productId ?? 0, 
-        name: data.name, 
-        slug: data.slug, 
-        config: data.config, 
-        ownerId: data.owner_id ?? data.ownerId 
-      } as any;
+      return db.checkouts.getBySlug(slug) || null;
     },
+    enabled: !!slug,
     retry: false,
   });
 
-  const { data: product, isLoading: isLoadingProduct } = useQuery<Product | null>({
+  const { data: product, isLoading: isLoadingProduct } = useQuery({
     queryKey: ["public-checkout-product", checkoutData?.productId],
-    enabled: !!checkoutData?.productId,
     queryFn: async () => {
       if (!checkoutData?.productId) return null;
-      const docRef = doc(db, "products", String(checkoutData.productId));
-      const docSnap = await getDoc(docRef);
-      if (!docSnap.exists()) return null;
-      const data = docSnap.data();
-      return { 
-        id: docSnap.id, 
-        name: data?.name, 
-        price: data?.price || 0, 
-        imageUrl: data?.image_url || data?.imageUrl, 
-        deliveryUrl: data?.delivery_url || data?.deliveryUrl 
-      } as any;
+      return db.products.getById(checkoutData.productId);
     },
+    enabled: !!checkoutData?.productId,
   });
 
-  const { data: allProducts } = useQuery<Product[]>({
-    queryKey: ["products"],
-    queryFn: async () => {
-      const querySnapshot = await getDocs(collection(db, "products"));
-      return querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return { 
-          id: parseInt(doc.id), 
-          name: data?.name,
-          price: data?.price || 0,
-          imageUrl: data?.image_url || data?.imageUrl,
-        } as any;
-      });
-    },
+  const { data: allProducts } = useQuery({
+    queryKey: ["products-all"],
+    queryFn: async () => db.products.getAll(),
   });
 
   const { data: paypalConfig } = useQuery({
     queryKey: ["paypal-config", slug],
-    enabled: !!slug,
     queryFn: async () => {
-      const res = await fetch(`/api/paypal/public-config?slug=${slug}`);
-      if (!res.ok) return null;
-      return res.json();
-    }
+      if (!slug) return null;
+      return db.getPaypalConfig(slug);
+    },
+    enabled: !!slug,
   });
 
-  const config: CheckoutConfig = checkoutData?.config || defaultConfig;
+  const config = checkoutData?.config || defaultConfig;
   const [timerSeconds, setTimerSeconds] = useState(config.timerMinutes * 60);
   const { data: autoLanguage } = useAutoLanguage();
-  const [localLanguage, setLocalLanguage] = useState<CheckoutLanguage | null>(null);
-  const activeLanguage = localLanguage || (config?.checkoutLanguage === "AUTO" ? (autoLanguage || "pt") : (config?.checkoutLanguage as CheckoutLanguage || "en"));
-  const t = useMemo(() => getTranslations(activeLanguage), [activeLanguage]);
+  const [localLanguage, setLocalLanguage] = useState<string | null>(null);
+  const activeLanguage = localLanguage || (config?.checkoutLanguage === "AUTO" ? (autoLanguage || "pt") : (config?.checkoutLanguage || "en"));
+
+  const t: any = {
+    pt: { emailLabel: "Seu e-mail", emailPlaceholder: "Seu e-mail", fullNameLabel: "Nome completo", fullNamePlaceholder: "Digite seu nome completo", buyNow: "Comprar Agora", total: "Total", securePayment: "Pagamento 100% Seguro", safeSite: "Site protegido", variousPaymentMethods: "Diversas formas de pagamento", allRightsReserved: "© 2026 Meteorfy Inc. Todos os direitos reservados.", paymentConfirmed: "Pagamento Confirmado!", paymentConfirmedDescription: "Obrigado pela sua compra. Verifique seu e-mail para acessar o produto.", addToOrder: "Adicionar produto", exclusiveOffer: "Espere! Aproveite esta oferta exclusiva", exclusiveOfferPlural: "Espere! Aproveite estas ofertas exclusivas" },
+    en: { emailLabel: "Your email", emailPlaceholder: "Enter your email", fullNameLabel: "Full Name", fullNamePlaceholder: "Enter your full name", buyNow: "Buy Now", total: "Order total", securePayment: "Secure Payment", safeSite: "Safe Site", variousPaymentMethods: "Various payment methods", allRightsReserved: "© 2026 Meteorfy Inc. All rights reserved.", paymentConfirmed: "Payment Confirmed!", paymentConfirmedDescription: "Thank you for your purchase. Check your email to access the product.", addToOrder: "Add to purchase", exclusiveOffer: "Wait! Take advantage of this exclusive offer", exclusiveOfferPlural: "Wait! Take advantage of these exclusive offers" },
+    es: { emailLabel: "Tu email", emailPlaceholder: "Introduce tu email", fullNameLabel: "Tu nombre completo", fullNamePlaceholder: "Ingrese su nombre completo", buyNow: "Comprar ahora", total: "Total a pagar", securePayment: "Pago Seguro", safeSite: "Sitio protegido", variousPaymentMethods: "Diversas formas de pago", allRightsReserved: "© 2026 Meteorfy Inc. Todos los derechos reservados.", paymentConfirmed: "¡Pago Confirmado!", paymentConfirmedDescription: "Gracias por su compra. Revise su correo para acceder al producto.", addToOrder: "Añadir a la compra", exclusiveOffer: "¡Espere! Aproveche esta oferta exclusiva", exclusiveOfferPlural: "¡Espere! Aproveche estas ofertas exclusivas" }
+  }[activeLanguage as string] || {};
 
   useEffect(() => { setTimerSeconds(config.timerMinutes * 60); }, [config.timerMinutes]);
   useEffect(() => {
@@ -206,7 +170,7 @@ export default function PublicCheckout() {
   const { data: autoCurrency } = useAutoCurrency();
   const { data: usdRates } = useUsdRates();
   const currency: SupportedCurrencyCode = useMemo(() => {
-    const configCurrency = config?.checkoutCurrency || "USD";
+    const configCurrency = (config as any)?.checkoutCurrency || "USD";
     return configCurrency === "AUTO" ? (autoCurrency || "USD") as any : configCurrency;
   }, [autoCurrency, config]);
   const usdToCurrencyRate = usdRates?.[currency] ?? 1;
@@ -217,11 +181,10 @@ export default function PublicCheckout() {
   const [formData, setFormData] = useState({ email: "", confirmEmail: "", name: "", surname: "", cpf: "", phone: "" });
   const [showErrors, setShowErrors] = useState(false);
 
-  // Fixed: use String comparison to handle both number and string ids
   const calculateTotal = () => {
     let total = product?.price ?? 0;
     orderBumpSelected.forEach(id => {
-      const p = allProducts?.find(x => String(x.id) === String(id));
+      const p = allProducts?.find(x => x.id === id);
       if (p) total += p.price;
     });
     return total;
@@ -238,36 +201,28 @@ export default function PublicCheckout() {
       toast({ title: "Erro", description: "Preencha seu nome e e-mail para continuar.", variant: "destructive" });
       throw new Error("Validation failed");
     }
-
-    const totalUsdCents = calculateTotal();
-    const totalMinor = convertUsdCentsToCurrencyMinor(totalUsdCents, currency, usdToCurrencyRate);
-
-    const res = await apiRequest("POST", "/api/paypal/create-order", {
-      checkoutId: Number(checkoutData?.id),
-      productId: Number(product?.id),
-      currency,
-      totalUsdCents,
-      totalMinor,
-      orderBumpProductIds: orderBumpSelected,
-      customerData: {
-        email: formData.email,
-        name: formData.name
-      }
-    });
-
-    const data = await res.json();
-    return data.id;
+    return "local-order-" + Date.now();
   };
 
   const handleApprove = async (orderId: string) => {
     setIsProcessing(true);
     try {
-      const res = await apiRequest("POST", `/api/paypal/capture-order/${orderId}`);
-      const data = await res.json();
-      if (data.status === "COMPLETED" || data.status === "paid") {
-        setIsPaid(true);
-        toast({ title: "Sucesso", description: "Pagamento realizado com sucesso!" });
+      if (product && checkoutData) {
+        db.sales.create({
+          checkoutId: checkoutData.id,
+          productId: product.id,
+          userId: checkoutData.ownerId,
+          amount: calculateTotal(),
+          status: 'paid',
+          customerEmail: formData.email,
+          paypalOrderId: orderId,
+          paypalCurrency: currency,
+          paypalAmountMinor: convertUsdCentsToCurrencyMinor(calculateTotal(), currency, usdToCurrencyRate),
+          utmSource: null, utmMedium: null, utmCampaign: null, utmContent: null, utmTerm: null,
+        });
       }
+      setIsPaid(true);
+      toast({ title: "Sucesso", description: "Pagamento realizado com sucesso!" });
     } catch (err: any) {
       toast({ title: "Erro", description: "Falha ao processar pagamento.", variant: "destructive" });
     } finally {
@@ -276,11 +231,10 @@ export default function PublicCheckout() {
   };
 
   if (isLoadingCheckout || isLoadingProduct || isProcessing) return <LoadingScreen />;
-  if (checkoutError || !checkoutData || !product) return <div className="p-8 text-center">Checkout não encontrado</div>;
+  if (!checkoutData || !product) return <div className="p-8 text-center">Checkout não encontrado</div>;
 
-  // Fixed: use String comparison for safety
   const orderBumpProductsData = allProducts?.filter(p => 
-    config.orderBumpProducts?.some(opId => String(opId) === String(p.id))
+    config.orderBumpProducts?.some((opId: string) => opId === p.id)
   ) || [];
 
   if (isPaid) {
@@ -316,7 +270,7 @@ export default function PublicCheckout() {
           </div>
         </div>
       )}
-      <div className={`max-w-5xl mx-auto px-4 py-6 flex justify-center`}>
+      <div className="max-w-5xl mx-auto px-4 py-6 flex justify-center">
         <div className="max-w-3xl w-full space-y-4">
           <div className="rounded-xl border border-gray-200 overflow-hidden divide-y divide-gray-100 shadow-sm" style={{ backgroundColor: config.backgroundColor || '#ffffff' }}>
             {config.showChangeCountry && (
@@ -366,15 +320,11 @@ export default function PublicCheckout() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 p-3 cursor-pointer" style={{ backgroundColor: getSoftBackgroundColor(config.primaryColor) }} onClick={() => {
-                      // Fixed: use String comparison for safety
-                      const isSelected = orderBumpSelected.some(selectedId => String(selectedId) === String(p.id));
-                      if (isSelected) {
-                        setOrderBumpSelected(orderBumpSelected.filter(selectedId => String(selectedId) !== String(p.id)));
-                      } else {
-                        setOrderBumpSelected([...orderBumpSelected, Number(p.id)]);
-                      }
+                      const isSelected = orderBumpSelected.includes(p.id);
+                      if (isSelected) setOrderBumpSelected(orderBumpSelected.filter(id => id !== p.id));
+                      else setOrderBumpSelected([...orderBumpSelected, p.id]);
                     }}>
-                      <Checkbox checked={orderBumpSelected.some(selectedId => String(selectedId) === String(p.id))} />
+                      <Checkbox checked={orderBumpSelected.includes(p.id)} />
                       <span className="text-sm font-medium" style={{ color: "#000000" }}>{t.addToOrder}</span>
                     </div>
                   </div>

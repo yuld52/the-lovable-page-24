@@ -28,17 +28,3 @@ try {
     console.error("Render error:", e);
     document.body.innerText = `Render Error: ${e.message}\n${e.stack}`;
 }
-
-// Register Service Worker on startup (required for PWA install prompt)
-if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-        navigator.serviceWorker
-            .register("/sw.js")
-            .then((reg) => {
-                console.log("SW registered:", reg.scope);
-            })
-            .catch((err) => {
-                console.warn("SW registration failed:", err);
-            });
-    });
-}

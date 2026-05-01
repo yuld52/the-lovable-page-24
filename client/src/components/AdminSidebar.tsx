@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import {
   LayoutDashboard,
   Package,
@@ -6,28 +6,23 @@ import {
   Settings,
   LogOut,
   Shield,
-  BarChart3,
   ArrowDownToLine,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
-import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
+import { logoutUser } from "@/lib/queryClient";
 
 const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
 export function AdminSidebar() {
   const [location, setLocation] = useLocation();
   const { user } = useUser();
-  const { toast } = useToast();
 
   const isAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL;
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await logoutUser();
       setLocation("/admin-login");
     } catch (error) {
       console.error("Erro ao sair:", error);
@@ -50,75 +45,70 @@ export function AdminSidebar() {
 
       <div className="flex-1 overflow-y-auto">
         <nav className="px-4 py-2 space-y-1">
-          <Link to="/admin">
-            <button
-              className={cn(
-                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-                location === "/admin"
-                  ? "bg-red-600 text-white shadow-lg"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              )}
-            >
-              <LayoutDashboard size={18} strokeWidth={2.5} />
-              Visão Geral
-            </button>
-          </Link>
+          <button
+            onClick={() => setLocation("/admin")}
+            className={cn(
+              "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+              location === "/admin"
+                ? "bg-red-600 text-white shadow-lg"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+            )}
+          >
+            <LayoutDashboard size={18} strokeWidth={2.5} />
+            Visão Geral
+          </button>
 
-          <Link to="/admin/products">
-            <button
-              className={cn(
-                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-                location === "/admin/products"
-                  ? "bg-red-600 text-white shadow-lg"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              )}
-            >
-              <Package size={18} strokeWidth={2.5} />
-              Aprovação de Produtos
-            </button>
-          </Link>
+          <button
+            onClick={() => setLocation("/admin/products")}
+            className={cn(
+              "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+              location === "/admin/products"
+                ? "bg-red-600 text-white shadow-lg"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+            )}
+          >
+            <Package size={18} strokeWidth={2.5} />
+            Aprovação de Produtos
+          </button>
 
-          <Link to="/admin/users">
-            <button
-              className={cn(
-                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-                location === "/admin/users"
-                  ? "bg-red-600 text-white shadow-lg"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              )}
-            >
-              <Users size={18} strokeWidth={2.5} />
-              Gerenciar Usuários
-            </button>
-          </Link>
+          <button
+            onClick={() => setLocation("/admin/users")}
+            className={cn(
+              "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+              location === "/admin/users"
+                ? "bg-red-600 text-white shadow-lg"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+            )}
+          >
+            <Users size={18} strokeWidth={2.5} />
+            Gerenciar Usuários
+          </button>
 
-          <Link to="/admin/withdrawals">
-            <button
-              className={cn(
-                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-                location === "/admin/withdrawals"
-                  ? "bg-red-600 text-white shadow-lg"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              )}
-            >
-              <ArrowDownToLine size={18} strokeWidth={2.5} />
-              Aprovação de Saques
-            </button>
-          </Link>
+          <button
+            onClick={() => setLocation("/admin/withdrawals")}
+            className={cn(
+              "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+              location === "/admin/withdrawals"
+                ? "bg-red-600 text-white shadow-lg"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+            )}
+          >
+            <ArrowDownToLine size={18} strokeWidth={2.5} />
+            Aprovação de Saques
+          </button>
 
-          <Link to="/admin/settings">
-            <button
-              className={cn(
-                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-                location === "/admin/settings"
-                  ? "bg-red-600 text-white shadow-lg"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              )}
-            >
-              <Settings size={18} strokeWidth={2.5} />
-              Configurações
-            </button>
-          </Link>
+          <button
+            onClick={() => setLocation("/admin/settings")}
+            className={cn(
+              "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
+              location === "/admin/settings"
+                ? "bg-red-600 text-white shadow-lg"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+            )}
+          >
+            <Settings size={18} strokeWidth={2.5} />
+            Configurações
+          </button>
         </nav>
       </div>
 

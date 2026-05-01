@@ -1,19 +1,18 @@
 import { useEffect, useState } from "react";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
+import { db } from "@/lib/db";
+import { restoreSession, setCurrentUser } from "@/lib/queryClient";
+import type { User } from "@/lib/db";
 
 export function useUser() {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Listen to auth state changes
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+    restoreSession().then((u) => {
+      setUser(u);
+      setCurrentUser(u);
       setLoading(false);
     });
-
-    return () => unsubscribe();
   }, []);
 
   return { user, loading };

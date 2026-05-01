@@ -3,7 +3,6 @@ import { MessageCircle, X, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 interface Message {
@@ -11,6 +10,25 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+}
+
+const AI_RESPONSES: Record<string, string> = {
+  "oi": "Olá! Como posso ajudar você hoje? 😊",
+  "olá": "Olá! Como posso ajudar você hoje? 😊",
+  "como criar produto": "Para criar um produto, vá em 'Produtos' > 'Novo Produto'. Preencha o nome, preço, descrição e configure a entrega. Depois é só salvar!",
+  "como criar checkout": "Para criar um checkout, vá em 'Checkouts' > 'Novo Checkout'. Escolha um produto, personalize as cores e configurações, e copie o link gerado.",
+  "pagamento": "O Meteorfy suporta pagamentos via PayPal. Configure suas credenciais PayPal em 'Configurações' > 'Integração'.",
+  "vendas": "Para ver suas vendas, acesse o menu 'Vendas' no dashboard. Lá você verá todas as transações realizadas.",
+  "dashboard": "O dashboard mostra um resumo das suas vendas, faturamento e métricas de conversão.",
+  "ajuda": "Posso ajudar com:\n• Criar produtos\n• Criar checkouts\n• Configurar pagamentos\n• Ver vendas\n• Configurações gerais\n\nO que você precisa?",
+};
+
+function getAIResponse(message: string): string {
+  const lower = message.toLowerCase();
+  for (const [key, response] of Object.entries(AI_RESPONSES)) {
+    if (lower.includes(key)) return response;
+  }
+  return "Obrigado pela sua mensagem! Sou o assistente virtual da Meteorfy. Posso ajudar com dúvidas sobre produtos, checkouts, vendas e configurações. Como posso ajudar?";
 }
 
 export function ChatSupport() {
@@ -28,7 +46,6 @@ export function ChatSupport() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollAreaRef.current) {
       const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
@@ -52,44 +69,17 @@ export function ChatSupport() {
     setInputMessage("");
     setIsLoading(true);
 
-    try {
-      const response = await apiRequest("POST", "/api/chat", {
-        messages: messages
-          .filter(m => m.role !== "assistant" || m.id !== 1) // Remove initial greeting for API
-          .concat(userMessage)
-          .map(m => ({
-            role: m.role,
-            content: m.content,
-          }))
-      });
-
-      const data = await response.json();
-
+    // Simulate AI response with delay
+    setTimeout(() => {
       const assistantMessage: Message = {
         id: Date.now() + 1,
         role: "assistant",
-        content: data.message || "Desculpe, ocorreu um erro. Tente novamente.",
+        content: getAIResponse(userMessage.content),
         timestamp: new Date(),
       };
-
       setMessages(prev => [...prev, assistantMessage]);
-    } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message || "Falha ao enviar mensagem",
-        variant: "destructive",
-      });
-
-      const errorMessage: Message = {
-        id: Date.now() + 1,
-        role: "assistant",
-        content: "Desculpe, estou com dificuldades técnicas. Tente novamente em alguns instantes.",
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
       setIsLoading(false);
-    }
+    }, 800);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -101,7 +91,6 @@ export function ChatSupport() {
 
   return (
     <>
-      {/* Floating Chat Button */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
@@ -112,10 +101,8 @@ export function ChatSupport() {
         </button>
       )}
 
-      {/* Chat Window */}
       {isOpen && (
         <div className="fixed bottom-6 right-6 w-96 h-[500px] bg-[#18181b] border border-zinc-800 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
-          {/* Header */}
           <div className="p-4 bg-gradient-to-r from-purple-600 to-purple-500 text-white flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
@@ -136,7 +123,6 @@ export function ChatSupport() {
             </Button>
           </div>
 
-          {/* Messages */}
           <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
             <div className="space-y-4">
               {messages.map((message) => (
@@ -153,10 +139,7 @@ export function ChatSupport() {
                   >
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                     <span className="text-[10px] opacity-50 mt-1 block">
-                      {message.timestamp.toLocaleTimeString("pt-BR", { 
-                        hour: "2-digit", 
-                        minute: "2-digit" 
-                      })}
+                      {message.timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                   </div>
                 </div>
@@ -172,7 +155,6 @@ export function ChatSupport() {
             </div>
           </ScrollArea>
 
-          {/* Input */}
           <div className="p-4 border-t border-zinc-800 bg-[#18181b]">
             <div className="flex gap-2">
               <Input

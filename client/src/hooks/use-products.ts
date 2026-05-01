@@ -1,96 +1,53 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { CreateProductRequest, UpdateProductRequest, Product } from "@shared/schema";
-import { auth } from "@/lib/firebase";
-import { getIdToken } from "firebase/auth";
+import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/queryClient";
+import type { Product } from "@/lib/db";
 
 export function useProducts(status?: string) {
   return useQuery({
-    queryKey: ["products", status],
+    queryKey: ["api/products", status],
     queryFn: async () => {
-      const user = auth.currentUser;
+      const user = getCurrentUser();
       if (!user) return [];
-
-      const idToken = await getIdToken(user);
-      const url = status ? `/api/products?status=${status}` : "/api/products";
-      const response = await fetch(url, {
-        headers: { "Authorization": `Bearer ${idToken}` }
-      });
-      
-      if (!response.ok) return [];
-      return await response.json() as Product[];
+      return db.products.getAll(user.id, status);
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 }
 
 export function useProduct(id: string | number) {
   return useQuery({
-    queryKey: ["products", id],
-    queryFn: async () => {
-      const user = auth.currentUser;
-      if (!user || !id) return null;
-
-      const idToken = await getIdToken(user);
-      const response = await fetch(`/api/products/${id}`, {
-        headers: { "Authorization": `Bearer ${idToken}` }
-      });
-
-      if (!response.ok) return null;
-      return await response.json() as Product;
-    },
+    queryKey: ["api/products", id],
+    queryFn: async () => db.products.getById(String(id)),
     enabled: !!id,
+    staleTime: 0,
   });
 }
 
 export function useCreateProduct() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: CreateProductRequest) => {
-      const user = auth.currentUser;
+    mutationFn: async (payload: any) => {
+      const user = getCurrentUser();
       if (!user) throw new Error("Não autenticado");
-
-      const idToken = await getIdToken(user);
-      const response = await fetch("/api/products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${idToken}`
-        },
-        body: JSON.stringify(payload)
+      return db.products.create({
+        ...payload,
+        ownerId: user.id,
+        status: 'pending',
       });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Erro ao criar produto");
-      }
-      return response.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["api/products"] }),
   });
 }
 
 export function useUpdateProduct() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: number } & UpdateProductRequest) => {
-      const user = auth.currentUser;
-      if (!user) throw new Error("Não autenticado");
-
-      const idToken = await getIdToken(user);
-      const response = await fetch(`/api/products/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${idToken}`
-        },
-        body: JSON.stringify(updates)
-      });
-
-      if (!response.ok) throw new Error("Erro ao atualizar produto");
-      return response.json();
+    mutationFn: async ({ id, ...updates }: { id: number } & any) => {
+      return db.products.update(String(id), updates);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["api/products"] }),
   });
 }
 
@@ -98,18 +55,9 @@ export function useDeleteProduct() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string | number) => {
-      const user = auth.currentUser;
-      if (!user) throw new Error("Não autenticado");
-
-      const idToken = await getIdToken(user);
-      const response = await fetch(`/api/products/${id}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${idToken}` }
-      });
-
-      if (!response.ok) throw new Error("Erro ao excluir produto");
+      db.products.delete(String(id));
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["api/products"] }),
   });
 }
 
@@ -117,23 +65,9 @@ export function useApproveProduct() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const user = auth.currentUser;
-      if (!user) throw new Error("Não autenticado");
-
-      const idToken = await getIdToken(user);
-      const response = await fetch(`/api/products/${id}/approve`, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${idToken}` }
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || "Erro ao aprovar produto");
-      }
-
-      return response.json();
+      return db.products.approve(String(id));
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["api/products"] }),
   });
 }
 
@@ -141,22 +75,8 @@ export function useRejectProduct() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const user = auth.currentUser;
-      if (!user) throw new Error("Não autenticado");
-
-      const idToken = await getIdToken(user);
-      const response = await fetch(`/api/products/${id}/reject`, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${idToken}` }
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || "Erro ao rejeitar produto");
-      }
-
-      return response.json();
+      return db.products.reject(String(id));
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["api/products"] }),
   });
 }
