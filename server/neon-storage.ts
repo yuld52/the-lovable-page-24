@@ -22,7 +22,7 @@ function getPool(): Pool {
     const url = getDatabaseUrl();
     pool = new Pool({ connectionString: url });
     
-    pool.on('error', (err) => {
+    pool.on('error', (err: Error) => {
       console.error('Unexpected error on idle client', err);
       process.exit(-1);
     });
@@ -132,7 +132,7 @@ export class NeonStorage {
           JSON.stringify(productData.delivery_files || []),
           productData.no_email_delivery || false,
           JSON.stringify(productData.payment_methods || ["paypal"]),
-          productData.status || 'pending', // Garante que o status seja salvo
+          productData.status || 'pending',
           productData.owner_id || null
         ]);
         
@@ -159,7 +159,6 @@ export class NeonStorage {
           if (key !== 'id' && key !== 'created_at') {
             setClauses.push(`${key} = $${paramCount}`);
             let val = updateData[key];
-            // Converte arrays (JSONB) para string JSON
             if (key === 'delivery_files' || key === 'payment_methods') {
               val = JSON.stringify(val);
             }
@@ -324,8 +323,8 @@ export class NeonStorage {
           checkoutData.name,
           checkoutData.slug,
           checkoutData.public_url || null,
-          0, // views
-          true, // active
+          0,
+          true,
           JSON.stringify(checkoutData.config || {})
         ]);
         
@@ -442,7 +441,6 @@ export class NeonStorage {
         let result = await client.query(`SELECT * FROM settings WHERE id = $1`, [userId]);
         
         if (result.rows.length === 0) {
-          // Create new settings
           const settingsData = {
             id: userId,
             user_id: userId,
@@ -480,7 +478,6 @@ export class NeonStorage {
           
           return toCamelCase(insertResult.rows[0]);
         } else {
-          // Update existing settings
           const setClauses: string[] = [];
           const values: any[] = [];
           let paramCount = 1;
@@ -674,98 +671,92 @@ export class NeonStorage {
 
   // Dashboard stats
   async getDashboardStats(userId: string, period?: string, productId?: string, startDateStr?: string, endDateStr?: string): Promise<any> {
+    const client = await getPool().connect();
     try {
-      const client = await getPool().connect();
-      try {
-        let startDate = new Date();
-        startDate.setHours(0, 0, 0, 0);
-        let endDate = new Date();
+      let startDate = new Date();
+      startDate.setHours(0, 0, 0, 0);
+      let endDate = new Date();
+      endDate.setHours(23, 59, 59, 999);
+
+      if (period === "custom" && startDateStr && endDateStr) {
+        startDate = new Date(startDateStr);
+        endDate = new Date(endDateStr);
+      } else if (period === "1") {
+        startDate.setDate(startDate.getDate() - 1);
+        endDate = new Date(startDate);
         endDate.setHours(23, 59, 59, 999);
+      } else if (period === "7") {
+        startDate.setDate(startDate.getDate() - 7);
+      } else if (period === "90") {
+        startDate.setDate(startDate.getDate() - 90);
+      } else if (period === "30" || !period) {
+        startDate.setDate(startDate.getDate() - 30);
+      }
 
-        if (period === "custom" && startDateStr && endDateStr) {
-          startDate = new Date(startDateStr);
-          endDate = new Date(endDateStr);
-        } else if (period === "1") { // Yesterday
-          startDate.setDate(startDate.getDate() - 1);
-          endDate = new Date(startDate);
-          endDate.setHours(23, 59, 59, 999);
-        } else if (period === "7") {
-          startDate.setDate(startDate.getDate() - 7);
-        } else if (period === "90") {
-          startDate.setDate(startDate.getDate() - 90);
-        } else if (period === "30" || !period) {
-          startDate.setDate(startDate.getDate() - 30);
-        }
+      let query = `
+        SELECT * FROM sales 
+        WHERE user_id = $1 
+        AND status = 'paid'
+        AND created_at >= $2 
+        AND created_at <= $3
+      `;
+      
+      const params: any[] = [userId, startDate, endDate];
+      
+      if (productId && productId !== "all") {
+        query += ` AND product_id = $4`;
+        params.push(productId);
+      }
 
-        let query = `
-          SELECT * FROM sales 
-          WHERE user_id = $1 
-          AND status = 'paid'
-          AND created_at >= $2 
-          AND created_at <= $3
-        `;
-        
-        const params: any[] = [userId, startDate, endDate];
-        
+      const result = await client.query(query, params);
+      const sales = result.rows.map(row => toCamelCase(row));
+      
+      const checkoutsResult = await client.query(
+        `SELECT * FROM checkouts WHERE owner_id = $1`,
+        [userId]
+      );
+      
+      let totalViews = 0;
+      checkoutsResult.rows.forEach((row: any) => {
         if (productId && productId !== "all") {
-          query += ` AND product_id = $4`;
-          params.push(productId);
-        }
-        
-        const result = await client.query(query, params);
-        const sales = result.rows.map(row => toCamelCase(row));
-        
-        // Get views from checkouts
-        const checkoutsResult = await client.query(`
-          SELECT * FROM checkouts 
-          WHERE owner_id = $1`
-        `, [userId]);
-        
-        let totalViews = 0;
-        checkoutsResult.rows.forEach((row: any) => {
-          if (productId && productId !== "all") {
-            if (String(row.product_id) === String(productId)) {
-              totalViews += (row.views || 0);
-            }
-          } else {
+          if (String(row.product_id) === String(productId)) {
             totalViews += (row.views || 0);
           }
-        });
-        
-        const totalRevenue = sales.reduce((sum: number, s: any) => sum + (Number(s.amount) || 0), 0);
-        const conversionRate = totalViews > 0 ? (sales.length / totalViews) * 100 : 0;
-        
-        // Chart Data
-        const chartData: { name: string; sales: number }[] = [];
-        const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        for (let i = diffDays; i >= 0; i--) {
-          const d = new Date(endDate);
-          d.setDate(endDate.getDate() - i);
-          const key = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
-          const daySales = sales.filter((s: any) => {
-            const saleDate = new Date(s.created_at);
-            return saleDate.getDate() === d.getDate() && 
-                   saleDate.getMonth() === d.getMonth() && 
-                   saleDate.getFullYear() === d.getFullYear();
-          });
-          const dayTotal = daySales.reduce((sum: number, s: any) => sum + (Number(s.amount) || 0), 0);
-          chartData.push({ name: key, sales: dayTotal / 100 });
+        } else {
+          totalViews += (row.views || 0);
         }
-        
-        return {
-          salesToday: totalRevenue / 100,
-          revenuePaid: totalRevenue / 100,
-          salesApproved: sales.length,
-          conversionRate,
-          revenueTarget: 10000,
-          revenueCurrent: totalRevenue / 100,
-          chartData,
-        };
-      } finally {
-        client.release();
+      });
+      
+      const totalRevenue = sales.reduce((sum: number, s: any) => sum + (Number(s.amount) || 0), 0);
+      const conversionRate = totalViews > 0 ? (sales.length / totalViews) * 100 : 0;
+      
+      const chartData: { name: string; sales: number }[] = [];
+      const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      for (let i = diffDays; i >= 0; i--) {
+        const d = new Date(endDate);
+        d.setDate(endDate.getDate() - i);
+        const key = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const daySales = sales.filter((s: any) => {
+          const saleDate = new Date(s.created_at);
+          return saleDate.getDate() === d.getDate() && 
+                 saleDate.getMonth() === d.getMonth() && 
+                 saleDate.getFullYear() === d.getFullYear();
+        });
+        const dayTotal = daySales.reduce((sum: number, s: any) => sum + (Number(s.amount) || 0), 0);
+        chartData.push({ name: key, sales: dayTotal / 100 });
       }
+      
+      return {
+        salesToday: totalRevenue / 100,
+        revenuePaid: totalRevenue / 100,
+        salesApproved: sales.length,
+        conversionRate,
+        revenueTarget: 10000,
+        revenueCurrent: totalRevenue / 100,
+        chartData,
+      };
     } catch (error) {
       console.error("Error getting dashboard stats:", error);
       return { 
@@ -777,6 +768,8 @@ export class NeonStorage {
         revenueCurrent: 0, 
         chartData: [] 
       };
+    } finally {
+      client.release();
     }
   }
 }

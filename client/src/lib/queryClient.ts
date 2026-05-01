@@ -21,10 +21,9 @@ export async function apiRequest(
     headers["Authorization"] = `Bearer ${idToken}`;
   }
 
-  // In Vercel, API routes are at the same domain
   const baseUrl = process.env.NODE_ENV === "production" 
-    ? "" // Same domain in production
-    : "http://localhost:3000"; // Local development
+    ? ""
+    : "http://localhost:3000";
 
   const res = await fetch(`${baseUrl}${url}`, {
     method,
@@ -61,7 +60,7 @@ export const getQueryFn: <T>(options: {
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null as T;
+      return null as unknown as T;
     }
 
     await throwIfResNotOk(res);
