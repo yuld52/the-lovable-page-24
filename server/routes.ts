@@ -21,13 +21,27 @@ export async function registerRoutes(
   registerTrackingRoutes(app, storage as any);
   registerChatRoutes(app);
 
-  // Configuração do Multer para upload de memória
+  // Pasta de uploads locais
+  const uploadsDir = path.join(process.cwd(), "public", "uploads");
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+
+  // Configuração do Multer para salvar localmente
+  const diskStorage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadsDir),
+    filename: (_req, file, cb) => {
+      const safeName = file.originalname.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
+      cb(null, `${Date.now()}-${safeName}`);
+    },
+  });
+
   const upload = multer({
-    storage: multer.memoryStorage(),
+    storage: diskStorage,
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   });
 
-  // --- ROTA DE UPLOAD (Firebase Storage) ---
+  // --- ROTA DE UPLOAD (armazenamento local) ---
   app.post("/api/upload", requireAuth, upload.single("file"), async (req: any, res) => {
     try {
       if (!req.file) {
@@ -35,43 +49,19 @@ export async function registerRoutes(
       }
 
       const file = req.file;
-      const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
-      const filePath = `public/${fileName}`;
-
-      if (!adminStorage) {
-        throw new Error("Firebase Admin Storage não inicializado. Verifique as credenciais no .env");
-      }
-
-      const bucket = adminStorage.bucket("meteorfy1.firebasestorage.app");
-      const fileUpload = bucket.file(filePath);
-
-      await fileUpload.save(file.buffer, {
-        metadata: {
-          contentType: file.mimetype,
-          metadata: {
-            originalName: file.originalname,
-          }
-        }
-      });
-
-      try {
-        await fileUpload.makePublic();
-      } catch (pubErr: any) {
-        console.warn(`[Upload] Aviso: Não foi possível tornar o arquivo público: ${pubErr.message}`);
-      }
-
-      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+      // Use relative path so it works on any domain (Replit, production, etc.)
+      const relativePath = `/uploads/${file.filename}`;
 
       res.json({
-        url: publicUrl,
-        path: filePath,
+        url: relativePath,
+        path: relativePath,
         name: file.originalname,
         size: file.size,
         type: file.mimetype,
       });
     } catch (err: any) {
-      console.error("[Upload] ERRO CRÍTICO:", err);
-      res.status(500).json({ message: err.message || "Falha ao carregar imagem para o servidor" });
+      console.error("[Upload] ERRO:", err);
+      res.status(500).json({ message: err.message || "Falha ao carregar imagem" });
     }
   });
 
