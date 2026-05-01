@@ -76,8 +76,12 @@ export function Sidebar() {
 
   return (
     <div className="w-80 bg-background border-r border-border flex flex-col">
-      <div className="p-4 border-b border-border/50 flex-shrink-0 flex items-center">
-        <img src="/logo.png" alt="Meteorfy" className="h-12 w-auto" />
+      <div className="p-4 border-b border-border/50 flex-shrink-0 flex items-center gap-0">
+        <img src="https://www.image2url.com/r2/default/images/1777403007715-3125c2b9-991d-4cf5-ae03-744bfabf9b11.png" alt="Meteorfy" className="w-16 h-16 rounded-xl" />
+        <h1 className="text-3xl font-extrabold tracking-tight">
+          <span className="bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent">Meteor</span>
+          <span className="text-foreground">fy</span>
+        </h1>
       </div>
 
       <div className="flex-1 overflow-y-auto">
