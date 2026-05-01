@@ -36,91 +36,111 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Notification Bell */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-10 w-10 rounded-full hover:bg-accent text-zinc-400 hover:text-white transition-colors"
-          onClick={() => setIsNotificationOpen(true)}
-          title="Notificações"
-        >
-          <Bell className="h-5 w-5" />
-        </Button>
-
-        {/* User Profile Popover */}
-        <Popover>
-          <PopoverTrigger asChild>
+        {/* Only show notification bell and profile when user is logged in */}
+        {user && (
+          <>
+            {/* Notification Bell */}
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full hover:bg-accent"
-              title="Perfil"
+              className="h-10 w-10 rounded-full hover:bg-accent text-zinc-400 hover:text-white transition-colors"
+              onClick={() => setIsNotificationOpen(true)}
+              title="Notificações"
             >
-              <UserCircle className="h-5 w-5 text-foreground" />
+              <Bell className="h-5 w-5" />
             </Button>
-          </PopoverTrigger>
-          <PopoverContent 
-            className="w-64 p-2 bg-card border-border shadow-2xl rounded-2xl" 
-            align="end"
-            sideOffset={8}
-          >
-            <div className="flex flex-col">
-              {/* User Info */}
-              <div className="flex items-center gap-3 p-3 mb-2">
-                <div className="w-12 h-12 rounded-full bg-purple-600/10 flex items-center justify-center border border-purple-500/20">
-                  <UserCircle className="w-6 h-6 text-purple-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white truncate">
-                    {user?.email?.split('@')[0] || "Usuário"}
-                  </p>
-                  <p className="text-[11px] text-zinc-500 truncate">
-                    {user?.email || ""}
-                  </p>
-                </div>
-              </div>
 
-              <div className="h-px bg-border/50 mx-1 my-1"></div>
-
-              {/* Menu Items */}
-              <div className="space-y-1 mt-1">
-                <button
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-accent text-foreground"
-                  onClick={() => setLocation("/profile")}
+            {/* User Profile Popover */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-accent"
+                  title="Perfil"
                 >
-                  <UserCircle className="w-4 h-4" />
-                  Meu Perfil
-                </button>
-
-                <button
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-accent text-foreground"
-                  onClick={() => toast({ title: "Em breve", description: "Central de ajuda será implementada em breve." })}
-                >
-                  <HelpCircle className="w-4 h-4" />
-                  Ajuda & Suporte
-                </button>
-              </div>
-
-              <div className="h-px bg-border/50 mx-1 my-1"></div>
-
-              {/* Logout */}
-              <button
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-red-500/10 text-red-400"
-                onClick={handleLogout}
+                  <UserCircle className="h-5 w-5 text-foreground" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent 
+                className="w-64 p-2 bg-card border-border shadow-2xl rounded-2xl" 
+                align="end"
+                sideOffset={8}
               >
-                <LogOut className="w-4 h-4" />
-                Sair
-              </button>
-            </div>
-          </PopoverContent>
-        </Popover>
+                <div className="flex flex-col">
+                  {/* User Info */}
+                  <div className="flex items-center gap-3 p-3 mb-2">
+                    <div className="w-12 h-12 rounded-full bg-purple-600/10 flex items-center justify-center border border-purple-500/20">
+                      <UserCircle className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-white truncate">
+                        {user?.email?.split('@')[0] || "Usuário"}
+                      </p>
+                      <p className="text-[11px] text-zinc-500 truncate">
+                        {user?.email || ""}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-border/50 mx-1 my-1"></div>
+
+                  {/* Menu Items */}
+                  <div className="space-y-1 mt-1">
+                    <button
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-accent text-foreground"
+                      onClick={() => setLocation("/profile")}
+                    >
+                      <UserCircle className="w-4 h-4" />
+                      Meu Perfil
+                    </button>
+
+                    <button
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-accent text-foreground"
+                      onClick={() => toast({ title: "Em breve", description: "Central de ajuda será implementada em breve." })}
+                    >
+                      <HelpCircle className="w-4 h-4" />
+                      Ajuda & Suporte
+                    </button>
+                  </div>
+
+                  <div className="h-px bg-border/50 mx-1 my-1"></div>
+
+                  {/* Logout */}
+                  <button
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-red-500/10 text-red-400"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Sair
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </>
+        )}
+
+        {/* Always show Help link for non-logged users */}
+        {!user && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-zinc-400 hover:text-white"
+            onClick={() => setLocation("/help")}
+          >
+            <HelpCircle className="w-4 h-4 mr-2" />
+            Ajuda
+          </Button>
+        )}
       </div>
 
       {/* Notification Modal */}
-      <NotificationModal 
-        isOpen={isNotificationOpen} 
-        onClose={() => setIsNotificationOpen(false)} 
-      />
+      {user && (
+        <NotificationModal 
+          isOpen={isNotificationOpen} 
+          onClose={() => setIsNotificationOpen(false)} 
+        />
+      )}
     </header>
   );
 }
