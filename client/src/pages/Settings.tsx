@@ -1,57 +1,195 @@
 import { Layout } from "@/components/Layout";
 import { useSettings, useUpdateSettings } from "@/hooks/use-settings";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, Settings as SettingsIcon, ArrowLeft, Save } from "lucide-react";
+import { Loader2, X, Save, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { useUser } from "@/hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { NotificationModal } from "@/components/NotificationModal";
+
+type Integration = {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  configured: (s: typeof defaultLocal) => boolean;
+  fields: {
+    key: keyof typeof defaultLocal;
+    label: string;
+    placeholder: string;
+    type?: string;
+    hint?: string;
+  }[];
+};
+
+const defaultLocal = {
+  paypalClientId: "",
+  paypalClientSecret: "",
+  paypalWebhookId: "",
+  facebookPixelId: "",
+  facebookAccessToken: "",
+  utmfyToken: "",
+  webhookUrl: "",
+  environment: "production",
+};
+
+const integrations: Integration[] = [
+  {
+    id: "webhook",
+    name: "Integração Webhook",
+    description: "Notificações de vendas via URL",
+    icon: "/integrations/webhook.svg",
+    configured: (s) => !!s.webhookUrl,
+    fields: [
+      {
+        key: "webhookUrl",
+        label: "URL do Webhook",
+        placeholder: "https://seu-site.com/webhook",
+        hint: "Receba notificações de vendas em tempo real nesta URL.",
+      },
+    ],
+  },
+  {
+    id: "meta",
+    name: "Pixel da Meta",
+    description: "ID do pixel para rastreamento",
+    icon: "/integrations/meta.svg",
+    configured: (s) => !!s.facebookPixelId,
+    fields: [
+      {
+        key: "facebookPixelId",
+        label: "Pixel ID",
+        placeholder: "Ex: 123456789012345",
+      },
+      {
+        key: "facebookAccessToken",
+        label: "Access Token",
+        placeholder: "Cole aqui o token",
+        type: "password",
+      },
+    ],
+  },
+  {
+    id: "utmify",
+    name: "UTMify",
+    description: "Parâmetros UTM para campanhas",
+    icon: "/integrations/utmify.svg",
+    configured: (s) => !!s.utmfyToken,
+    fields: [
+      {
+        key: "utmfyToken",
+        label: "UTMify Token",
+        placeholder: "Insira seu token UTMify",
+        type: "password",
+      },
+    ],
+  },
+  {
+    id: "paypal",
+    name: "PayPal",
+    description: "Processamento de pagamentos",
+    icon: "/integrations/paypal.svg",
+    configured: (s) => !!s.paypalClientId,
+    fields: [
+      {
+        key: "paypalClientId",
+        label: "Client ID",
+        placeholder: "PayPal Client ID",
+      },
+      {
+        key: "paypalClientSecret",
+        label: "Client Secret",
+        placeholder: "PayPal Client Secret",
+        type: "password",
+      },
+      {
+        key: "paypalWebhookId",
+        label: "Webhook ID",
+        placeholder: "PayPal Webhook ID",
+      },
+    ],
+  },
+];
+
+const integrationIconFallback: Record<string, string> = {
+  webhook: "🔗",
+  meta: "📘",
+  utmify: "📊",
+  paypal: "💳",
+};
+
+function IntegrationIcon({ integration }: { integration: Integration }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <div className="w-14 h-14 rounded-2xl bg-zinc-800 flex items-center justify-center text-2xl">
+        {integrationIconFallback[integration.id]}
+      </div>
+    );
+  }
+  return (
+    <img
+      src={integration.icon}
+      alt={integration.name}
+      className="w-14 h-14 object-contain rounded-2xl"
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 export default function Settings() {
   const [, setLocation] = useLocation();
   const { user, loading } = useUser();
   const { toast } = useToast();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [activeIntegration, setActiveIntegration] = useState<Integration | null>(null);
+  const [modalSettings, setModalSettings] = useState(defaultLocal);
 
   const { data: settings, isLoading: isLoadingSettings } = useSettings();
   const updateSettings = useUpdateSettings();
 
-  const [localSettings, setLocalSettings] = useState({
-    paypalClientId: "",
-    paypalClientSecret: "",
-    paypalWebhookId: "",
-    facebookPixelId: "",
-    facebookAccessToken: "",
-    utmfyToken: "",
-    environment: "production",
-  });
+  const [localSettings, setLocalSettings] = useState(defaultLocal);
 
   useEffect(() => {
     if (settings) {
-      setLocalSettings({
+      const s = {
         paypalClientId: settings.paypalClientId || "",
         paypalClientSecret: settings.paypalClientSecret || "",
         paypalWebhookId: settings.paypalWebhookId || "",
         facebookPixelId: settings.facebookPixelId || "",
         facebookAccessToken: settings.facebookAccessToken || "",
         utmfyToken: settings.utmfyToken || "",
+        webhookUrl: (settings as any).webhookUrl || "",
         environment: settings.environment || "production",
-      });
+      };
+      setLocalSettings(s);
     }
   }, [settings]);
 
-  const handleSave = async () => {
+  const openModal = (integration: Integration) => {
+    setModalSettings({ ...localSettings });
+    setActiveIntegration(integration);
+  };
+
+  const closeModal = () => {
+    setActiveIntegration(null);
+  };
+
+  const handleModalSave = async () => {
     try {
-      await updateSettings.mutateAsync(localSettings);
+      const merged = { ...localSettings, ...modalSettings };
+      await updateSettings.mutateAsync(merged as any);
+      setLocalSettings(merged);
+      closeModal();
     } catch (error: any) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     }
   };
 
-  if (loading) {
+  if (loading || isLoadingSettings) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -60,125 +198,92 @@ export default function Settings() {
   }
 
   return (
-    <Layout title="Configurações" subtitle="Gerencie suas integrações">
-      <div className="flex flex-col sm:flex-row items-end justify-end gap-3 mb-6">
-        <Button
-          variant="ghost"
-          className="flex-1 h-12 text-zinc-400 hover:text-white"
-          onClick={() => setLocation("/dashboard")}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar
-        </Button>
-      </div>
-
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">PAYPAL</CardTitle>
-              <SettingsIcon className="w-4 h-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase">Client ID</label>
-                  <Input
-                    value={localSettings.paypalClientId}
-                    onChange={(e) => setLocalSettings({ ...localSettings, paypalClientId: e.target.value })}
-                    placeholder="PayPal Client ID"
-                    className="bg-zinc-900 border-zinc-800"
-                  />
+    <Layout title="Integrações" subtitle="Conecte suas ferramentas favoritas">
+      <div className="max-w-5xl mx-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {integrations.map((integration) => {
+            const isConfigured = integration.configured(localSettings);
+            return (
+              <button
+                key={integration.id}
+                onClick={() => openModal(integration)}
+                className="relative flex flex-col items-center gap-3 p-6 rounded-2xl bg-[#18181b] border border-zinc-800/60 hover:border-purple-500/50 hover:bg-[#1e1e24] transition-all duration-200 text-center group shadow-lg"
+              >
+                {isConfigured && (
+                  <span className="absolute top-3 right-3">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  </span>
+                )}
+                <IntegrationIcon integration={integration} />
+                <div>
+                  <p className="font-semibold text-white text-sm leading-tight">{integration.name}</p>
+                  <p className="text-xs text-zinc-400 mt-1 leading-tight">{integration.description}</p>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase">Client Secret</label>
-                  <Input
-                    type="password"
-                    value={localSettings.paypalClientSecret}
-                    onChange={(e) => setLocalSettings({ ...localSettings, paypalClientSecret: e.target.value })}
-                    placeholder="PayPal Client Secret"
-                    className="bg-zinc-900 border-zinc-800"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase">Webhook ID</label>
-                  <Input
-                    value={localSettings.paypalWebhookId}
-                    onChange={(e) => setLocalSettings({ ...localSettings, paypalWebhookId: e.target.value })}
-                    placeholder="PayPal Webhook ID"
-                    className="bg-zinc-900 border-zinc-800"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">META PIXEL</CardTitle>
-              <SettingsIcon className="w-4 h-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase">Pixel ID</label>
-                  <Input
-                    value={localSettings.facebookPixelId}
-                    onChange={(e) => setLocalSettings({ ...localSettings, facebookPixelId: e.target.value })}
-                    placeholder="Ex: 123456789012345"
-                    className="bg-zinc-900 border-zinc-800"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase">Access Token</label>
-                  <Input
-                    type="password"
-                    value={localSettings.facebookAccessToken}
-                    onChange={(e) => setLocalSettings({ ...localSettings, facebookAccessToken: e.target.value })}
-                    placeholder="Cole aqui o token"
-                    className="bg-zinc-900 border-zinc-800"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">UTMIFY</CardTitle>
-              <SettingsIcon className="w-4 h-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase">UTMify Token</label>
-                  <Input
-                    value={localSettings.utmfyToken}
-                    onChange={(e) => setLocalSettings({ ...localSettings, utmfyToken: e.target.value })}
-                    placeholder="Insira seu token UTMify"
-                    className="bg-zinc-900 border-zinc-800"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="flex justify-end">
-          <Button
-            onClick={handleSave}
-            disabled={updateSettings.isPending}
-            className="bg-purple-600 hover:bg-purple-500 text-white"
-          >
-            {updateSettings.isPending ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4 mr-2" />
-            )}
-            Salvar Configurações
-          </Button>
+              </button>
+            );
+          })}
         </div>
       </div>
+
+      {activeIntegration && (
+        <Dialog open={!!activeIntegration} onOpenChange={(open) => { if (!open) closeModal(); }}>
+          <DialogContent className="bg-[#18181b] border border-zinc-800 text-white max-w-md">
+            <DialogHeader>
+              <div className="flex items-center gap-3 mb-1">
+                <IntegrationIcon integration={activeIntegration} />
+                <div>
+                  <DialogTitle className="text-white text-lg">{activeIntegration.name}</DialogTitle>
+                  <p className="text-xs text-zinc-400">{activeIntegration.description}</p>
+                </div>
+              </div>
+            </DialogHeader>
+
+            <div className="space-y-4 mt-2">
+              {activeIntegration.fields.map((field) => (
+                <div key={field.key} className="space-y-1.5">
+                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                    {field.label}
+                  </label>
+                  <Input
+                    type={field.type || "text"}
+                    value={modalSettings[field.key] as string}
+                    onChange={(e) =>
+                      setModalSettings((prev) => ({ ...prev, [field.key]: e.target.value }))
+                    }
+                    placeholder={field.placeholder}
+                    className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-purple-500"
+                  />
+                  {field.hint && (
+                    <p className="text-xs text-zinc-500">{field.hint}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-3 mt-4">
+              <Button
+                variant="ghost"
+                className="flex-1 text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-600"
+                onClick={closeModal}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1 bg-purple-600 hover:bg-purple-500 text-white"
+                onClick={handleModalSave}
+                disabled={updateSettings.isPending}
+              >
+                {updateSettings.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                Salvar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <NotificationModal
         isOpen={isNotificationOpen}

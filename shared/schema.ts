@@ -134,6 +134,7 @@ export const settings = pgTable("settings", {
   trackTopFunnel: boolean("track_top_funnel").default(true),
   trackCheckout: boolean("track_checkout").default(true),
   trackPurchaseRefund: boolean("track_purchase_refund").default(true),
+  webhookUrl: text("webhook_url"),
 });
 
 export type CheckoutLanguage = "pt" | "en" | "es" | "AUTO";
