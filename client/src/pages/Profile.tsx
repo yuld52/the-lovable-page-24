@@ -6,111 +6,14 @@ import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { UserCircle, Mail, Calendar, LogOut, HelpCircle, Crown, CheckCircle2, Clock, ArrowLeft, Award, ShoppingBag, Flame, Star, Trophy, Zap, Target, TrendingUp } from "lucide-react";
+import { UserCircle, Mail, Calendar, LogOut, HelpCircle, Crown, CheckCircle2, Clock, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
-import { useSales } from "@/hooks/use-sales";
-
-const badges = [
-  {
-    id: "first_sale",
-    title: "Primeira Venda",
-    description: "Realizou sua primeira venda!",
-    icon: ShoppingBag,
-    color: "from-emerald-500 to-green-600",
-    glowColor: "shadow-emerald-500/30",
-    borderColor: "border-emerald-500/40",
-    bgColor: "bg-emerald-500/10",
-    textColor: "text-emerald-400",
-    requirement: 1,
-  },
-  {
-    id: "ten_sales",
-    title: "Vendedor Iniciante",
-    description: "Alcançou 10 vendas!",
-    icon: Star,
-    color: "from-blue-500 to-cyan-500",
-    glowColor: "shadow-blue-500/30",
-    borderColor: "border-blue-500/40",
-    bgColor: "bg-blue-500/10",
-    textColor: "text-blue-400",
-    requirement: 10,
-  },
-  {
-    id: "fifty_sales",
-    title: "Vendedor Experiente",
-    description: "Alcançou 50 vendas!",
-    icon: Flame,
-    color: "from-orange-500 to-amber-500",
-    glowColor: "shadow-orange-500/30",
-    borderColor: "border-orange-500/40",
-    bgColor: "bg-orange-500/10",
-    textColor: "text-orange-400",
-    requirement: 50,
-  },
-  {
-    id: "hundred_sales",
-    title: "Mestre das Vendas",
-    description: "Alcançou 100 vendas!",
-    icon: Trophy,
-    color: "from-yellow-400 to-amber-500",
-    glowColor: "shadow-yellow-500/30",
-    borderColor: "border-yellow-500/40",
-    bgColor: "bg-yellow-500/10",
-    textColor: "text-yellow-400",
-    requirement: 100,
-  },
-  {
-    id: "two_hundred_sales",
-    title: "Lenda Digital",
-    description: "Alcançou 200 vendas!",
-    icon: Crown,
-    color: "from-purple-500 to-pink-500",
-    glowColor: "shadow-purple-500/30",
-    borderColor: "border-purple-500/40",
-    bgColor: "bg-purple-500/10",
-    textColor: "text-purple-400",
-    requirement: 200,
-  },
-  {
-    id: "five_hundred_sales",
-    title: "Ícone do E-commerce",
-    description: "Alcançou 500 vendas!",
-    icon: Zap,
-    color: "from-rose-500 to-red-500",
-    glowColor: "shadow-rose-500/30",
-    borderColor: "border-rose-500/40",
-    bgColor: "bg-rose-500/10",
-    textColor: "text-rose-400",
-    requirement: 500,
-  },
-  {
-    id: "thousand_sales",
-    title: "Meteorfy Elite",
-    description: "Alcançou 1.000 vendas!",
-    icon: Award,
-    color: "from-indigo-400 to-violet-500",
-    glowColor: "shadow-indigo-500/30",
-    borderColor: "border-indigo-500/40",
-    bgColor: "bg-indigo-500/10",
-    textColor: "text-indigo-400",
-    requirement: 1000,
-  },
-];
 
 export default function Profile() {
   const { user, loading } = useUser();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { data: sales } = useSales();
-
-  const totalSales = sales?.filter(s => s.status === 'paid').length || 0;
-
-  const earnedBadges = badges.filter(b => totalSales >= b.requirement);
-  const nextBadge = badges.find(b => totalSales < b.requirement);
-  const progressToNext = nextBadge
-    ? Math.min((totalSales / nextBadge.requirement) * 100, 100)
-    : 100;
 
   useEffect(() => {
     if (!loading && !user) {
@@ -208,7 +111,7 @@ export default function Profile() {
                   <h2 className="text-3xl font-bold text-white mb-1">
                     {user.displayName || user.email?.split("@")[0] || "Usuário"}
                   </h2>
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <div className="flex items-center justify-center sm:justify-start gap-2">
                     <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                       E-mail verificado
@@ -219,97 +122,8 @@ export default function Profile() {
                         Admin
                       </Badge>
                     )}
-                    {earnedBadges.length > 0 && (
-                      <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
-                        <Award className="w-3 h-3 mr-1" />
-                        {earnedBadges.length} {earnedBadges.length === 1 ? 'Selo' : 'Selos'}
-                      </Badge>
-                    )}
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Badges / Selos Section */}
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3 text-white">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <Award className="w-4 h-4 text-amber-400" />
-                </div>
-                Selos Conquistados
-              </CardTitle>
-              <CardDescription className="text-zinc-500">
-                {totalSales} {totalSales === 1 ? 'venda realizada' : 'vendas realizadas'} • {earnedBadges.length} de {badges.length} selos desbloqueados
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Progress to next badge */}
-              {nextBadge && (
-                <div className="mb-6 p-4 bg-zinc-900/50 rounded-xl border border-zinc-800/50">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <nextBadge.icon className={`w-4 h-4 ${nextBadge.textColor}`} />
-                      <span className="text-sm font-medium text-white">Próximo: {nextBadge.title}</span>
-                    </div>
-                    <span className="text-xs text-zinc-400">{totalSales}/{nextBadge.requirement}</span>
-                  </div>
-                  <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full bg-gradient-to-r ${nextBadge.color} transition-all duration-500`}
-                      style={{ width: `${progressToNext}%` }}
-                    />
-                  </div>
-                  <p className="text-[11px] text-zinc-500 mt-1.5">{nextBadge.description}</p>
-                </div>
-              )}
-
-              {/* Badges Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {badges.map((badge) => {
-                  const isEarned = totalSales >= badge.requirement;
-                  const Icon = badge.icon;
-                  return (
-                    <div
-                      key={badge.id}
-                      className={`relative p-4 rounded-xl border transition-all duration-300 ${
-                        isEarned
-                          ? `${badge.bgColor} ${badge.borderColor} shadow-lg ${badge.glowColor}`
-                          : 'bg-zinc-900/30 border-zinc-800/40 opacity-40 grayscale'
-                      }`}
-                    >
-                      {isEarned && (
-                        <div className="absolute top-2 right-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        </div>
-                      )}
-                      <div className="flex items-start gap-3">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                          isEarned
-                            ? `bg-gradient-to-br ${badge.color} shadow-lg`
-                            : 'bg-zinc-800'
-                        }`}>
-                          <Icon className={`w-6 h-6 ${isEarned ? 'text-white' : 'text-zinc-600'}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className={`text-sm font-bold ${isEarned ? 'text-white' : 'text-zinc-500'}`}>
-                            {badge.title}
-                          </h4>
-                          <p className={`text-[11px] mt-0.5 ${isEarned ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                            {badge.description}
-                          </p>
-                          <div className="flex items-center gap-1 mt-2">
-                            <Target className={`w-3 h-3 ${isEarned ? badge.textColor : 'text-zinc-600'}`} />
-                            <span className={`text-[10px] font-bold uppercase tracking-wider ${isEarned ? badge.textColor : 'text-zinc-600'}`}>
-                              {badge.requirement} {badge.requirement === 1 ? 'venda' : 'vendas'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
               </div>
             </CardContent>
           </Card>
