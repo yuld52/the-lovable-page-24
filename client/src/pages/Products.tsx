@@ -1,18 +1,16 @@
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
-import { useProducts, useDeleteProduct, useApproveProduct, useRejectProduct } from "@/hooks/use-products";
+import { useProducts, useDeleteProduct } from "@/hooks/use-products";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus, PackageOpen, Search, Pencil, Trash2, CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
+import { Loader2, Plus, PackageOpen, Search, Pencil, Trash2, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Products() {
   const { data: products, isLoading } = useProducts();
   const deleteProduct = useDeleteProduct();
-  const approveProduct = useApproveProduct();
-  const rejectProduct = useRejectProduct();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
@@ -27,25 +25,6 @@ export default function Products() {
     try {
       await deleteProduct.mutateAsync(id);
       toast({ title: "Sucesso", description: "Produto excluído com sucesso!" });
-    } catch (error: any) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    }
-  };
-
-  const handleApprove = async (id: number) => {
-    try {
-      await approveProduct.mutateAsync(id);
-      toast({ title: "Sucesso", description: "Produto aprovado com sucesso!" });
-    } catch (error: any) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    }
-  };
-
-  const handleReject = async (id: number) => {
-    if (!confirm("Tem certeza que deseja rejeitar este produto?")) return;
-    try {
-      await rejectProduct.mutateAsync(id);
-      toast({ title: "Sucesso", description: "Produto rejeitado!" });
     } catch (error: any) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     }
@@ -156,32 +135,6 @@ export default function Products() {
                     </p>
                   </div>
                   <div className="flex gap-1">
-                    {product.status === 'pending' && (
-                      <>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-10 w-10"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleApprove(product.id);
-                          }}
-                        >
-                          <CheckCircle2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-10 w-10"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleReject(product.id);
-                          }}
-                        >
-                          <XCircle className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
                     <Button
                       size="icon"
                       variant="ghost"
