@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "web", "postgresql-16"]
+modules = ["nodejs-20", "web", "postgresql-16", "python-3.11"]
 run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
@@ -8,6 +8,10 @@ channel = "stable-24_05"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
 
 [env]
 PORT = "5000"
@@ -35,14 +39,20 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run dev"
+args = "node --import tsx/esm server/index.ts"
 waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
 
 [agent]
 integrations = ["javascript_object_storage:2.0.0"]
+stack = "GAMESTACK_JS"
 
 [userenv]
 
 [userenv.shared]
 SUPABASE_URL = "https://dozyujjqsxvxgjsgayia.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvenl1ampxc3h2eGdqc2dheWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMTY4NDAsImV4cCI6MjA4NTc5Mjg0MH0.q85p274YvzFQSBMjfiozVpYCnhohU8eBABRiJeTr69o"
+NODE_ENV = "development"
+PORT = "5000"

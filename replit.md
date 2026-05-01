@@ -2,7 +2,7 @@
 
 ## Overview
 
-Meteorfy is a full-stack sales and checkout platform built with React, Express, and PostgreSQL. It provides a dashboard for managing products, creating customizable checkout pages, and tracking sales with PayPal payment integration. The application follows a monorepo structure with shared types and validation schemas between frontend and backend.
+Meteorfy is a full-stack sales and checkout platform built with React, Express, and PostgreSQL. It provides a dashboard for managing products, creating customizable checkout pages, and tracking sales with PayPal payment integration.
 
 ## User Preferences
 
@@ -14,26 +14,22 @@ Preferred communication style: Simple, everyday language.
 - **Framework**: React 18 with TypeScript
 - **Routing**: Wouter for lightweight client-side routing
 - **State Management**: TanStack React Query for server state and caching
-- **Styling**: Tailwind CSS with shadcn/ui component library (New York style)
-- **Build Tool**: Vite with hot module replacement
+- **Styling**: Tailwind CSS with shadcn/ui component library
+- **Build Tool**: Vite (served via Express middleware in dev mode)
 - **UI Components**: Radix UI primitives wrapped with shadcn/ui styling
 
 ### Backend Architecture
-- **Framework**: Express.js with TypeScript
-- **Database ORM**: Drizzle ORM with PostgreSQL
-- **Authentication**: Passport.js with local strategy, session-based auth using express-session
-- **Session Storage**: PostgreSQL-backed sessions via connect-pg-simple
-- **Password Hashing**: bcryptjs
+- **Framework**: Express.js with TypeScript (run via `tsx`)
+- **Database**: Neon PostgreSQL (serverless) via `@neondatabase/serverless`
+- **Authentication**: Firebase Auth (JWT verification via Firebase Admin SDK)
+- **File Uploads**: Firebase Storage (admin SDK) + local multer
+- **Payments**: PayPal integration
+- **Push Notifications**: web-push with VAPID keys
 
-### Data Layer
-- **Database**: PostgreSQL (Supabase/Neon) - configured via `DATABASE_URL` environment variable.
-- **Migration Strategy**: The project uses `db:push` to synchronize the Drizzle schema directly with the connected PostgreSQL database.
-- **Decision**: The user chose to use Supabase as the primary database while maintaining the project on the Replit Free tier.
-
-### API Design
-- **Route Definitions**: Centralized in `shared/routes.ts` with type-safe request/response schemas
-- **Pattern**: RESTful API endpoints under `/api/*` prefix
-- **Type Safety**: Shared Zod schemas ensure frontend-backend type consistency
+### Dev Server
+- Single port 5000: Express serves both the API and the Vite dev middleware
+- Workflow command: `node --import tsx/esm server/index.ts`
+- In production: Vite builds static files served by Express static middleware
 
 ### Project Structure
 ```
@@ -44,44 +40,44 @@ Preferred communication style: Simple, everyday language.
 │   │   ├── pages/        # Route page components
 │   │   └── lib/          # Utilities and query client
 ├── server/           # Express backend
-│   ├── auth.ts       # Passport authentication setup
-│   ├── db.ts         # Database connection
+│   ├── index.ts      # Main entry point (also sets up Vite middleware)
 │   ├── routes.ts     # API route handlers
-│   └── storage.ts    # Database operations interface
-├── shared/           # Shared code between frontend/backend
-│   ├── schema.ts     # Drizzle database schema
-│   └── routes.ts     # API route definitions with Zod schemas
+│   ├── firebase-admin.ts  # Firebase Admin SDK setup
+│   ├── neon-storage.ts    # Neon DB storage layer
+│   └── middleware/   # Auth middleware
+├── shared/           # Shared types and schema
+│   └── schema.ts     # Drizzle database schema definitions
+├── migrations/       # SQL migration files
 ```
 
 ### Key Design Decisions
 
-1. **Monorepo with Shared Types**: The `shared/` directory contains database schemas and API route definitions used by both frontend and backend, ensuring type safety across the stack.
+1. **Single-port development**: Express server handles both API routes and Vite frontend (via `setupVite`) on port 5000. No need for a separate Vite dev server.
 
-2. **Storage Interface Pattern**: `server/storage.ts` implements an `IStorage` interface, abstracting database operations and making the storage layer testable and swappable.
+2. **Firebase Auth**: JWT tokens from Firebase are verified server-side using Firebase Admin SDK. The `requireAuth` middleware validates Bearer tokens on protected routes.
 
-3. **Session-Based Authentication**: Uses PostgreSQL-backed sessions for stateful auth, appropriate for this type of admin dashboard application.
+3. **Neon PostgreSQL**: Uses `@neondatabase/serverless` for database access. `DATABASE_URL` secret is set in Replit secrets.
 
-4. **Dark Theme by Default**: The UI is designed with a dark color scheme (zinc/blue palette) optimized for the dashboard experience.
+4. **Environment Secrets**: All secrets are in the `.env` file and also registered in Replit secrets. The server loads `.env` at startup as a fallback.
 
-## External Dependencies
+## External Dependencies & Required Secrets
 
-### Database
-- **PostgreSQL**: Required database, connection via `DATABASE_URL` environment variable
+### Secrets (set in Replit Secrets panel)
+- `DATABASE_URL`: Neon PostgreSQL connection string (already configured)
+- `FIREBASE_PROJECT_ID`: Firebase project ID
+- `FIREBASE_CLIENT_EMAIL`: Firebase service account email
+- `FIREBASE_PRIVATE_KEY`: Firebase service account private key (needs real key for admin features)
+- `PAYPAL_CLIENT_ID`: PayPal app client ID
+- `PAYPAL_CLIENT_SECRET`: PayPal app secret
+- `PAYPAL_WEBHOOK_ID`: PayPal webhook ID
+- `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`: Web push notification keys
+- `FACEBOOK_PIXEL_ID` / `FACEBOOK_ACCESS_TOKEN`: Meta/Facebook pixel tracking
+- `UTMIFY_TOKEN`: UTMify analytics token
 
-### Payment Processing
-- **PayPal Integration**: Settings table stores PayPal credentials (clientId, clientSecret, webhookId) with sandbox/production environment support
+### Important Notes
+- Firebase Admin private key must be a valid RSA key for auth verification to work. If invalid, the server falls back to no-credential mode (some admin features may not work).
+- PayPal credentials are also stored per-user in the `settings` table in the database.
 
-### Frontend Libraries
-- **Recharts**: Dashboard sales visualization charts
-- **date-fns**: Date formatting and manipulation
-- **lucide-react**: Icon library
-
-### Development Tools
-- **Vite**: Development server with HMR and production builds
-- **esbuild**: Server bundling for production
-- **Drizzle Kit**: Database schema management
-
-### Environment Variables
-- `DATABASE_URL`: PostgreSQL connection string (required)
-- `SESSION_SECRET`: Express session secret (defaults to "coldpay_secret" in development)
-- `NODE_ENV`: Environment mode (development/production)
+## Environment Variables (non-secret)
+- `PORT`: 5000 (set in Replit env)
+- `NODE_ENV`: development or production

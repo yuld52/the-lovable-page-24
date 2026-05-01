@@ -39,11 +39,16 @@ const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 
 if (privateKey && clientEmail && privateKey !== "your-private-key-here") {
-  credential = cert({
-    projectId: firebaseConfig.projectId,
-    clientEmail: clientEmail,
-    privateKey: privateKey.replace(/\\n/g, '\n'),
-  });
+  try {
+    credential = cert({
+      projectId: firebaseConfig.projectId,
+      clientEmail: clientEmail,
+      privateKey: privateKey.replace(/\\n/g, '\n'),
+    });
+  } catch (err) {
+    console.warn("Firebase Admin: Failed to parse private key, running without admin credentials:", err instanceof Error ? err.message : err);
+    credential = undefined;
+  }
 }
 
 // Initialize Firebase Admin if not already initialized
