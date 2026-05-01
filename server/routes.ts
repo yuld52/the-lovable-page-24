@@ -17,7 +17,7 @@ const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
 export async function registerRoutes(
   httpServer: Server,
-  app: Express()
+  app: Express
 ): Promise<Server> {
   registerTrackingRoutes(app, storage as any);
   registerChatRoutes(app);
@@ -149,11 +149,10 @@ export async function registerRoutes(
       const input = api.products.create.input.parse(req.body);
       console.log("[CREATE PRODUCT] Input:", input);
       
-      // Garante que a URL da imagem seja salva
       const productData = {
         ...input,
         ownerId: userId,
-        status: 'pending' // Mantém o status padrão de pendente
+        status: 'pending'
       };
       
       const result = await storage.createProduct(productData);
@@ -469,7 +468,7 @@ export async function registerRoutes(
       if (user?.email !== ADMIN_EMAIL) {
         return res.status(403).json({ message: "Acesso negado" });
       }
-      const result = await storage.getWithdrawals(); // No user filter for admin
+      const result = await storage.getWithdrawals();
       res.json(result);
     } catch (error: any) {
       console.error("Error getting all withdrawals:", error);
@@ -511,7 +510,7 @@ export async function registerRoutes(
     try {
       const user = (req as any).user;
       if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
-      const result = await storage.getProducts(); // No user filter for admin
+      const result = await storage.getProducts();
       res.json(result);
     } catch (error: any) {
       console.error("Error getting all products:", error);
@@ -550,7 +549,7 @@ export async function registerRoutes(
     try {
       const user = (req as any).user;
       if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
-      const result = await storage.getCheckouts(); // No user filter for admin
+      const result = await storage.getCheckouts();
       res.json(result);
     } catch (error: any) {
       console.error("Error getting all checkouts:", error);
