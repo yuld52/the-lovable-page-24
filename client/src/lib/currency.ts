@@ -14,7 +14,6 @@ export type SupportedCurrencyCode =
   | "JPY"
   | "MYR"
   | "MXN"
-  | "MZN"
   | "TWD"
   | "NZD"
   | "NOK"
@@ -41,7 +40,6 @@ export const SUPPORTED_CURRENCIES: SupportedCurrencyCode[] = [
   "JPY",
   "MYR",
   "MXN",
-  "MZN",
   "TWD",
   "NZD",
   "NOK",
@@ -85,42 +83,46 @@ export function currencyFromCountry(countryCode?: string | null): SupportedCurre
   if (EU_COUNTRIES.has(cc)) return "EUR";
 
   // Comprehensive mapping of countries to supported currencies
+  // Only includes countries whose currencies are in our supported list
   const map: Record<string, SupportedCurrencyCode> = {
     // Americas
-    US: "USD",
-    CA: "CAD",
-    MX: "MXN",
-    BR: "BRL",
+    US: "USD", // United States
+    CA: "CAD", // Canada
+    MX: "MXN", // Mexico
+    BR: "BRL", // Brazil
+
+    // Europe (Euro zone)
+    // EU_COUNTRIES already handles: AT, BE, CY, EE, FI, FR, DE, GR, IE, IT, LV, LT, LU, MT, NL, PT, SK, SI, ES, HR
 
     // Europe (Non-Euro)
-    GB: "GBP",
-    CH: "CHF",
-    NO: "NOK",
-    SE: "SEK",
-    DK: "DKK",
-    PL: "PLN",
-    CZ: "CZK",
-    HU: "HUF",
+    GB: "GBP", // United Kingdom
+    CH: "CHF", // Switzerland
+    NO: "NOK", // Norway
+    SE: "SEK", // Sweden
+    DK: "DKK", // Denmark
+    PL: "PLN", // Poland
+    CZ: "CZK", // Czech Republic
+    HU: "HUF", // Hungary
 
     // Asia-Pacific
-    AU: "AUD",
-    NZ: "NZD",
-    JP: "JPY",
-    CN: "CNY",
-    HK: "HKD",
-    SG: "SGD",
-    TW: "TWD",
-    MY: "MYR",
-    TH: "THB",
-    PH: "PHP",
+    AU: "AUD", // Australia
+    NZ: "NZD", // New Zealand
+    JP: "JPY", // Japan
+    CN: "CNY", // China
+    HK: "HKD", // Hong Kong
+    SG: "SGD", // Singapore
+    TW: "TWD", // Taiwan
+    MY: "MYR", // Malaysia
+    TH: "THB", // Thailand
+    PH: "PHP", // Philippines
 
     // Middle East
-    IL: "ILS",
-
-    // Africa - Mozambique
-    MZ: "MZN",
+    IL: "ILS", // Israel
   };
 
+  // Note: All other countries (e.g., MZ-Mozambique, AO-Angola, AR-Argentina, etc.)
+  // use currencies not in our PayPal-supported list and will return null,
+  // which triggers USD fallback in the calling code for universal coverage
   return map[cc] ?? null;
 }
 
@@ -132,6 +134,8 @@ export function currencyFromLocale(locale?: string | null): SupportedCurrencyCod
   const byRegion = currencyFromCountry(region);
   if (byRegion) return byRegion;
 
+  // No longer forcing BRL for all PT speakers, or EUR for all ES speakers.
+  // We prioritize country-based detection or fallback to USD for better accuracy.
   return null;
 }
 
