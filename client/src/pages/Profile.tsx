@@ -1,14 +1,14 @@
 import { useUser } from "@/hooks/use-user";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
-import { useLocation, Link } from "wouter";
+import { useLocation } from "wouter";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { UserCircle, Mail, Calendar, LogOut, Settings, HelpCircle, Shield, Crown, CheckCircle2, Clock, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
-import { Badge } from "@/components/ui/badge";
 
 export default function Profile() {
   const { user, loading } = useUser();
@@ -44,11 +44,9 @@ export default function Profile() {
     return null;
   }
 
-  // Helper function to parse Firebase timestamp
   const parseFirebaseDate = (dateString: string | undefined): Date | null => {
     if (!dateString) return null;
     try {
-      // Firebase returns format like: "Tue, 01 Feb 2022 12:34:56 GMT"
       return new Date(dateString);
     } catch {
       return null;
@@ -58,21 +56,21 @@ export default function Profile() {
   const creationDate = parseFirebaseDate(user.metadata?.creationTime);
   const lastSignInDate = parseFirebaseDate(user.metadata?.lastSignInTime);
 
-  const memberSince = creationDate 
-    ? creationDate.toLocaleDateString('pt-BR', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+  const memberSince = creationDate
+    ? creationDate.toLocaleDateString("pt-BR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       })
     : "Data indisponível";
 
-  const lastLogin = lastSignInDate 
-    ? lastSignInDate.toLocaleDateString('pt-BR', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+  const lastLogin = lastSignInDate
+    ? lastSignInDate.toLocaleDateString("pt-BR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       })
     : "Data indisponível";
 
@@ -94,16 +92,16 @@ export default function Profile() {
           {/* Profile Header Card */}
           <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg overflow-hidden">
             <div className="relative h-32 bg-gradient-to-r from-purple-600/20 via-purple-500/10 to-transparent">
-              <div className="absolute inset-0 bg-[url('data:image/svg+xml,...')] opacity-5"></div>
+              <div className="absolute inset-0 opacity-5"></div>
             </div>
             <CardContent className="relative -mt-16 pt-0">
               <div className="flex flex-col sm:flex-row items-center gap-6">
                 <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-600 to-purple-400 flex items-center justify-center border-4 border-background shadow-xl -mt-2">
                   {user.photoURL ? (
-                    <img 
-                      src={user.photoURL} 
-                      alt="Profile" 
-                      className="w-full h-full rounded-full object-cover" 
+                    <img
+                      src={user.photoURL}
+                      alt="Profile"
+                      className="w-full h-full rounded-full object-cover"
                     />
                   ) : (
                     <UserCircle className="w-12 h-12 text-white" />
@@ -111,21 +109,12 @@ export default function Profile() {
                 </div>
                 <div className="flex-1 text-center sm:text-left mt-4 sm:mt-0">
                   <h2 className="text-3xl font-bold text-white mb-1">
-                    {user.displayName || user.email?.split('@')[0] || "Usuário"}
+                    {user.displayName || user.email?.split("@")[0] || "Usuário"}
                   </h2>
                   <div className="flex items-center justify-center sm:justify-start gap-2">
-                    <Badge variant={user.emailVerified ? "default" : "secondary"} className={user.emailVerified ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-amber-500/20 text-amber-400 border-amber-500/30"}>
-                      {user.emailVerified ? (
-                        <>
-                          <CheckCircle2 className="w-3 h-3 mr-1" />
-                          E-mail verificado
-                        </>
-                      ) : (
-                        <>
-                          <Clock className="w-3 h-3 mr-1" />
-                          Pendente
-                        </>
-                      )}
+                    <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      E-mail verificado
                     </Badge>
                     {isAdmin && (
                       <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
@@ -150,7 +139,7 @@ export default function Profile() {
                   Informações da Conta
                 </CardTitle>
                 <CardDescription className="text-zinc-500">
-                  Detalhes e status da sua conta
+                  Detalhes da sua conta
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -227,28 +216,6 @@ export default function Profile() {
                     <LogOut className="w-4 h-4 mr-2" />
                     Sair da Conta
                   </Button>
-                </CardContent>
-              </Card>
-
-              {/* Security Card */}
-              <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-3">
-                    <Shield className="w-4 h-4 text-emerald-400" />
-                    Segurança
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-zinc-400">Autenticação de dois fatores</span>
-                      <Badge variant="secondary" className="bg-zinc-800 text-zinc-500">Indisponível</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-zinc-400">Sessões ativas</span>
-                      <span className="text-sm text-zinc-300">1</span>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
             </div>
