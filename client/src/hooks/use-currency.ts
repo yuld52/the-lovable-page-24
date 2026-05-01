@@ -11,7 +11,6 @@ type GeoResult = {
 };
 
 async function fetchGeoByIp(): Promise<GeoResult | null> {
-  // ipapi.co supports CORS and returns country code.
   const res = await fetch("https://ipapi.co/json/");
   if (!res.ok) return null;
   const data = (await res.json()) as any;
@@ -24,13 +23,11 @@ type RatesResponse = {
 };
 
 async function fetchUsdRates(): Promise<Record<string, number>> {
-  // Free endpoint with broad currency coverage.
   const res = await fetch("https://open.er-api.com/v6/latest/USD");
   if (!res.ok) throw new Error("Falha ao buscar câmbio");
   const data = (await res.json()) as RatesResponse;
   const rates = data?.rates ?? {};
 
-  // Ensure we only expose supported currencies.
   const filtered: Record<string, number> = {};
   for (const code of SUPPORTED_CURRENCIES) {
     const rate = rates[code];
@@ -46,8 +43,8 @@ export function useAutoCurrency() {
     queryFn: async () => {
       const geo = await fetchGeoByIp().catch(() => null);
       const fromIp = currencyFromCountry(geo?.country_code);
-      // Prioritize country-based detection, fallback to USD if country currency not supported
-      return (fromIp ?? "USD") as SupportedCurrencyCode;
+      // Prioritize country-based detection, fallback to MZN
+      return (fromIp ?? "MZN") as SupportedCurrencyCode;
     },
     staleTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
