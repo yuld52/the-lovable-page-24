@@ -40,8 +40,8 @@ type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
-  ({ on401: unauthorizedBehavior }) =>
-  async ({ queryKey }) => {
+  <T>({ on401: unauthorizedBehavior }: { on401: UnauthorizedBehavior }) =>
+  async ({ queryKey }): Promise<T> => {
     const user = auth.currentUser;
     const headers: Record<string, string> = {};
     
