@@ -1,3 +1,5 @@
+import { auth } from "@/lib/firebase";
+import { getIdToken } from "firebase/auth";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -652,8 +654,13 @@ export default function CheckoutEditor() {
                               formData.append("file", file);
 
                               try {
+                                const user = auth.currentUser;
+                                if (!user) throw new Error("Usuário não autenticado");
+                                const idToken = await getIdToken(user);
+
                                 const response = await fetch("/api/upload", {
                                   method: "POST",
+                                  headers: { "Authorization": `Bearer ${idToken}` },
                                   body: formData,
                                 });
 

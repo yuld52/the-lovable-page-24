@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { auth } from "@/lib/firebase";
+import { getIdToken } from "firebase/auth";
 import { Layout } from "@/components/Layout";
 import { useCreateProduct } from "@/hooks/use-products";
 import { Button } from "@/components/ui/button";
@@ -124,8 +126,13 @@ export default function CreateProduct() {
             const formData = new FormData();
             formData.append("file", file);
 
+            const user = auth.currentUser;
+            if (!user) throw new Error("Usuário não autenticado");
+            const idToken = await getIdToken(user);
+
             const response = await fetch("/api/upload", {
               method: "POST",
+              headers: { "Authorization": `Bearer ${idToken}` },
               body: formData,
             });
 
