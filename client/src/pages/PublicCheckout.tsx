@@ -8,8 +8,6 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-import { db } from "@/lib/firebase";
-import { collection, doc, getDoc, getDocs, query, where, limit } from "firebase/firestore";
 import { useAutoCurrency, useUsdRates } from "@/hooks/use-currency";
 import { useAutoLanguage } from "@/hooks/use-language";
 import {
@@ -121,63 +119,22 @@ export default function PublicCheckout() {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  const { data: checkoutData, isLoading: isLoadingCheckout, error: checkoutError } = useQuery<Checkout | null>({
+  const { data: publicData, isLoading: isLoadingCheckout, error: checkoutError } = useQuery<{ checkout: any; product: any; extraProducts: any[] } | null>({
     queryKey: ["public-checkout", slug],
     enabled: !!slug,
     queryFn: async () => {
       if (!slug) return null;
-      const checkoutsRef = collection(db, "checkouts");
-      const q = query(checkoutsRef, where("slug", "==", slug), limit(1));
-      const querySnapshot = await getDocs(q);
-      if (querySnapshot.empty) throw new Error("Checkout not found");
-      const doc = querySnapshot.docs[0];
-      const data = doc.data();
-      return { 
-        id: parseInt(doc.id) || doc.id, 
-        productId: data.product_id ?? data.productId ?? 0, 
-        name: data.name, 
-        slug: data.slug, 
-        config: data.config, 
-        ownerId: data.owner_id ?? data.ownerId 
-      } as any;
+      const res = await fetch(`/api/public/checkout/${encodeURIComponent(slug)}`);
+      if (!res.ok) throw new Error("Checkout not found");
+      return res.json();
     },
     retry: false,
   });
 
-  const { data: product, isLoading: isLoadingProduct } = useQuery<Product | null>({
-    queryKey: ["public-checkout-product", checkoutData?.productId],
-    enabled: !!checkoutData?.productId,
-    queryFn: async () => {
-      if (!checkoutData?.productId) return null;
-      const docRef = doc(db, "products", String(checkoutData.productId));
-      const docSnap = await getDoc(docRef);
-      if (!docSnap.exists()) return null;
-      const data = docSnap.data();
-      return { 
-        id: docSnap.id, 
-        name: data?.name, 
-        price: data?.price || 0, 
-        imageUrl: data?.image_url || data?.imageUrl, 
-        deliveryUrl: data?.delivery_url || data?.deliveryUrl 
-      } as any;
-    },
-  });
-
-  const { data: allProducts } = useQuery<Product[]>({
-    queryKey: ["products"],
-    queryFn: async () => {
-      const querySnapshot = await getDocs(collection(db, "products"));
-      return querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return { 
-          id: parseInt(doc.id), 
-          name: data?.name,
-          price: data?.price || 0,
-          imageUrl: data?.image_url || data?.imageUrl,
-        } as any;
-      });
-    },
-  });
+  const checkoutData = publicData?.checkout ?? null;
+  const product = publicData?.product ?? null;
+  const allProducts = publicData?.extraProducts ?? [];
+  const isLoadingProduct = false;
 
   const { data: paypalConfig } = useQuery({
     queryKey: ["paypal-config", slug],

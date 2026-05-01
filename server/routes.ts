@@ -303,6 +303,31 @@ export async function registerRoutes(
     }
   });
 
+  // --- PUBLIC CHECKOUT (no auth required) ---
+  app.get("/api/public/checkout/:slug", async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const checkout = await storage.getCheckoutBySlug(slug);
+      if (!checkout) return res.status(404).json({ message: "Checkout não encontrado" });
+      const product = checkout.productId ? await storage.getProduct(parseInt(checkout.productId)) : null;
+      // Fetch order bump products if config has them
+      const config = checkout.config || {};
+      const orderBumpIds: number[] = (config.orderBumpProducts || []).map((id: any) => parseInt(id)).filter(Boolean);
+      const upsellIds: number[] = (config.upsellProducts || []).map((id: any) => parseInt(id)).filter(Boolean);
+      const allExtraIds = [...new Set([...orderBumpIds, ...upsellIds])];
+      const extraProducts: any[] = [];
+      for (const pid of allExtraIds) {
+        const p = await storage.getProduct(pid);
+        if (p) extraProducts.push(p);
+      }
+      await storage.incrementCheckoutViews(checkout.id);
+      res.json({ checkout, product, extraProducts });
+    } catch (err: any) {
+      console.error("Error getting public checkout:", err);
+      res.status(500).json({ message: err.message || "Erro ao buscar checkout" });
+    }
+  });
+
   // --- PAYPAL ---
   app.get("/api/paypal/public-config", async (req, res) => {
     try {
