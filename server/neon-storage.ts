@@ -814,6 +814,58 @@ export class NeonStorage {
       client.release();
     }
   }
+
+  // Platform Config (Rules & Fees)
+  async ensurePlatformConfigTable(): Promise<void> {
+    const client = await getPool().connect();
+    try {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS platform_config (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL,
+          updated_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+    } finally {
+      client.release();
+    }
+  }
+
+  async getPlatformConfig(): Promise<Record<string, string>> {
+    try {
+      await this.ensurePlatformConfigTable();
+      const client = await getPool().connect();
+      try {
+        const result = await client.query(`SELECT key, value FROM platform_config`);
+        const config: Record<string, string> = {};
+        for (const row of result.rows) {
+          config[row.key] = row.value;
+        }
+        return config;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error("Error getting platform config:", error);
+      return {};
+    }
+  }
+
+  async setPlatformConfig(data: Record<string, string>): Promise<void> {
+    await this.ensurePlatformConfigTable();
+    const client = await getPool().connect();
+    try {
+      for (const [key, value] of Object.entries(data)) {
+        await client.query(`
+          INSERT INTO platform_config (key, value, updated_at)
+          VALUES ($1, $2, NOW())
+          ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()
+        `, [key, value]);
+      }
+    } finally {
+      client.release();
+    }
+  }
 }
 
 export const neonStorage = new NeonStorage();
