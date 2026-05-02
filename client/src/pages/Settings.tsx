@@ -200,24 +200,24 @@ export default function Settings() {
   return (
     <Layout title="Integrações" subtitle="Conecte suas ferramentas favoritas">
       <div className="max-w-5xl mx-auto">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {integrations.map((integration) => {
             const isConfigured = integration.configured(localSettings);
             return (
               <button
                 key={integration.id}
                 onClick={() => openModal(integration)}
-                className="relative flex flex-col items-center gap-3 p-6 rounded-2xl bg-[#18181b] border border-zinc-800/60 hover:border-purple-500/50 hover:bg-[#1e1e24] transition-all duration-200 text-center group shadow-lg"
+                className="relative flex flex-col items-center gap-5 p-10 rounded-2xl bg-[#18181b] border border-zinc-800/60 hover:border-purple-500/50 hover:bg-[#1e1e24] transition-all duration-200 text-center group shadow-lg"
               >
                 {isConfigured && (
-                  <span className="absolute top-3 right-3">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <span className="absolute top-4 right-4">
+                    <CheckCircle2 className="w-5 h-5 text-green-500" />
                   </span>
                 )}
                 <IntegrationIcon integration={integration} />
                 <div>
-                  <p className="font-semibold text-white text-sm leading-tight">{integration.name}</p>
-                  <p className="text-xs text-zinc-400 mt-1 leading-tight">{integration.description}</p>
+                  <p className="font-semibold text-white text-base leading-tight">{integration.name}</p>
+                  <p className="text-sm text-zinc-400 mt-1.5 leading-tight">{integration.description}</p>
                 </div>
               </button>
             );
