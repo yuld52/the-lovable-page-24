@@ -36,6 +36,7 @@ export default function Financeiro() {
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
   const [showWithdrawForm, setShowWithdrawForm] = useState(false);
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
 
   const METHOD_LABELS: Record<string, string> = {
     mpesa: "M-Pesa",
@@ -436,7 +437,9 @@ export default function Financeiro() {
       )}
 
       {/* Withdraw Form Dialog */}
-      <Dialog open={showWithdrawForm} onOpenChange={(v) => { if (!v) { setShowWithdrawForm(false); setAmount(""); setPixKey(""); } }}>
+      <Dialog open={showWithdrawForm} onOpenChange={(v) => {
+        if (!v) { setShowWithdrawForm(false); setAmount(""); setPixKey(""); setSelectedAccountId(null); }
+      }}>
         <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-white">Solicitar Saque</DialogTitle>
@@ -449,7 +452,7 @@ export default function Financeiro() {
                 {(["mpesa", "emola", "pix"] as const).map((m) => (
                   <button
                     key={m}
-                    onClick={() => { setWithdrawMethod(m); setPixKey(""); }}
+                    onClick={() => { setWithdrawMethod(m); setPixKey(""); setSelectedAccountId(null); }}
                     className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
                       withdrawMethod === m
                         ? m === "mpesa"
@@ -476,15 +479,76 @@ export default function Financeiro() {
                 className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
               />
             </div>
+
+            {/* Account selector — registered accounts for the chosen method */}
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{KEY_LABELS[withdrawMethod]}</label>
-              <Input
-                placeholder={KEY_PLACEHOLDERS[withdrawMethod]}
-                value={pixKey}
-                onChange={(e) => setPixKey(e.target.value)}
-                className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
-              />
+              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                Conta {METHOD_LABELS[withdrawMethod]}
+              </label>
+              {(() => {
+                const matching = (bankAccounts || []).filter((a) => a.type === withdrawMethod);
+                if (accountsLoading) {
+                  return (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="w-5 h-5 animate-spin text-purple-500" />
+                    </div>
+                  );
+                }
+                if (matching.length === 0) {
+                  return (
+                    <div className="flex flex-col items-center gap-2 py-4 px-3 rounded-xl border border-dashed border-zinc-700 text-center">
+                      <p className="text-xs text-zinc-400">
+                        Nenhuma conta {METHOD_LABELS[withdrawMethod]} registada.
+                      </p>
+                      <button
+                        className="text-xs text-purple-400 hover:text-purple-300 underline underline-offset-2"
+                        onClick={() => { setShowWithdrawForm(false); setActiveTab("contas"); }}
+                      >
+                        Adicionar conta agora →
+                      </button>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="flex flex-col gap-2">
+                    {matching.map((acc) => {
+                      const isSelected = selectedAccountId === acc.id;
+                      const color =
+                        acc.type === "mpesa"
+                          ? "border-red-500/50 bg-red-500/5"
+                          : acc.type === "emola"
+                          ? "border-orange-500/50 bg-orange-500/5"
+                          : "border-purple-500/50 bg-purple-500/5";
+                      const dotColor =
+                        acc.type === "mpesa" ? "bg-red-600" : acc.type === "emola" ? "bg-orange-500" : "bg-purple-600";
+                      return (
+                        <button
+                          key={acc.id}
+                          onClick={() => { setSelectedAccountId(acc.id); setPixKey(acc.phone); }}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${
+                            isSelected ? color : "border-zinc-800 hover:border-zinc-600"
+                          }`}
+                        >
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ${dotColor}`}>
+                            {acc.type === "mpesa" ? "M" : acc.type === "emola" ? "E" : "P"}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-white leading-tight">{METHOD_LABELS[acc.type]}</p>
+                            <p className="text-xs text-zinc-400">{acc.phone}</p>
+                          </div>
+                          {isSelected && (
+                            <Check className={`w-4 h-4 shrink-0 ${
+                              acc.type === "mpesa" ? "text-red-400" : acc.type === "emola" ? "text-orange-400" : "text-purple-400"
+                            }`} />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
+
             <Button
               onClick={() => { setShowWithdrawForm(false); setShowWithdrawDialog(true); }}
               disabled={!amount || !pixKey}
