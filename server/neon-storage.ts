@@ -784,7 +784,7 @@ export class NeonStorage {
       return {
         salesToday: totalRevenue,
         revenuePaid: totalRevenue,
-        salesApproved: sales.length,    // total orders (all statuses)
+        salesApproved: paidSales.length, // only paid/captured
         conversionRate,
         revenueTarget: 10000,
         revenueCurrent: totalRevenue,
