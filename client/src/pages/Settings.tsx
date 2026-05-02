@@ -87,31 +87,6 @@ const integrations: Integration[] = [
       },
     ],
   },
-  {
-    id: "paypal",
-    name: "PayPal",
-    description: "Processamento de pagamentos",
-    icon: "/integrations/paypal.svg",
-    configured: (s) => !!s.paypalClientId,
-    fields: [
-      {
-        key: "paypalClientId",
-        label: "Client ID",
-        placeholder: "PayPal Client ID",
-      },
-      {
-        key: "paypalClientSecret",
-        label: "Client Secret",
-        placeholder: "PayPal Client Secret",
-        type: "password",
-      },
-      {
-        key: "paypalWebhookId",
-        label: "Webhook ID",
-        placeholder: "PayPal Webhook ID",
-      },
-    ],
-  },
 ];
 
 const integrationIconFallback: Record<string, string> = {
