@@ -80,8 +80,8 @@ export default function Register() {
       <div className="w-full max-w-sm p-6 relative z-10">
         <div className="text-center mb-6">
           <h1 className="text-4xl font-extrabold tracking-tight mb-2">
-            <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Berry</span>
-            <span className="text-foreground">Pay</span>
+            <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Meteor</span>
+            <span className="text-foreground">fy</span>
           </h1>
           <p className="text-muted-foreground text-sm">Crie sua conta</p>
         </div>
