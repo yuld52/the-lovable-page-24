@@ -89,8 +89,8 @@ export function Sidebar() {
           <div className="bg-card/50 rounded-lg p-2 border-2 border-purple-500/30 relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="relative flex items-center gap-2">
-              <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-primary/10 rounded-lg shadow-lg border border-primary/20">
-                <Trophy className="text-primary w-5 h-5" />
+              <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-lg overflow-hidden">
+                <img src="/favicon.png" alt="Meteorfy" className="w-10 h-10 object-contain" />
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[10px] font-normal text-white block">Faturamento</span>
