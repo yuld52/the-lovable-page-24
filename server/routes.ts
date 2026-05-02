@@ -21,9 +21,6 @@ export async function registerRoutes(
   registerTrackingRoutes(app, storage as any);
   registerChatRoutes(app);
 
-  // Run once on startup — backfill products that only had ["paypal"]
-  storage.migrateDefaultPaymentMethods().catch(console.error);
-
   // Pasta de uploads — usa /tmp no Vercel (serverless), pasta local no Replit
   const uploadsDir = process.env.VERCEL
     ? "/tmp/uploads"
