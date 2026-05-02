@@ -154,6 +154,16 @@ export default function Financeiro() {
 
       {activeTab === 'visao' && (
         <>
+          <div className="flex justify-end mb-4">
+            <Button
+              onClick={() => setShowWithdrawForm(true)}
+              className="bg-purple-600 hover:bg-purple-500 text-white gap-2"
+            >
+              <ArrowDownToLine className="w-4 h-4" />
+              Solicitar Saque
+            </Button>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -193,16 +203,6 @@ export default function Financeiro() {
                 <p className="text-xs text-zinc-500 mt-1">Aguardando processamento</p>
               </CardContent>
             </Card>
-          </div>
-
-          <div className="flex justify-end mb-4">
-            <Button
-              onClick={() => setShowWithdrawForm(true)}
-              className="bg-purple-600 hover:bg-purple-500 text-white gap-2"
-            >
-              <ArrowDownToLine className="w-4 h-4" />
-              Solicitar Saque
-            </Button>
           </div>
 
           <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
