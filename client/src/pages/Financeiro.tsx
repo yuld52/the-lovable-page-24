@@ -341,9 +341,9 @@ export default function Financeiro() {
                           <td className="px-6 py-4">
                             {w.pixKeyType === 'mpesa' || w.pixKeyType === 'emola' ? (
                               <img
-                                src={w.pixKeyType === 'mpesa' ? '/mpesa-logo.svg' : '/emola-logo.svg'}
+                                src={w.pixKeyType === 'mpesa' ? 'https://yt3.googleusercontent.com/ytc/AIdro_k9S-mKWfmtSx85sbylUgINsr7-ErWacXBh0R39hZ_2rg=s900-c-k-c0x00ffffff-no-rj' : 'https://play-lh.googleusercontent.com/2TGAhJ55tiyhCwW0ZM43deGv4lUTFTBMoq83mnAO6-bU5hi2NPyKX8BN8iKt13irK7Y'}
                                 alt={METHOD_LABELS[w.pixKeyType]}
-                                className="h-6 w-auto object-contain"
+                                className="h-6 w-6 object-contain rounded"
                               />
                             ) : (
                               <span className="text-xs font-bold text-zinc-400">{w.pixKeyType || '—'}</span>
@@ -511,7 +511,7 @@ export default function Financeiro() {
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center bg-zinc-800 shrink-0">
                         {acc.type === 'mpesa' || acc.type === 'emola'
-                          ? <img src={acc.type === 'mpesa' ? '/mpesa-logo.svg' : '/emola-logo.svg'} alt={acc.type} className="w-full h-full object-cover" />
+                          ? <img src={acc.type === 'mpesa' ? 'https://yt3.googleusercontent.com/ytc/AIdro_k9S-mKWfmtSx85sbylUgINsr7-ErWacXBh0R39hZ_2rg=s900-c-k-c0x00ffffff-no-rj' : 'https://play-lh.googleusercontent.com/2TGAhJ55tiyhCwW0ZM43deGv4lUTFTBMoq83mnAO6-bU5hi2NPyKX8BN8iKt13irK7Y'} alt={acc.type} className="w-full h-full object-cover" />
                           : <span className="text-white text-xs font-bold">P</span>}
                       </div>
                       <div>
@@ -579,8 +579,8 @@ export default function Financeiro() {
             </CardHeader>
             <CardContent className="space-y-3">
               {[
-                { label: "M-Pesa", rate: "10%", logo: "/mpesa-logo.svg" },
-                { label: "e-Mola", rate: "10%", logo: "/emola-logo.svg" },
+                { label: "M-Pesa", rate: "10%", logo: "https://yt3.googleusercontent.com/ytc/AIdro_k9S-mKWfmtSx85sbylUgINsr7-ErWacXBh0R39hZ_2rg=s900-c-k-c0x00ffffff-no-rj" },
+                { label: "e-Mola", rate: "10%", logo: "https://play-lh.googleusercontent.com/2TGAhJ55tiyhCwW0ZM43deGv4lUTFTBMoq83mnAO6-bU5hi2NPyKX8BN8iKt13irK7Y" },
               ].map((m) => (
                 <div key={m.label} className="flex items-center justify-between bg-zinc-900/50 border border-zinc-800/50 rounded-xl px-4 py-3">
                   <div className="flex items-center gap-3">
@@ -684,7 +684,7 @@ export default function Financeiro() {
                             : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
                         }`}
                       >
-                        <img src={m === "mpesa" ? "/mpesa-logo.svg" : "/emola-logo.svg"} alt={METHOD_LABELS[m]} className="h-5 w-auto object-contain" />
+                        <img src={m === "mpesa" ? "https://yt3.googleusercontent.com/ytc/AIdro_k9S-mKWfmtSx85sbylUgINsr7-ErWacXBh0R39hZ_2rg=s900-c-k-c0x00ffffff-no-rj" : "https://play-lh.googleusercontent.com/2TGAhJ55tiyhCwW0ZM43deGv4lUTFTBMoq83mnAO6-bU5hi2NPyKX8BN8iKt13irK7Y"} alt={METHOD_LABELS[m]} className="h-6 w-6 object-contain rounded" />
                       </button>
                     ))}
                   </div>
@@ -729,7 +729,7 @@ export default function Financeiro() {
                               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${isSelected ? color : "border-zinc-800 hover:border-zinc-600"}`}
                             >
                               <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 bg-zinc-800 flex items-center justify-center">
-                                <img src={acc.type === "mpesa" ? "/mpesa-logo.svg" : "/emola-logo.svg"} alt={acc.type} className="w-full h-full object-cover" />
+                                <img src={acc.type === "mpesa" ? "https://yt3.googleusercontent.com/ytc/AIdro_k9S-mKWfmtSx85sbylUgINsr7-ErWacXBh0R39hZ_2rg=s900-c-k-c0x00ffffff-no-rj" : "https://play-lh.googleusercontent.com/2TGAhJ55tiyhCwW0ZM43deGv4lUTFTBMoq83mnAO6-bU5hi2NPyKX8BN8iKt13irK7Y"} alt={acc.type} className="w-full h-full object-cover" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-semibold text-white leading-tight">{METHOD_LABELS[acc.type]}</p>
@@ -1058,8 +1058,8 @@ export default function Financeiro() {
               <div className="space-y-3">
                 <p className="text-sm text-zinc-400">Selecione o tipo de conta que deseja adicionar:</p>
                 {([
-                  { type: "mpesa" as const, label: "M-Pesa", sub: "Carteira móvel Moçambique", logo: "/mpesa-logo.svg", border: "hover:border-red-500/50" },
-                  { type: "emola" as const, label: "e-Mola", sub: "Carteira móvel Moçambique", logo: "/emola-logo.svg", border: "hover:border-orange-500/50" },
+                  { type: "mpesa" as const, label: "M-Pesa", sub: "Carteira móvel Moçambique", logo: "https://yt3.googleusercontent.com/ytc/AIdro_k9S-mKWfmtSx85sbylUgINsr7-ErWacXBh0R39hZ_2rg=s900-c-k-c0x00ffffff-no-rj", border: "hover:border-red-500/50" },
+                  { type: "emola" as const, label: "e-Mola", sub: "Carteira móvel Moçambique", logo: "https://play-lh.googleusercontent.com/2TGAhJ55tiyhCwW0ZM43deGv4lUTFTBMoq83mnAO6-bU5hi2NPyKX8BN8iKt13irK7Y", border: "hover:border-orange-500/50" },
                 ]).map((m) => (
                   <button
                     key={m.type}
