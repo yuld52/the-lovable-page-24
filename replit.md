@@ -22,13 +22,13 @@ Preferred communication style: Simple, everyday language.
 - **Framework**: Express.js with TypeScript (run via `tsx`)
 - **Database**: Neon PostgreSQL (serverless) via `@neondatabase/serverless`
 - **Authentication**: Firebase Auth (JWT verification via Firebase Admin SDK)
-- **File Uploads**: Firebase Storage (admin SDK) + local multer
-- **Payments**: PayPal integration
+- **File Uploads**: Local disk storage via Multer (stored in `public/uploads/`)
+- **Payments**: PayPal integration (per-user credentials stored in DB settings table)
 - **Push Notifications**: web-push with VAPID keys
 
 ### Dev Server
 - Single port 5000: Express serves both the API and the Vite dev middleware
-- Workflow command: `node --import tsx/esm server/index.ts`
+- Workflow command: `npm run dev` → `node start-all.js` → `npx tsx --watch server/index.ts`
 - In production: Vite builds static files served by Express static middleware
 
 ### Project Structure
@@ -44,40 +44,41 @@ Preferred communication style: Simple, everyday language.
 │   ├── routes.ts     # API route handlers
 │   ├── firebase-admin.ts  # Firebase Admin SDK setup
 │   ├── neon-storage.ts    # Neon DB storage layer
-│   └── middleware/   # Auth middleware
+│   ├── paypal.ts     # PayPal API helpers
+│   ├── static.ts     # Production static file serving
+│   └── middleware/   # Auth middleware (Firebase JWT verification)
 ├── shared/           # Shared types and schema
 │   └── schema.ts     # Drizzle database schema definitions
 ├── migrations/       # SQL migration files
+├── public/uploads/   # Local file uploads (multer)
+└── start-all.js      # Dev startup script
 ```
 
 ### Key Design Decisions
 
-1. **Single-port development**: Express server handles both API routes and Vite frontend (via `setupVite`) on port 5000. No need for a separate Vite dev server.
+1. **Single-port development**: Express server handles both API routes and Vite frontend (via `setupVite`) on port 5000. No separate Vite dev server needed.
 
 2. **Firebase Auth**: JWT tokens from Firebase are verified server-side using Firebase Admin SDK. The `requireAuth` middleware validates Bearer tokens on protected routes.
 
-3. **Neon PostgreSQL**: Uses `@neondatabase/serverless` for database access. `DATABASE_URL` secret is set in Replit secrets.
+3. **Neon PostgreSQL**: Uses `@neondatabase/serverless` with WebSocket support. `NEON_DATABASE_URL` is set in Replit env vars.
 
-4. **Environment Secrets**: All secrets are in the `.env` file and also registered in Replit secrets. The server loads `.env` at startup as a fallback.
+4. **Environment Secrets**: All secrets are managed via Replit Secrets — no `.env` loading at runtime.
 
 ## External Dependencies & Required Secrets
 
 ### Secrets (set in Replit Secrets panel)
-- `DATABASE_URL`: Neon PostgreSQL connection string (already configured)
-- `FIREBASE_PROJECT_ID`: Firebase project ID
-- `FIREBASE_CLIENT_EMAIL`: Firebase service account email
-- `FIREBASE_PRIVATE_KEY`: Firebase service account private key (needs real key for admin features)
-- `PAYPAL_CLIENT_ID`: PayPal app client ID
-- `PAYPAL_CLIENT_SECRET`: PayPal app secret
-- `PAYPAL_WEBHOOK_ID`: PayPal webhook ID
-- `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`: Web push notification keys
+- `FIREBASE_PRIVATE_KEY`: Firebase service account private key ✅
+- `SESSION_SECRET`: Express session secret ✅
+
+### Environment Variables (set in Replit env)
+- `PORT`: 5000 ✅
+- `NODE_ENV`: development ✅
+- `FIREBASE_PROJECT_ID`: meteorfy1 ✅
+- `FIREBASE_CLIENT_EMAIL`: Firebase service account email ✅
+- `NEON_DATABASE_URL`: Neon PostgreSQL connection string ✅
+- `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`: Web push notification keys ✅
+
+### Optional Secrets (configure when ready)
+- `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` / `PAYPAL_WEBHOOK_ID`: PayPal payments
 - `FACEBOOK_PIXEL_ID` / `FACEBOOK_ACCESS_TOKEN`: Meta/Facebook pixel tracking
 - `UTMIFY_TOKEN`: UTMify analytics token
-
-### Important Notes
-- Firebase Admin private key must be a valid RSA key for auth verification to work. If invalid, the server falls back to no-credential mode (some admin features may not work).
-- PayPal credentials are also stored per-user in the `settings` table in the database.
-
-## Environment Variables (non-secret)
-- `PORT`: 5000 (set in Replit env)
-- `NODE_ENV`: development or production
