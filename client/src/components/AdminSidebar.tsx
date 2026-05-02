@@ -7,7 +7,6 @@ import {
   LogOut,
   Shield,
   ArrowDownToLine,
-  ArrowLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
@@ -50,16 +49,6 @@ export function AdminSidebar() {
           <span className="bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">Admin</span>
           <span className="text-foreground"> Panel</span>
         </h1>
-      </div>
-
-      {/* Back to app */}
-      <div className="px-4 pt-3 pb-1">
-        <Link href="/dashboard">
-          <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-white hover:bg-zinc-800/60 border border-transparent hover:border-zinc-700/50 transition-all duration-200">
-            <ArrowLeft size={15} strokeWidth={2.5} />
-            Voltar ao App
-          </button>
-        </Link>
       </div>
 
       {/* Nav */}
