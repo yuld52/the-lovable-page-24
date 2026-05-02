@@ -100,7 +100,7 @@ export default function Products() {
           )}
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 items-stretch">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 items-stretch">
           {filteredProducts?.map((product) => (
             <Card key={product.id} className="bg-[#18181b] border-zinc-800/60 hover:border-purple-500/30 transition-all cursor-pointer group overflow-hidden w-full flex flex-col">
               <div className="w-full aspect-square relative overflow-hidden border-b border-zinc-800/50">
@@ -118,44 +118,44 @@ export default function Products() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-500/5 to-blue-500/5">
-                    <PackageOpen className="w-8 h-8 text-zinc-700" />
+                    <PackageOpen className="w-6 h-6 text-zinc-700" />
                   </div>
                 )}
-                <div className="absolute top-3 right-3">
+                <div className="absolute top-2 right-2">
                   {getStatusBadge(product.status || 'pending')}
                 </div>
               </div>
-              <div className="p-6 flex flex-col flex-1">
-                <h3 className="text-xl font-semibold text-white mb-4 group-hover:text-purple-400 transition-colors text-center break-words whitespace-normal flex-1">{product.name}</h3>
-                <div className="flex items-center justify-between border-t border-zinc-800/50 pt-4">
+              <div className="p-3 flex flex-col flex-1">
+                <h3 className="text-sm font-semibold text-white mb-2 group-hover:text-purple-400 transition-colors text-center break-words whitespace-normal flex-1 leading-tight">{product.name}</h3>
+                <div className="flex items-center justify-between border-t border-zinc-800/50 pt-2">
                   <div>
-                    <p className="text-sm text-zinc-500">USD</p>
-                    <p className="text-xl font-bold text-white">
+                    <p className="text-[10px] text-zinc-500">USD</p>
+                    <p className="text-sm font-bold text-white">
                       {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.price / 100)}
                     </p>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-0.5">
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 h-10 w-10"
+                      className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 h-7 w-7"
                       onClick={(e) => {
                         e.stopPropagation();
                         setLocation(`/products/edit/${product.id}`);
                       }}
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Pencil className="w-3 h-3" />
                     </Button>
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-10 w-10"
+                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 w-7"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDelete(product.id);
                       }}
                     >
-                      {deleteProduct.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      {deleteProduct.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                     </Button>
                   </div>
                 </div>
