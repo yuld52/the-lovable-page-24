@@ -776,6 +776,19 @@ export async function registerRoutes(
     }
   });
 
+  // --- VENDAS (Admin) ---
+  app.get("/api/admin/sales", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
+      const result = await storage.getSales();
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error getting all sales:", error);
+      res.status(500).json({ message: error.message || "Erro ao buscar vendas" });
+    }
+  });
+
   // --- PRODUTOS (Admin) ---
   app.get("/api/admin/products", requireAuth, async (req, res) => {
     try {

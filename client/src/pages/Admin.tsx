@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Shield, Users, Package, ShoppingCart, Loader2, ArrowDownToLine } from "lucide-react";
+import { Shield, Users, Package, ShoppingCart, Loader2, ArrowDownToLine, Receipt } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAdminProducts, useAdminCheckouts } from "@/hooks/use-admin";
 import { apiRequest } from "@/lib/queryClient";
@@ -36,6 +36,15 @@ export default function Admin() {
     enabled: true
   });
 
+  const { data: allSales, isLoading: loadingSales } = useQuery<any[]>({
+    queryKey: ["/api/admin/sales"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/sales");
+      return res.json();
+    },
+    enabled: true
+  });
+
   const approveWithdrawalMutation = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest("POST", `/api/admin/withdrawals/${id}/approve`);
@@ -54,7 +63,7 @@ export default function Admin() {
     }
   });
 
-  const isLoading = loadingUsers || loadingProducts || loadingCheckouts || loadingWithdrawals;
+  const isLoading = loadingUsers || loadingProducts || loadingCheckouts || loadingWithdrawals || loadingSales;
 
   const pendingWithdrawals = withdrawals?.filter(w => w.status === 'pending') || [];
 
@@ -106,6 +115,20 @@ export default function Admin() {
                 <CardContent>
                     <div className="text-3xl font-bold text-white">{checkouts?.length || 0}</div>
                     <p className="text-xs text-zinc-500 mt-1">Páginas de venda</p>
+                </CardContent>
+                </Card>
+
+                <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">TOTAL DE VENDAS</CardTitle>
+                    <Receipt className="w-4 h-4 text-green-500" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-3xl font-bold text-white">{allSales?.length || 0}</div>
+                    <div className="flex gap-3 mt-1">
+                      <p className="text-xs text-emerald-400">{allSales?.filter(s => s.status === 'paid').length || 0} pagas</p>
+                      <p className="text-xs text-amber-400">{allSales?.filter(s => s.status === 'pending').length || 0} pendentes</p>
+                    </div>
                 </CardContent>
                 </Card>
 
