@@ -47,7 +47,7 @@ function PodiumCard({
   accentColor,
   label,
 }: {
-  item: { rank: number; email: string; paidRevenue: number; paidSales: number };
+  item: { rank: number; email: string; totalRevenue: number; totalSales: number };
   height: string;
   accentColor: string;
   label: string;
@@ -58,8 +58,8 @@ function PodiumCard({
         <p className="text-xs text-zinc-400 truncate max-w-[120px]" title={item.email}>
           {item.email.length > 18 ? item.email.slice(0, 15) + "…" : item.email}
         </p>
-        <p className={`text-sm font-bold ${accentColor}`}>{formatCurrency(item.paidRevenue)}</p>
-        <p className="text-[10px] text-zinc-500">{item.paidSales} vendas</p>
+        <p className={`text-sm font-bold ${accentColor}`}>{formatCurrency(item.totalRevenue)}</p>
+        <p className="text-[10px] text-zinc-500">{item.totalSales} vendas</p>
       </div>
       <div
         className={`w-24 rounded-t-xl flex items-start justify-center pt-3 border-t border-l border-r ${height}`}
@@ -87,8 +87,8 @@ export default function AdminRevenueRanking() {
   const top3 = ranking?.slice(0, 3) || [];
   const rest = ranking?.slice(3) || [];
 
-  const totalRevenue = ranking?.reduce((sum, r) => sum + r.paidRevenue, 0) || 0;
-  const totalSales = ranking?.reduce((sum, r) => sum + r.paidSales, 0) || 0;
+  const totalRevenue = ranking?.reduce((sum, r) => sum + r.totalRevenue, 0) || 0;
+  const totalSales = ranking?.reduce((sum, r) => sum + r.totalSales, 0) || 0;
 
   if (isLoading) {
     return (
@@ -138,7 +138,7 @@ export default function AdminRevenueRanking() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-white">{ranking?.length || 0}</div>
-                <p className="text-xs text-zinc-500 mt-1">Com ao menos 1 venda paga</p>
+                <p className="text-xs text-zinc-500 mt-1">Com ao menos 1 venda</p>
               </CardContent>
             </Card>
 
@@ -164,7 +164,7 @@ export default function AdminRevenueRanking() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-white">{totalSales}</div>
-                <p className="text-xs text-zinc-500 mt-1">Vendas pagas na plataforma</p>
+                <p className="text-xs text-zinc-500 mt-1">Vendas na plataforma</p>
               </CardContent>
             </Card>
           </div>
@@ -172,8 +172,8 @@ export default function AdminRevenueRanking() {
           {ranking?.length === 0 ? (
             <div className="text-center py-20">
               <Trophy className="w-16 h-16 text-zinc-700 mx-auto mb-4" />
-              <p className="text-zinc-400 text-lg font-medium">Nenhuma venda aprovada ainda</p>
-              <p className="text-zinc-600 text-sm mt-1">O ranking aparecerá quando houver vendas pagas.</p>
+              <p className="text-zinc-400 text-lg font-medium">Nenhuma venda ainda</p>
+              <p className="text-zinc-600 text-sm mt-1">O ranking aparecerá quando houver vendas.</p>
             </div>
           ) : (
             <>
@@ -249,7 +249,7 @@ export default function AdminRevenueRanking() {
                         {ranking?.map((item) => {
                           const isTop3 = item.rank <= 3;
                           const sharePercent =
-                            totalRevenue > 0 ? ((item.paidRevenue / totalRevenue) * 100).toFixed(1) : "0.0";
+                            totalRevenue > 0 ? ((item.totalRevenue / totalRevenue) * 100).toFixed(1) : "0.0";
                           return (
                             <tr
                               key={item.ownerId}
@@ -278,7 +278,7 @@ export default function AdminRevenueRanking() {
                               </td>
                               <td className="px-6 py-4 text-center">
                                 <span className="text-sm text-zinc-300 font-semibold">
-                                  {item.paidSales}
+                                  {item.totalSales}
                                 </span>
                               </td>
                               <td className="px-6 py-4 text-right">
@@ -294,7 +294,7 @@ export default function AdminRevenueRanking() {
                                         : "text-emerald-400"
                                     }`}
                                   >
-                                    {formatCurrency(item.paidRevenue)}
+                                    {formatCurrency(item.totalRevenue)}
                                   </p>
                                   <p className="text-[10px] text-zinc-600">{sharePercent}% do total</p>
                                 </div>

@@ -74,8 +74,8 @@ export function useAdminRevenueRanking() {
         rank: number;
         ownerId: string;
         email: string;
-        paidRevenue: number;
-        paidSales: number;
+        totalRevenue: number;
+        totalSales: number;
         lastSaleAt: string | null;
       }[]>;
     },

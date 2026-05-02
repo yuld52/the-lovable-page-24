@@ -934,15 +934,13 @@ export async function registerRoutes(
             c.owner_id,
             COALESCE(SUM(s.amount), 0)::bigint AS total_revenue,
             COUNT(s.id)::int AS total_sales,
-            COUNT(CASE WHEN s.status IN ('paid', 'captured') THEN 1 END)::int AS paid_sales,
-            COALESCE(SUM(CASE WHEN s.status IN ('paid', 'captured') THEN s.amount ELSE 0 END), 0)::bigint AS paid_revenue,
             MAX(s.created_at) AS last_sale_at
           FROM checkouts c
-          LEFT JOIN sales s ON s.checkout_id = c.id AND s.status IN ('paid', 'captured')
+          LEFT JOIN sales s ON s.checkout_id = c.id
           WHERE c.owner_id IS NOT NULL
           GROUP BY c.owner_id
-          HAVING COALESCE(SUM(CASE WHEN s.status IN ('paid', 'captured') THEN s.amount ELSE 0 END), 0) > 0
-          ORDER BY paid_revenue DESC
+          HAVING COUNT(s.id) > 0
+          ORDER BY total_revenue DESC
           LIMIT 100
         `);
 
@@ -966,8 +964,8 @@ export async function registerRoutes(
           rank: idx + 1,
           ownerId: row.owner_id,
           email: userMap[row.owner_id] || row.owner_id,
-          paidRevenue: Number(row.paid_revenue),
-          paidSales: Number(row.paid_sales),
+          totalRevenue: Number(row.total_revenue),
+          totalSales: Number(row.total_sales),
           lastSaleAt: row.last_sale_at,
         }));
 
