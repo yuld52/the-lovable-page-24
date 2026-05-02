@@ -284,6 +284,7 @@ export default function PublicCheckout() {
   const [mobilePhone, setMobilePhone] = useState("");
   const [mobileSubmitting, setMobileSubmitting] = useState(false);
   const [showPhoneError, setShowPhoneError] = useState(false);
+  const [showMobileModal, setShowMobileModal] = useState(false);
 
   // Validate Mozambique mobile prefix (strip country code 258 then check first 2 digits)
   const getMobilePhoneError = (method: string, phone: string): string => {
@@ -324,6 +325,7 @@ export default function PublicCheckout() {
       return;
     }
     setShowPhoneError(false);
+    setShowMobileModal(true);
     setMobileSubmitting(true);
     try {
       const totalUsdCents = calculateTotal();
@@ -800,6 +802,35 @@ export default function PublicCheckout() {
         </div>
         <p className="text-[13px]">{t.allRightsReserved}</p>
       </footer>
+
+      {/* Mobile payment processing modal */}
+      {showMobileModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.55)" }}>
+          <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl bg-white">
+            {/* Blue header */}
+            <div className="flex flex-col items-center justify-center gap-3 px-6 py-8" style={{ background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)" }}>
+              <div className="w-14 h-14 rounded-full border-4 border-white/30 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-white animate-spin" />
+              </div>
+              <p className="text-white text-xl font-bold">Processando pagamento…</p>
+            </div>
+            {/* Body */}
+            <div className="px-6 py-6 space-y-4">
+              <p className="text-gray-700 text-sm text-center">
+                Um código USSD foi enviado para{" "}
+                <span className="font-semibold">+{mobilePhone}</span>
+              </p>
+              <p className="text-gray-800 text-base font-bold text-center">
+                Valor: {moneyFromUsdCents(calculateTotal())}
+              </p>
+              <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-center text-sm text-blue-800">
+                <span className="font-bold">Não feche esta página.</span>{" "}
+                Confirmaremos automaticamente quando você inserir o PIN.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }
