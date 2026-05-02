@@ -556,32 +556,6 @@ export default function PublicCheckout() {
                 <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder={t.fullNamePlaceholder} className={`w-full h-11 px-3 rounded-md border text-sm focus:outline-none focus:ring-1 ${showErrors && !formData.name ? 'border-red-500' : 'border-gray-300'}`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
               </div>
             </div>
-            {orderBumpProductsData.length > 0 && (
-              <div className="p-4 space-y-4">
-                {orderBumpProductsData.map(p => (
-                  <div key={p.id} className="rounded-lg border-2 border-dashed" style={{ borderColor: config.primaryColor }}>
-                    <div className="flex items-start gap-3 p-3">
-                      <div className="flex-1">
-                        <h4 className="text-[17px] font-medium">{p.name}</h4>
-                        <div className="mt-1 font-bold text-sm" style={{ color: config.primaryColor }}>+ {moneyFromUsdCents(p.price)}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 p-3 cursor-pointer" style={{ backgroundColor: getSoftBackgroundColor(config.primaryColor) }} onClick={() => {
-                      // Fixed: use String comparison for safety
-                      const isSelected = orderBumpSelected.some(selectedId => String(selectedId) === String(p.id));
-                      if (isSelected) {
-                        setOrderBumpSelected(orderBumpSelected.filter(selectedId => String(selectedId) !== String(p.id)));
-                      } else {
-                        setOrderBumpSelected([...orderBumpSelected, Number(p.id)]);
-                      }
-                    }}>
-                      <Checkbox checked={orderBumpSelected.some(selectedId => String(selectedId) === String(p.id))} />
-                      <span className="text-sm font-medium" style={{ color: "#000000" }}>{t.addToOrder}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
             <div className="p-4 space-y-4">
               {/* Payment method selector */}
               {(() => {
@@ -733,6 +707,31 @@ export default function PublicCheckout() {
                 </div>
               </div>
             </div>
+            {orderBumpProductsData.length > 0 && (
+              <div className="p-4 space-y-4">
+                {orderBumpProductsData.map(p => (
+                  <div key={p.id} className="rounded-lg border-2 border-dashed" style={{ borderColor: config.primaryColor }}>
+                    <div className="flex items-start gap-3 p-3">
+                      <div className="flex-1">
+                        <h4 className="text-[17px] font-medium">{p.name}</h4>
+                        <div className="mt-1 font-bold text-sm" style={{ color: config.primaryColor }}>+ {moneyFromUsdCents(p.price)}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 p-3 cursor-pointer" style={{ backgroundColor: getSoftBackgroundColor(config.primaryColor) }} onClick={() => {
+                      const isSelected = orderBumpSelected.some(selectedId => String(selectedId) === String(p.id));
+                      if (isSelected) {
+                        setOrderBumpSelected(orderBumpSelected.filter(selectedId => String(selectedId) !== String(p.id)));
+                      } else {
+                        setOrderBumpSelected([...orderBumpSelected, Number(p.id)]);
+                      }
+                    }}>
+                      <Checkbox checked={orderBumpSelected.some(selectedId => String(selectedId) === String(p.id))} />
+                      <span className="text-sm font-medium" style={{ color: "#000000" }}>{t.addToOrder}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
