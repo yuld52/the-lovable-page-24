@@ -39,6 +39,9 @@ export default function Financeiro() {
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
 
+  // Withdraw step
+  const [withdrawStep, setWithdrawStep] = useState<1 | 2 | 3>(1);
+
   // Identity verification state
   const [docsOpen, setDocsOpen] = useState(true);
   const [residenceOpen, setResidenceOpen] = useState(false);
@@ -580,258 +583,287 @@ export default function Financeiro() {
         </div>
       )}
 
-      {/* Withdraw Form Dialog */}
+      {/* Withdraw Form Dialog — 3-step */}
       <Dialog open={showWithdrawForm} onOpenChange={(v) => {
-        if (!v) { setShowWithdrawForm(false); setAmount(""); setPixKey(""); setSelectedAccountId(null); }
+        if (!v) { setShowWithdrawForm(false); setAmount(""); setPixKey(""); setSelectedAccountId(null); setWithdrawStep(1); }
       }}>
         <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-white">Solicitar Saque</DialogTitle>
+            <DialogTitle className="text-base font-bold text-white flex items-center justify-between">
+              <span>Solicitar Saque</span>
+              <span className="text-xs font-normal text-zinc-500">Passo {withdrawStep} de 3</span>
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 pt-2">
-            {/* Method selector */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Método</label>
-              <div className="grid grid-cols-2 gap-2">
-                {(["mpesa", "emola"] as const).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => { setWithdrawMethod(m); setPixKey(""); setSelectedAccountId(null); }}
-                    className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
-                      withdrawMethod === m
-                        ? m === "mpesa"
-                          ? "bg-red-600 border-red-500 text-white shadow"
-                          : "bg-orange-500 border-orange-400 text-white shadow"
-                        : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
-                    }`}
-                  >
-                    {METHOD_LABELS[m]}
-                  </button>
-                ))}
+
+          {/* Step indicator */}
+          <div className="flex items-center gap-1 pt-1 pb-2">
+            {([1, 2, 3] as const).map((s) => (
+              <div key={s} className="flex-1 flex items-center gap-1">
+                <div className={`flex-1 h-1 rounded-full transition-all ${withdrawStep >= s ? "bg-purple-500" : "bg-zinc-800"}`} />
               </div>
-            </div>
+            ))}
+          </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Valor (MZN)</label>
-              <Input
-                type="number"
-                placeholder="0,00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
-              />
-            </div>
-
-            {/* Account selector — registered accounts for the chosen method */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                Conta {METHOD_LABELS[withdrawMethod]}
-              </label>
-              {(() => {
-                const matching = (bankAccounts || []).filter((a) => a.type === withdrawMethod);
-                if (accountsLoading) {
-                  return (
-                    <div className="flex justify-center py-4">
-                      <Loader2 className="w-5 h-5 animate-spin text-purple-500" />
-                    </div>
-                  );
-                }
-                if (matching.length === 0) {
-                  return (
-                    <div className="flex flex-col items-center gap-2 py-4 px-3 rounded-xl border border-dashed border-zinc-700 text-center">
-                      <p className="text-xs text-zinc-400">
-                        Nenhuma conta {METHOD_LABELS[withdrawMethod]} registada.
-                      </p>
+          <div className="space-y-4">
+            {/* ── STEP 1: Método + Valor + Conta ── */}
+            {withdrawStep === 1 && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Método</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["mpesa", "emola"] as const).map((m) => (
                       <button
-                        className="text-xs text-purple-400 hover:text-purple-300 underline underline-offset-2"
-                        onClick={() => { setShowWithdrawForm(false); setActiveTab("contas"); }}
+                        key={m}
+                        onClick={() => { setWithdrawMethod(m); setPixKey(""); setSelectedAccountId(null); }}
+                        className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                          withdrawMethod === m
+                            ? m === "mpesa"
+                              ? "bg-red-600 border-red-500 text-white shadow"
+                              : "bg-orange-500 border-orange-400 text-white shadow"
+                            : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
+                        }`}
                       >
-                        Adicionar conta agora →
+                        {METHOD_LABELS[m]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Valor (MZN)</label>
+                  <Input
+                    type="number"
+                    placeholder="0,00"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                    Conta {METHOD_LABELS[withdrawMethod]}
+                  </label>
+                  {(() => {
+                    const matching = (bankAccounts || []).filter((a) => a.type === withdrawMethod);
+                    if (accountsLoading) return <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-purple-500" /></div>;
+                    if (matching.length === 0) return (
+                      <div className="flex flex-col items-center gap-2 py-4 px-3 rounded-xl border border-dashed border-zinc-700 text-center">
+                        <p className="text-xs text-zinc-400">Nenhuma conta {METHOD_LABELS[withdrawMethod]} registada.</p>
+                        <button className="text-xs text-purple-400 hover:text-purple-300 underline underline-offset-2"
+                          onClick={() => { setShowWithdrawForm(false); setActiveTab("contas"); }}>
+                          Adicionar conta agora →
+                        </button>
+                      </div>
+                    );
+                    return (
+                      <div className="flex flex-col gap-2">
+                        {matching.map((acc) => {
+                          const isSelected = selectedAccountId === acc.id;
+                          const color = acc.type === "mpesa" ? "border-red-500/50 bg-red-500/5" : "border-orange-500/50 bg-orange-500/5";
+                          const dotColor = acc.type === "mpesa" ? "bg-red-600" : "bg-orange-500";
+                          return (
+                            <button key={acc.id}
+                              onClick={() => { setSelectedAccountId(acc.id); setPixKey(acc.phone); }}
+                              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${isSelected ? color : "border-zinc-800 hover:border-zinc-600"}`}
+                            >
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ${dotColor}`}>
+                                {acc.type === "mpesa" ? "M" : "E"}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-white leading-tight">{METHOD_LABELS[acc.type]}</p>
+                                <p className="text-xs text-zinc-400">{acc.phone}</p>
+                              </div>
+                              {isSelected && <Check className={`w-4 h-4 shrink-0 ${acc.type === "mpesa" ? "text-red-400" : "text-orange-400"}`} />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <Button
+                  onClick={() => setWithdrawStep(2)}
+                  disabled={!amount || !pixKey}
+                  className={`w-full text-white h-11 ${METHOD_COLORS[withdrawMethod]}`}
+                >
+                  Próximo →
+                </Button>
+              </>
+            )}
+
+            {/* ── STEP 2: Verificação de Identidade ── */}
+            {withdrawStep === 2 && (
+              <>
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-bold text-amber-400">Verificação de Identidade Necessária</p>
+                    <p className="text-[11px] text-amber-300/70 mt-0.5">Para realizar seu primeiro saque, precisamos confirmar sua identidade. Envie os documentos abaixo.</p>
+                  </div>
+                </div>
+
+                {/* Documentos de Identidade */}
+                <div className="rounded-xl border border-zinc-800 overflow-hidden">
+                  <button onClick={() => setDocsOpen(!docsOpen)}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-zinc-900/50 hover:bg-zinc-900 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-purple-400" />
+                      <div className="text-left">
+                        <p className="text-sm font-semibold text-white">Documentos de Identidade <span className="text-red-400">*</span></p>
+                        <p className="text-[11px] text-zinc-500">{[idFront, idBack, selfieFile].filter(Boolean).length}/3 enviados</p>
+                      </div>
+                    </div>
+                    {docsOpen ? <ChevronUp className="w-4 h-4 text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-zinc-400" />}
+                  </button>
+                  {docsOpen && (
+                    <div className="px-4 py-3 space-y-3 bg-zinc-950/30">
+                      <div>
+                        <p className="text-xs font-medium text-zinc-300 mb-2">Frente e Verso do BI / Passaporte <span className="text-red-400">*</span></p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <p className="text-[10px] text-zinc-500 mb-1">Frente</p>
+                            <input ref={idFrontRef} type="file" accept="image/jpg,image/jpeg,image/png" className="hidden" onChange={e => setIdFront(e.target.files?.[0] || null)} />
+                            <button onClick={() => idFrontRef.current?.click()}
+                              className={`w-full border-2 border-dashed rounded-lg py-4 flex flex-col items-center gap-1 transition-colors ${idFront ? "border-purple-500/50 bg-purple-500/5" : "border-zinc-700 hover:border-zinc-500"}`}>
+                              {idFront ? <Check className="w-5 h-5 text-purple-400" /> : <FileText className="w-5 h-5 text-zinc-500" />}
+                              <p className="text-[10px] text-zinc-400 text-center">{idFront ? idFront.name.slice(0, 12) + "…" : "Clique para enviar"}</p>
+                            </button>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-zinc-500 mb-1">Verso</p>
+                            <input ref={idBackRef} type="file" accept="image/jpg,image/jpeg,image/png" className="hidden" onChange={e => setIdBack(e.target.files?.[0] || null)} />
+                            <button onClick={() => idBackRef.current?.click()}
+                              className={`w-full border-2 border-dashed rounded-lg py-4 flex flex-col items-center gap-1 transition-colors ${idBack ? "border-purple-500/50 bg-purple-500/5" : "border-zinc-700 hover:border-zinc-500"}`}>
+                              {idBack ? <Check className="w-5 h-5 text-purple-400" /> : <FileText className="w-5 h-5 text-zinc-500" />}
+                              <p className="text-[10px] text-zinc-400 text-center">{idBack ? idBack.name.slice(0, 12) + "…" : "Clique para enviar"}</p>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-zinc-300 mb-2">Selfie com o Documento <span className="text-red-400">*</span></p>
+                        <input ref={selfieRef} type="file" accept="image/jpg,image/jpeg,image/png" className="hidden" onChange={e => setSelfieFile(e.target.files?.[0] || null)} />
+                        <button onClick={() => selfieRef.current?.click()}
+                          className={`w-full border-2 border-dashed rounded-lg py-4 flex flex-col items-center gap-1.5 transition-colors ${selfieFile ? "border-purple-500/50 bg-purple-500/5" : "border-zinc-700 hover:border-zinc-500"}`}>
+                          {selfieFile ? <Check className="w-5 h-5 text-purple-400" /> : <User className="w-5 h-5 text-zinc-500" />}
+                          <p className="text-[10px] text-zinc-400">{selfieFile ? selfieFile.name.slice(0, 18) + "…" : "Clique para enviar selfie"}</p>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Comprovativo de Residência */}
+                <div className="rounded-xl border border-zinc-800 overflow-hidden">
+                  <button onClick={() => setResidenceOpen(!residenceOpen)}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-zinc-900/50 hover:bg-zinc-900 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Home className="w-4 h-4 text-purple-400" />
+                      <div className="text-left">
+                        <p className="text-sm font-semibold text-white">Comprovativo de Residência <span className="text-red-400">*</span></p>
+                        <p className="text-[11px] text-zinc-500">{proofOfAddress ? "1/1 enviado" : "0/1 enviado"}</p>
+                      </div>
+                    </div>
+                    {residenceOpen ? <ChevronUp className="w-4 h-4 text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-zinc-400" />}
+                  </button>
+                  {residenceOpen && (
+                    <div className="px-4 py-3 bg-zinc-950/30">
+                      <input ref={proofRef} type="file" accept="image/jpg,image/jpeg,image/png" className="hidden" onChange={e => setProofOfAddress(e.target.files?.[0] || null)} />
+                      <button onClick={() => proofRef.current?.click()}
+                        className={`w-full border-2 border-dashed rounded-lg py-4 flex flex-col items-center gap-1.5 transition-colors ${proofOfAddress ? "border-purple-500/50 bg-purple-500/5" : "border-zinc-700 hover:border-zinc-500"}`}>
+                        {proofOfAddress ? <Check className="w-5 h-5 text-purple-400" /> : <Upload className="w-5 h-5 text-zinc-500" />}
+                        <p className="text-[10px] text-zinc-400">{proofOfAddress ? proofOfAddress.name.slice(0, 18) + "…" : "Clique para enviar"}</p>
                       </button>
                     </div>
-                  );
-                }
-                return (
-                  <div className="flex flex-col gap-2">
-                    {matching.map((acc) => {
-                      const isSelected = selectedAccountId === acc.id;
-                      const color =
-                        acc.type === "mpesa"
-                          ? "border-red-500/50 bg-red-500/5"
-                          : acc.type === "emola"
-                          ? "border-orange-500/50 bg-orange-500/5"
-                          : "border-purple-500/50 bg-purple-500/5";
-                      const dotColor =
-                        acc.type === "mpesa" ? "bg-red-600" : acc.type === "emola" ? "bg-orange-500" : "bg-purple-600";
-                      return (
-                        <button
-                          key={acc.id}
-                          onClick={() => { setSelectedAccountId(acc.id); setPixKey(acc.phone); }}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${
-                            isSelected ? color : "border-zinc-800 hover:border-zinc-600"
-                          }`}
-                        >
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ${dotColor}`}>
-                            {acc.type === "mpesa" ? "M" : acc.type === "emola" ? "E" : "P"}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-white leading-tight">{METHOD_LABELS[acc.type]}</p>
-                            <p className="text-xs text-zinc-400">{acc.phone}</p>
-                          </div>
-                          {isSelected && (
-                            <Check className={`w-4 h-4 shrink-0 ${
-                              acc.type === "mpesa" ? "text-red-400" : acc.type === "emola" ? "text-orange-400" : "text-purple-400"
-                            }`} />
-                          )}
-                        </button>
-                      );
-                    })}
+                  )}
+                </div>
+
+                <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 px-3 py-2">
+                  <p className="text-[10px] text-blue-300 leading-relaxed">
+                    <span className="font-bold text-blue-400">Dicas:</span> Documentos visíveis, bem iluminados e sem cortes. Verificação em 1-3 dias úteis.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" onClick={() => setWithdrawStep(1)}
+                    className="h-11 border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-500 bg-transparent">
+                    ← Voltar
+                  </Button>
+                  <Button onClick={() => setWithdrawStep(3)}
+                    className={`h-11 text-white ${METHOD_COLORS[withdrawMethod]}`}>
+                    Próximo →
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {/* ── STEP 3: Revisão e Confirmação ── */}
+            {withdrawStep === 3 && (
+              <>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 divide-y divide-zinc-800">
+                  <div className="px-4 py-3 flex justify-between items-center">
+                    <span className="text-xs text-zinc-400">Método</span>
+                    <span className="text-sm font-semibold text-white">{METHOD_LABELS[withdrawMethod]}</span>
                   </div>
-                );
-              })()}
-            </div>
-
-            {/* Identity Verification */}
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-bold text-amber-400">Verificação de Identidade Necessária</p>
-                <p className="text-[11px] text-amber-300/70 mt-0.5">Para realizar seu primeiro saque, precisamos confirmar sua identidade. Envie os documentos abaixo junto com sua solicitação.</p>
-              </div>
-            </div>
-
-            {/* Documentos de Identidade */}
-            <div className="rounded-xl border border-zinc-800 overflow-hidden">
-              <button
-                onClick={() => setDocsOpen(!docsOpen)}
-                className="w-full flex items-center justify-between px-4 py-3 bg-zinc-900/50 hover:bg-zinc-900 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-purple-400" />
-                  <div className="text-left">
-                    <p className="text-sm font-semibold text-white">Documentos de Identidade <span className="text-red-400">*</span></p>
-                    <p className="text-[11px] text-zinc-500">
-                      {[idFront, idBack, selfieFile].filter(Boolean).length}/3 documentos enviados
-                    </p>
+                  <div className="px-4 py-3 flex justify-between items-center">
+                    <span className="text-xs text-zinc-400">Conta</span>
+                    <span className="text-sm font-semibold text-white">{pixKey}</span>
+                  </div>
+                  <div className="px-4 py-3 flex justify-between items-center">
+                    <span className="text-xs text-zinc-400">Valor solicitado</span>
+                    <span className="text-sm font-semibold text-white">
+                      {amount ? new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2 }).format(parseFloat(amount)) + " MZN" : "—"}
+                    </span>
+                  </div>
+                  <div className="px-4 py-3 flex justify-between items-center">
+                    <span className="text-xs text-zinc-400">Taxa (10%)</span>
+                    <span className="text-sm font-semibold text-red-400">
+                      − {amount ? new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2 }).format(parseFloat(amount) * 0.1) + " MZN" : "—"}
+                    </span>
+                  </div>
+                  <div className="px-4 py-3 flex justify-between items-center bg-zinc-900/60 rounded-b-xl">
+                    <span className="text-xs font-bold text-zinc-300">Você receberá</span>
+                    <span className="text-base font-bold text-emerald-400">
+                      {amount ? new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2 }).format(parseFloat(amount) * 0.9) + " MZN" : "—"}
+                    </span>
                   </div>
                 </div>
-                {docsOpen ? <ChevronUp className="w-4 h-4 text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-zinc-400" />}
-              </button>
 
-              {docsOpen && (
-                <div className="px-4 py-3 space-y-4 bg-zinc-950/30">
-                  {/* ID front + back */}
-                  <div>
-                    <p className="text-xs font-medium text-zinc-300 mb-2">Documento de Identidade <span className="text-red-400">*</span></p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {/* Front */}
-                      <div>
-                        <p className="text-[10px] text-zinc-500 mb-1">Frente</p>
-                        <input ref={idFrontRef} type="file" accept="image/jpg,image/jpeg,image/png" className="hidden" onChange={e => setIdFront(e.target.files?.[0] || null)} />
-                        <button
-                          onClick={() => idFrontRef.current?.click()}
-                          className={`w-full border-2 border-dashed rounded-lg py-4 flex flex-col items-center gap-1 transition-colors ${idFront ? "border-purple-500/50 bg-purple-500/5" : "border-zinc-700 hover:border-zinc-500"}`}
-                        >
-                          {idFront ? <Check className="w-5 h-5 text-purple-400" /> : <FileText className="w-5 h-5 text-zinc-500" />}
-                          <p className="text-[10px] text-zinc-400 text-center">{idFront ? idFront.name.slice(0, 14) + "…" : "Clique para enviar"}</p>
-                          {!idFront && <p className="text-[9px] text-zinc-600">JPG, JPEG ou PNG (máx. 5MB)</p>}
-                        </button>
-                      </div>
-                      {/* Back */}
-                      <div>
-                        <p className="text-[10px] text-zinc-500 mb-1">Verso</p>
-                        <input ref={idBackRef} type="file" accept="image/jpg,image/jpeg,image/png" className="hidden" onChange={e => setIdBack(e.target.files?.[0] || null)} />
-                        <button
-                          onClick={() => idBackRef.current?.click()}
-                          className={`w-full border-2 border-dashed rounded-lg py-4 flex flex-col items-center gap-1 transition-colors ${idBack ? "border-purple-500/50 bg-purple-500/5" : "border-zinc-700 hover:border-zinc-500"}`}
-                        >
-                          {idBack ? <Check className="w-5 h-5 text-purple-400" /> : <FileText className="w-5 h-5 text-zinc-500" />}
-                          <p className="text-[10px] text-zinc-400 text-center">{idBack ? idBack.name.slice(0, 14) + "…" : "Clique para enviar"}</p>
-                          {!idBack && <p className="text-[9px] text-zinc-600">JPG, JPEG ou PNG (máx. 5MB)</p>}
-                        </button>
-                      </div>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3 space-y-1.5">
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">Documentos</p>
+                  {[
+                    { label: "BI / Passaporte (Frente)", file: idFront },
+                    { label: "BI / Passaporte (Verso)", file: idBack },
+                    { label: "Selfie com Documento", file: selfieFile },
+                    { label: "Comprovativo de Residência", file: proofOfAddress },
+                  ].map(({ label, file }) => (
+                    <div key={label} className="flex items-center justify-between">
+                      <span className="text-[11px] text-zinc-400">{label}</span>
+                      {file
+                        ? <span className="flex items-center gap-1 text-[11px] text-emerald-400"><Check className="w-3 h-3" /> Enviado</span>
+                        : <span className="text-[11px] text-zinc-600">Não enviado</span>}
                     </div>
-                  </div>
-
-                  {/* Selfie */}
-                  <div>
-                    <p className="text-xs font-medium text-zinc-300 mb-2">Selfie com o Documento <span className="text-red-400">*</span></p>
-                    <input ref={selfieRef} type="file" accept="image/jpg,image/jpeg,image/png" className="hidden" onChange={e => setSelfieFile(e.target.files?.[0] || null)} />
-                    <button
-                      onClick={() => selfieRef.current?.click()}
-                      className={`w-full border-2 border-dashed rounded-lg py-5 flex flex-col items-center gap-1.5 transition-colors ${selfieFile ? "border-purple-500/50 bg-purple-500/5" : "border-zinc-700 hover:border-zinc-500"}`}
-                    >
-                      {selfieFile ? <Check className="w-6 h-6 text-purple-400" /> : <User className="w-6 h-6 text-zinc-500" />}
-                      <p className="text-[11px] text-zinc-400">{selfieFile ? selfieFile.name.slice(0, 20) + "…" : "Clique para enviar selfie"}</p>
-                      {!selfieFile && <p className="text-[10px] text-zinc-600">JPG, JPEG ou PNG (máx. 5MB)</p>}
-                    </button>
-                  </div>
+                  ))}
                 </div>
-              )}
-            </div>
 
-            {/* Comprovativo de Residência */}
-            <div className="rounded-xl border border-zinc-800 overflow-hidden">
-              <button
-                onClick={() => setResidenceOpen(!residenceOpen)}
-                className="w-full flex items-center justify-between px-4 py-3 bg-zinc-900/50 hover:bg-zinc-900 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Home className="w-4 h-4 text-purple-400" />
-                  <div className="text-left">
-                    <p className="text-sm font-semibold text-white">Comprovativo de Residência <span className="text-red-400">*</span></p>
-                    <p className="text-[11px] text-zinc-500">{proofOfAddress ? "1/1 documento enviado" : "0/1 documento enviado"}</p>
-                  </div>
-                </div>
-                {residenceOpen ? <ChevronUp className="w-4 h-4 text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-zinc-400" />}
-              </button>
-
-              {residenceOpen && (
-                <div className="px-4 py-3 bg-zinc-950/30">
-                  <input ref={proofRef} type="file" accept="image/jpg,image/jpeg,image/png" className="hidden" onChange={e => setProofOfAddress(e.target.files?.[0] || null)} />
-                  <button
-                    onClick={() => proofRef.current?.click()}
-                    className={`w-full border-2 border-dashed rounded-lg py-5 flex flex-col items-center gap-1.5 transition-colors ${proofOfAddress ? "border-purple-500/50 bg-purple-500/5" : "border-zinc-700 hover:border-zinc-500"}`}
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" onClick={() => setWithdrawStep(2)}
+                    className="h-11 border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-500 bg-transparent">
+                    ← Voltar
+                  </Button>
+                  <Button
+                    onClick={() => { setShowWithdrawForm(false); setShowWithdrawDialog(true); setWithdrawStep(1); }}
+                    disabled={!amount || !pixKey}
+                    className={`h-11 text-white ${METHOD_COLORS[withdrawMethod]}`}
                   >
-                    {proofOfAddress ? <Check className="w-6 h-6 text-purple-400" /> : <Upload className="w-6 h-6 text-zinc-500" />}
-                    <p className="text-[11px] text-zinc-400">{proofOfAddress ? proofOfAddress.name.slice(0, 20) + "…" : "Clique para enviar"}</p>
-                    {!proofOfAddress && <p className="text-[10px] text-zinc-600">JPG, JPEG ou PNG (máx. 5MB)</p>}
-                  </button>
+                    <DollarSign className="w-4 h-4 mr-1" />
+                    Sacar
+                  </Button>
                 </div>
-              )}
-            </div>
-
-            {/* Tip */}
-            <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 px-3 py-2.5">
-              <p className="text-[11px] text-blue-300 leading-relaxed">
-                <span className="font-bold text-blue-400">Dicas:</span> Certifique-se de que todos os documentos estão visíveis, bem iluminados e sem cortes. A verificação leva 1-3 dias úteis.
-              </p>
-            </div>
-
-            {/* Fee summary */}
-            <div className="space-y-1 border-t border-zinc-800 pt-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-zinc-400">Taxa de Saque:</span>
-                <span className="font-semibold text-white">10%</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-zinc-400">Você receberá:</span>
-                <span className="font-bold text-emerald-400">
-                  {amount
-                    ? new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2 }).format(parseFloat(amount) * 0.9) + " MZN"
-                    : "0,00 MZN"}
-                </span>
-              </div>
-            </div>
-
-            <Button
-              onClick={() => { setShowWithdrawForm(false); setShowWithdrawDialog(true); }}
-              disabled={!amount || !pixKey}
-              className={`w-full text-white h-11 ${METHOD_COLORS[withdrawMethod]}`}
-            >
-              <DollarSign className="w-4 h-4 mr-1" />
-              Sacar
-            </Button>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
