@@ -87,7 +87,7 @@ export default function Sales() {
         product?.name || "Produto Removido",
         sale.customerEmail || "",
         ((sale.amount || 0) / 100).toFixed(2),
-        sale.paymentMethod || (sale.paypalOrderId ? "paypal" : "—"),
+        (sale as any).paymentMethod || (sale.paypalOrderId ? "paypal" : "—"),
         sale.status,
         sale.createdAt ? format(new Date(sale.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "",
       ];

@@ -82,6 +82,7 @@ Preferred communication style: Simple, everyday language.
 - `NEON_DATABASE_URL`: Neon PostgreSQL connection string ✅
 - `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`: Web push notification keys ✅
 - `DATABASE_URL`: Replit-managed Postgres (not used — app uses NEON_DATABASE_URL) ✅
+- `RESEND_API_KEY`: Resend transactional email API key ✅
 
 ### Secrets that still need to be added
 - `FIREBASE_PRIVATE_KEY`: Firebase service account private key (needed for server-side auth token verification)
@@ -91,6 +92,18 @@ Preferred communication style: Simple, everyday language.
 - `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` / `PAYPAL_WEBHOOK_ID`: PayPal (configured per-user via the app's Settings UI)
 - `FACEBOOK_PIXEL_ID` / `FACEBOOK_ACCESS_TOKEN`: Meta/Facebook pixel tracking
 - `UTMIFY_TOKEN`: UTMify analytics token
+- `EMAIL_FROM`: Sender address for Resend emails (e.g. `Meteorfy <noreply@yourdomain.com>`). Requires a verified domain in Resend. Defaults to `onboarding@resend.dev` (test only).
+
+### Email System (Resend)
+- **Service file**: `server/email.ts` — Resend client + 4 HTML email templates
+- **NOTE**: Resend Replit integration was dismissed by user; API key stored manually as `RESEND_API_KEY` secret.
+- Triggered fire-and-forget (non-blocking) from `server/routes.ts` at 4 points:
+  1. **PayPal capture** → buyer gets "Pagamento confirmado" + seller gets "Nova Venda"
+  2. **Withdrawal requested** → seller gets "Pedido de saque recebido" (pending)
+  3. **Withdrawal approved** (admin) → seller gets "Saque aprovado"
+  4. **Withdrawal rejected** (admin) → seller gets "Saque recusado"
+- Seller email address is resolved via `adminAuth.getUser(userId)` (Firebase Admin SDK)
+- **Production**: Set `EMAIL_FROM` to a Resend-verified domain address to avoid deliverability issues
 
 ## Dev Startup
 - Workflow: `Start application` runs `npm run dev`

@@ -11,6 +11,11 @@ import { getVapidPublicKey, saveSubscription } from "./services/notification";
 
 import { registerTrackingRoutes } from "./trackingRoutes";
 import { registerChatRoutes } from "./chat";
+import { sendBuyerConfirmation, sendSellerNewSale, sendWithdrawalUpdate, sendWithdrawalReceived } from "./email";
+
+function fmtUsd(cents: number) { return `$${(cents / 100).toFixed(2)} USD`; }
+function fmtMzn(minor: number) { return `MZN ${(minor / 100).toFixed(2)}`; }
+function methodLabel(m: string) { return m === "mpesa" ? "M-Pesa" : m === "emola" ? "e-Mola" : m === "paypal" ? "PayPal" : m; }
 
 const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
@@ -585,6 +590,38 @@ export async function registerRoutes(
       const now = new Date();
       const isTest = (settings.environment || "production") === "sandbox";
       const product = sale.productId ? await storage.getProduct(Number(sale.productId)) : null;
+
+      // ── Email notifications (fire-and-forget) ──
+      const emailOrderId = String(req.params.orderId).slice(-8);
+      const emailAmount  = fmtUsd(sale.amount || 0);
+      const emailProduct = product?.name || "Produto";
+      if (sale.customerEmail) {
+        sendBuyerConfirmation({
+          to: sale.customerEmail,
+          productName: emailProduct,
+          amount: emailAmount,
+          orderId: emailOrderId,
+          paymentMethod: "PayPal",
+        }).catch((e: any) => console.error("[EMAIL] buyer confirmation:", e?.message));
+      }
+      if (sale.userId) {
+        adminAuth.getUser(String(sale.userId))
+          .then((u) => {
+            if (u.email) {
+              sendSellerNewSale({
+                to: u.email,
+                productName: emailProduct,
+                amount: emailAmount,
+                buyerEmail: sale.customerEmail || "—",
+                orderId: emailOrderId,
+                paymentMethod: "PayPal",
+              }).catch((e: any) => console.error("[EMAIL] seller new sale:", e?.message));
+            }
+          })
+          .catch((e: any) => console.error("[EMAIL] seller lookup:", e?.message));
+      }
+      // ────────────────────────────────────────────
+
       const saleCurrency = sale.paypalCurrency || "USD";
       const saleAmountMinor = sale.paypalAmountMinor || sale.amount || 0;
       const trackingData = {
@@ -727,6 +764,22 @@ export async function registerRoutes(
         pixKeyType: pixKeyType || 'email'
       });
 
+      // ── Email: withdrawal received (fire-and-forget) ──
+      adminAuth.getUser(userId)
+        .then((u) => {
+          if (u.email) {
+            sendWithdrawalReceived({
+              to: u.email,
+              amount: fmtMzn(withdrawal.amount),
+              method: methodLabel(withdrawal.pixKeyType || pixKeyType || ""),
+              pixKey: withdrawal.pixKey || pixKey,
+              withdrawalId: withdrawal.id,
+            }).catch((e: any) => console.error("[EMAIL] withdrawal received:", e?.message));
+          }
+        })
+        .catch((e: any) => console.error("[EMAIL] user lookup (withdrawal):", e?.message));
+      // ─────────────────────────────────────────────────
+
       res.status(201).json(withdrawal);
     } catch (err: any) {
       console.error("Error creating withdrawal:", err);
@@ -756,6 +809,25 @@ export async function registerRoutes(
       const { adminNote } = req.body;
       const withdrawal = await storage.updateWithdrawalStatus(id, 'approved', adminNote);
       res.json(withdrawal);
+      // ── Email: withdrawal approved (fire-and-forget) ──
+      if (withdrawal?.userId) {
+        adminAuth.getUser(String(withdrawal.userId))
+          .then((u) => {
+            if (u.email) {
+              sendWithdrawalUpdate({
+                to: u.email,
+                status: "approved",
+                amount: fmtMzn(withdrawal.amount),
+                method: methodLabel(withdrawal.pixKeyType || ""),
+                pixKey: withdrawal.pixKey || "",
+                adminNote: adminNote || undefined,
+                withdrawalId: withdrawal.id,
+              }).catch((e: any) => console.error("[EMAIL] withdrawal approved:", e?.message));
+            }
+          })
+          .catch((e: any) => console.error("[EMAIL] user lookup (approve):", e?.message));
+      }
+      // ─────────────────────────────────────────────────
     } catch (err: any) {
       console.error("Error approving withdrawal:", err);
       res.status(500).json({ message: err.message || "Erro ao aprovar saque" });
@@ -770,6 +842,25 @@ export async function registerRoutes(
       const { adminNote } = req.body;
       const withdrawal = await storage.updateWithdrawalStatus(id, 'rejected', adminNote);
       res.json(withdrawal);
+      // ── Email: withdrawal rejected (fire-and-forget) ──
+      if (withdrawal?.userId) {
+        adminAuth.getUser(String(withdrawal.userId))
+          .then((u) => {
+            if (u.email) {
+              sendWithdrawalUpdate({
+                to: u.email,
+                status: "rejected",
+                amount: fmtMzn(withdrawal.amount),
+                method: methodLabel(withdrawal.pixKeyType || ""),
+                pixKey: withdrawal.pixKey || "",
+                adminNote: adminNote || undefined,
+                withdrawalId: withdrawal.id,
+              }).catch((e: any) => console.error("[EMAIL] withdrawal rejected:", e?.message));
+            }
+          })
+          .catch((e: any) => console.error("[EMAIL] user lookup (reject):", e?.message));
+      }
+      // ─────────────────────────────────────────────────
     } catch (err: any) {
       console.error("Error rejecting withdrawal:", err);
       res.status(500).json({ message: err.message || "Erro ao rejeitar saque" });
@@ -856,7 +947,7 @@ export async function registerRoutes(
   app.delete("/api/bank-accounts/:id", requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
-      await storage.deleteBankAccount(parseInt(req.params.id), userId);
+      await storage.deleteBankAccount(parseInt(String(req.params.id)), userId);
       res.status(204).end();
     } catch (err: any) {
       res.status(500).json({ message: err.message });
