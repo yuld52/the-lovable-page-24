@@ -136,6 +136,7 @@ export const settings = pgTable("settings", {
   trackCheckout: boolean("track_checkout").default(true),
   trackPurchaseRefund: boolean("track_purchase_refund").default(true),
   webhookUrl: text("webhook_url"),
+  webhookEvents: text("webhook_events").default("sale.pending,sale.paid,sale.refunded"),
 });
 
 export type CheckoutLanguage = "pt" | "en" | "es" | "AUTO";

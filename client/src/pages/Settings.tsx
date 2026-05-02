@@ -1,6 +1,6 @@
 import { Layout } from "@/components/Layout";
 import { useSettings, useUpdateSettings } from "@/hooks/use-settings";
-import { Loader2, X, Save, CheckCircle2 } from "lucide-react";
+import { Loader2, Save, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { useUser } from "@/hooks/use-user";
@@ -9,6 +9,26 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { NotificationModal } from "@/components/NotificationModal";
+import { Checkbox } from "@/components/ui/checkbox";
+
+// All events the webhook can fire
+const WEBHOOK_EVENTS = [
+  {
+    id: "sale.pending",
+    label: "Pedido criado",
+    description: "Disparado quando um cliente inicia o pagamento",
+  },
+  {
+    id: "sale.paid",
+    label: "Pagamento confirmado",
+    description: "Disparado quando o pagamento é aprovado com sucesso",
+  },
+  {
+    id: "sale.refunded",
+    label: "Reembolso realizado",
+    description: "Disparado quando uma venda é reembolsada",
+  },
+];
 
 type Integration = {
   id: string;
@@ -30,6 +50,7 @@ const defaultLocal = {
   facebookAccessToken: "",
   utmfyToken: "",
   webhookUrl: "",
+  webhookEvents: "sale.pending,sale.paid,sale.refunded",
   environment: "production",
 };
 
@@ -131,6 +152,7 @@ export default function Settings() {
         facebookAccessToken: settings.facebookAccessToken || "",
         utmfyToken: settings.utmfyToken || "",
         webhookUrl: (settings as any).webhookUrl || "",
+        webhookEvents: (settings as any).webhookEvents || "sale.pending,sale.paid,sale.refunded",
         environment: settings.environment || "production",
       };
       setLocalSettings(s);
@@ -155,6 +177,18 @@ export default function Settings() {
     } catch (error: any) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     }
+  };
+
+  // Webhook event helpers
+  const getSelectedEvents = (eventsStr: string): string[] =>
+    eventsStr ? eventsStr.split(",").filter(Boolean) : [];
+
+  const toggleEvent = (eventId: string) => {
+    const current = getSelectedEvents(modalSettings.webhookEvents);
+    const updated = current.includes(eventId)
+      ? current.filter((e) => e !== eventId)
+      : [...current, eventId];
+    setModalSettings((prev) => ({ ...prev, webhookEvents: updated.join(",") }));
   };
 
   if (loading || isLoadingSettings) {
@@ -226,6 +260,55 @@ export default function Settings() {
                   )}
                 </div>
               ))}
+
+              {/* Webhook-specific: event selection */}
+              {activeIntegration.id === "webhook" && (
+                <div className="space-y-2.5 pt-1">
+                  <div className="border-t border-zinc-800 pt-3">
+                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">
+                      Eventos a receber
+                    </p>
+                    <div className="space-y-2">
+                      {WEBHOOK_EVENTS.map((evt) => {
+                        const selected = getSelectedEvents(modalSettings.webhookEvents).includes(evt.id);
+                        return (
+                          <label
+                            key={evt.id}
+                            className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                              selected
+                                ? "border-purple-500/50 bg-purple-500/5"
+                                : "border-zinc-800 hover:border-zinc-700"
+                            }`}
+                            onClick={() => toggleEvent(evt.id)}
+                          >
+                            <Checkbox
+                              checked={selected}
+                              onCheckedChange={() => toggleEvent(evt.id)}
+                              className="mt-0.5 border-zinc-600 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-white leading-tight">
+                                {evt.label}
+                              </p>
+                              <p className="text-xs text-zinc-500 mt-0.5 leading-snug">
+                                {evt.description}
+                              </p>
+                              <code className="text-[10px] text-purple-400 font-mono mt-1 inline-block">
+                                {evt.id}
+                              </code>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {getSelectedEvents(modalSettings.webhookEvents).length === 0 && (
+                      <p className="text-xs text-amber-400 mt-2">
+                        Seleccione pelo menos um evento para receber notificações.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 mt-4">

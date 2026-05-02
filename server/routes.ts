@@ -480,8 +480,9 @@ export async function registerRoutes(
         }).catch((e) => console.error("[UTMIFY] waiting_payment error:", e));
       }
 
-      // Webhook — sale.pending
-      if (settings?.webhookUrl) {
+      // Webhook — sale.pending (only if event is enabled)
+      const allowedPendingEvents = (settings as any)?.webhookEvents?.split(",") ?? ["sale.pending", "sale.paid", "sale.refunded"];
+      if (settings?.webhookUrl && allowedPendingEvents.includes("sale.pending")) {
         sendWebhookNotification(settings.webhookUrl, "sale.pending", {
           id: sale?.id ?? 0,
           status: "pending",
@@ -559,8 +560,9 @@ export async function registerRoutes(
         }).catch((e) => console.error("[UTMIFY] paid error:", e));
       }
 
-      // Webhook — sale.paid
-      if (settings?.webhookUrl) {
+      // Webhook — sale.paid (only if event is enabled)
+      const allowedPaidEvents = (settings as any)?.webhookEvents?.split(",") ?? ["sale.pending", "sale.paid", "sale.refunded"];
+      if (settings?.webhookUrl && allowedPaidEvents.includes("sale.paid")) {
         sendWebhookNotification(settings.webhookUrl, "sale.paid", {
           id: sale.id,
           status: "paid",

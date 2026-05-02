@@ -451,8 +451,8 @@ export class NeonStorage {
           };
           
           const insertResult = await client.query(`
-            INSERT INTO settings (user_id, paypal_client_id, paypal_client_secret, paypal_webhook_id, facebook_pixel_id, facebook_access_token, utmfy_token, environment, meta_enabled, utmfy_enabled, track_top_funnel, track_checkout, track_purchase_refund, sales_notifications, webhook_url)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            INSERT INTO settings (user_id, paypal_client_id, paypal_client_secret, paypal_webhook_id, facebook_pixel_id, facebook_access_token, utmfy_token, environment, meta_enabled, utmfy_enabled, track_top_funnel, track_checkout, track_purchase_refund, sales_notifications, webhook_url, webhook_events)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
             RETURNING *
           `, [
             settingsData.user_id,
@@ -470,6 +470,7 @@ export class NeonStorage {
             settingsData.track_purchase_refund,
             settingsData.sales_notifications,
             settingsData.webhook_url || null,
+            settingsData.webhook_events || 'sale.pending,sale.paid,sale.refunded',
           ]);
           
           return toCamelCase(insertResult.rows[0]);
