@@ -1,20 +1,31 @@
 import { useUser } from "@/hooks/use-user";
 import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
+import { signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { UserCircle, Mail, Calendar, LogOut, HelpCircle, Crown, CheckCircle2, Clock, ArrowLeft } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { UserCircle, Mail, Calendar, LogOut, HelpCircle, Crown, CheckCircle2, Clock, ArrowLeft, KeyRound, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { SalesBadges } from "@/components/SalesBadges";
 
 export default function Profile() {
   const { user, loading } = useUser();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -28,6 +39,51 @@ export default function Profile() {
       setLocation("/");
     } catch (error) {
       console.error("Erro ao sair:", error);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast({ title: "Erro", description: "Preencha todos os campos.", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast({ title: "Erro", description: "A nova senha deve ter pelo menos 6 caracteres.", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Erro", description: "As senhas não coincidem.", variant: "destructive" });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser || !currentUser.email) throw new Error("Utilizador não autenticado");
+
+      // Reautenticar antes de alterar a senha
+      const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
+      await reauthenticateWithCredential(currentUser, credential);
+      await updatePassword(currentUser, newPassword);
+
+      toast({ title: "Senha alterada!", description: "A sua senha foi actualizada com sucesso." });
+      setShowPasswordDialog(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      const code = err?.code || "";
+      if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+        toast({ title: "Senha actual incorrecta", description: "Verifique a sua senha actual e tente novamente.", variant: "destructive" });
+      } else if (code === "auth/weak-password") {
+        toast({ title: "Senha fraca", description: "Use pelo menos 6 caracteres.", variant: "destructive" });
+      } else if (code === "auth/too-many-requests") {
+        toast({ title: "Muitas tentativas", description: "Aguarde alguns minutos e tente novamente.", variant: "destructive" });
+      } else {
+        toast({ title: "Erro", description: err?.message || "Não foi possível alterar a senha.", variant: "destructive" });
+      }
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -179,6 +235,25 @@ export default function Profile() {
                 <span className="text-sm text-zinc-300 text-right">{lastLogin}</span>
               </div>
 
+              <div className="flex items-center justify-between py-3 border-b border-zinc-800/50">
+                <div className="flex items-center gap-3">
+                  <KeyRound className="w-4 h-4 text-zinc-500" />
+                  <div>
+                    <p className="text-sm font-medium text-white">Senha</p>
+                    <p className="text-xs text-zinc-500">Altere a sua senha de acesso</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                  onClick={() => setShowPasswordDialog(true)}
+                >
+                  <KeyRound className="w-3.5 h-3.5 mr-1.5" />
+                  Redefinir Senha
+                </Button>
+              </div>
+
               <div className="flex items-center justify-between pt-2">
                 <div className="flex items-center gap-3">
                   <HelpCircle className="w-4 h-4 text-zinc-500" />
@@ -213,6 +288,129 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      {/* Password Reset Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={(open) => {
+        if (!open) {
+          setCurrentPassword("");
+          setNewPassword("");
+          setConfirmPassword("");
+        }
+        setShowPasswordDialog(open);
+      }}>
+        <DialogContent className="bg-[#18181b] border border-zinc-800 text-white max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                <KeyRound className="w-5 h-5 text-purple-400" />
+              </div>
+              <div>
+                <DialogTitle className="text-white text-lg">Redefinir Senha</DialogTitle>
+                <DialogDescription className="text-zinc-400 text-sm">
+                  Insira a sua senha actual e escolha uma nova
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-2">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                Senha Actual
+              </label>
+              <div className="relative">
+                <Input
+                  type={showCurrent ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Digite a sua senha actual"
+                  className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-purple-500 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrent(!showCurrent)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                >
+                  {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                Nova Senha
+              </label>
+              <div className="relative">
+                <Input
+                  type={showNew ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-purple-500 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNew(!showNew)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                >
+                  {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                Confirmar Nova Senha
+              </label>
+              <div className="relative">
+                <Input
+                  type={showConfirm ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repita a nova senha"
+                  className={`bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-purple-500 pr-10 ${
+                    confirmPassword && newPassword !== confirmPassword ? "border-red-500/70" : ""
+                  }`}
+                  onKeyDown={(e) => { if (e.key === "Enter") handlePasswordReset(); }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                >
+                  {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {confirmPassword && newPassword !== confirmPassword && (
+                <p className="text-xs text-red-400">As senhas não coincidem</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex gap-3 mt-4">
+            <Button
+              variant="ghost"
+              className="flex-1 text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-600"
+              onClick={() => setShowPasswordDialog(false)}
+              disabled={isChangingPassword}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="flex-1 bg-purple-600 hover:bg-purple-500 text-white"
+              onClick={handlePasswordReset}
+              disabled={isChangingPassword}
+            >
+              {isChangingPassword ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <KeyRound className="w-4 h-4 mr-2" />
+              )}
+              {isChangingPassword ? "Alterando..." : "Alterar Senha"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
