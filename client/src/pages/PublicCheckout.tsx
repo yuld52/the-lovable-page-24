@@ -808,7 +808,7 @@ export default function PublicCheckout() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.55)" }}>
           <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl bg-white">
             {/* Blue header */}
-            <div className="flex flex-col items-center justify-center gap-3 px-6 py-8" style={{ background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)" }}>
+            <div className="flex flex-col items-center justify-center gap-3 px-6 py-8" style={{ background: "linear-gradient(135deg, #16a34a 0%, #15803d 100%)" }}>
               <div className="w-14 h-14 rounded-full border-4 border-white/30 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 text-white animate-spin" />
               </div>
