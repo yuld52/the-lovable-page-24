@@ -280,6 +280,59 @@ export default function PublicCheckout() {
 
   const [formData, setFormData] = useState({ email: "", confirmEmail: "", name: "", surname: "", cpf: "", phone: "", cnpj: "" });
   const [showErrors, setShowErrors] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("");
+  const [mobilePhone, setMobilePhone] = useState("");
+  const [mobileSubmitting, setMobileSubmitting] = useState(false);
+
+  // Set default payment method when product loads
+  useEffect(() => {
+    if (product?.paymentMethods?.length && !selectedPaymentMethod) {
+      setSelectedPaymentMethod(product.paymentMethods[0]);
+    }
+  }, [product]);
+
+  // Submit mobile payment (mpesa / emola)
+  const handleMobileSubmit = async () => {
+    if (!formData.email || !formData.name) {
+      setShowErrors(true);
+      toast({ title: "Erro", description: "Preencha seu nome e e-mail para continuar.", variant: "destructive" });
+      return;
+    }
+    if (!mobilePhone) {
+      toast({ title: "Erro", description: "Insira o número de telemóvel.", variant: "destructive" });
+      return;
+    }
+    setMobileSubmitting(true);
+    try {
+      const totalUsdCents = calculateTotal();
+      const totalMinor = convertUsdCentsToCurrencyMinor(totalUsdCents, currency, usdToCurrencyRate);
+      const res = await fetch("/api/sales/mobile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          checkoutId: Number(checkoutData?.id),
+          productId: Number(product?.id),
+          currency,
+          totalUsdCents,
+          totalMinor,
+          paymentMethod: selectedPaymentMethod,
+          mobilePhone,
+          customerData: { email: formData.email, name: formData.name },
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast({ title: "Erro", description: data?.message || "Erro ao registar pedido.", variant: "destructive" });
+        return;
+      }
+      setIsPaid(true);
+      toast({ title: "Pedido registado!", description: "O seu pedido foi recebido. Aguarde confirmação de pagamento." });
+    } catch {
+      toast({ title: "Erro", description: "Sem ligação. Tente novamente.", variant: "destructive" });
+    } finally {
+      setMobileSubmitting(false);
+    }
+  };
 
   // Fixed: use String comparison to handle both number and string ids
   const calculateTotal = () => {
@@ -529,19 +582,122 @@ export default function PublicCheckout() {
                 ))}
               </div>
             )}
-            <div className="p-4 space-y-3">
-              <div className="mb-4">
-                <PayPalVisual
-                  clientId={paypalConfig?.clientId}
-                  currency={currency}
-                  environment={paypalConfig?.environment}
-                  createOrder={handleCreateOrder}
-                  onApprove={handleApprove}
-                  locale={activeLanguage === 'pt' ? 'pt_BR' : activeLanguage === 'es' ? 'es_ES' : 'en_US'}
-                />
-              </div>
-              <div className="pt-4 border-t border-gray-100">
-                <div className="flex justify-between items-center"><span className="font-bold text-xs">{t.total}</span><span className="font-bold text-lg" style={{ color: config.primaryColor }}>{moneyFromUsdCents(calculateTotal())}</span></div>
+            <div className="p-4 space-y-4">
+              {/* Payment method selector — only if product has multiple or mobile methods */}
+              {(() => {
+                const methods: string[] = product?.paymentMethods || ["paypal"];
+                const hasMobile = methods.some(m => m === "mpesa" || m === "emola");
+                const hasPaypal = methods.includes("paypal");
+                const showSelector = methods.length > 1 || hasMobile;
+
+                const METHOD_META: Record<string, { label: string; sub: string; badge: string; badgeBg: string; letter: string }> = {
+                  paypal: { label: "PayPal", sub: "Pagamento internacional", badge: "PP", badgeBg: "#003087", letter: "P" },
+                  mpesa:  { label: "M-Pesa", sub: "Carteira móvel Moçambique", badge: "M",  badgeBg: "#e11d48", letter: "M" },
+                  emola:  { label: "e-Mola", sub: "Carteira móvel Moçambique", badge: "E",  badgeBg: "#f97316", letter: "E" },
+                };
+
+                return (
+                  <>
+                    {showSelector && (
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold" style={{ color: config.textColor }}>
+                          Selecione o método de pagamento <span className="text-red-500">*</span>
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {methods.filter(m => METHOD_META[m]).map(m => {
+                            const meta = METHOD_META[m];
+                            const isSelected = selectedPaymentMethod === m;
+                            return (
+                              <button
+                                key={m}
+                                onClick={() => setSelectedPaymentMethod(m)}
+                                className={`flex flex-col items-center gap-2 py-4 px-3 rounded-xl border-2 transition-all ${
+                                  isSelected
+                                    ? "border-[var(--primary)] bg-[var(--primary-soft)]"
+                                    : "border-gray-200 hover:border-gray-300 bg-white"
+                                }`}
+                                style={{
+                                  ["--primary" as any]: config.primaryColor,
+                                  ["--primary-soft" as any]: getSoftBackgroundColor(config.primaryColor),
+                                  borderColor: isSelected ? config.primaryColor : undefined,
+                                  backgroundColor: isSelected ? getSoftBackgroundColor(config.primaryColor) : undefined,
+                                }}
+                              >
+                                <div className="flex items-center gap-2 w-full">
+                                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${isSelected ? "border-[4px]" : "border-gray-300"}`}
+                                    style={{ borderColor: isSelected ? config.primaryColor : undefined }}>
+                                    {isSelected && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.primaryColor }} />}
+                                  </div>
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: meta.badgeBg }}>
+                                    {meta.letter}
+                                  </div>
+                                  <span className="text-sm font-semibold" style={{ color: config.textColor }}>{meta.label}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Mobile phone input for M-Pesa / e-Mola */}
+                    {(selectedPaymentMethod === "mpesa" || selectedPaymentMethod === "emola") && (
+                      <div className="space-y-1">
+                        <label className="block text-sm font-semibold" style={{ color: config.textColor }}>
+                          Número {selectedPaymentMethod === "mpesa" ? "M-Pesa" : "e-Mola"} <span className="text-red-500">*</span>
+                        </label>
+                        <PhoneInput
+                          country="mz"
+                          value={mobilePhone}
+                          onChange={setMobilePhone}
+                          preferredCountries={["mz"]}
+                          inputStyle={{
+                            width: "100%",
+                            height: "44px",
+                            borderRadius: "6px",
+                            border: "1px solid #d1d5db",
+                            backgroundColor: config.backgroundColor,
+                            color: config.textColor,
+                            fontSize: "14px",
+                          }}
+                          containerStyle={{ width: "100%" }}
+                          buttonStyle={{ backgroundColor: "transparent", border: "1px solid #d1d5db", borderRight: "none", borderRadius: "6px 0 0 6px" }}
+                        />
+                        <Button
+                          onClick={handleMobileSubmit}
+                          disabled={mobileSubmitting || !mobilePhone}
+                          className="w-full h-12 text-base font-bold mt-2 text-white"
+                          style={{ backgroundColor: config.primaryColor }}
+                        >
+                          {mobileSubmitting
+                            ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> A processar…</>
+                            : `Pagar ${moneyFromUsdCents(calculateTotal())} via ${selectedPaymentMethod === "mpesa" ? "M-Pesa" : "e-Mola"}`}
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* PayPal */}
+                    {(selectedPaymentMethod === "paypal" || (!hasMobile && hasPaypal)) && (
+                      <div>
+                        <PayPalVisual
+                          clientId={paypalConfig?.clientId}
+                          currency={currency}
+                          environment={paypalConfig?.environment}
+                          createOrder={handleCreateOrder}
+                          onApprove={handleApprove}
+                          locale={activeLanguage === 'pt' ? 'pt_BR' : activeLanguage === 'es' ? 'es_ES' : 'en_US'}
+                        />
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
+              <div className="pt-2 border-t border-gray-100">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-xs">{t.total}</span>
+                  <span className="font-bold text-lg" style={{ color: config.primaryColor }}>{moneyFromUsdCents(calculateTotal())}</span>
+                </div>
               </div>
             </div>
           </div>

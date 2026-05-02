@@ -413,6 +413,40 @@ export async function registerRoutes(
     }
   });
 
+  // Mobile payment (M-Pesa / e-Mola) — creates a pending sale
+  app.post("/api/sales/mobile", async (req, res) => {
+    try {
+      const { checkoutId, productId, currency, totalUsdCents, totalMinor, paymentMethod, mobilePhone, customerData } = req.body;
+      if (!checkoutId || !productId || !paymentMethod || !mobilePhone) {
+        return res.status(400).json({ message: "Dados incompletos" });
+      }
+      const validMethods = ["mpesa", "emola"];
+      if (!validMethods.includes(paymentMethod)) {
+        return res.status(400).json({ message: "Método de pagamento inválido" });
+      }
+      const checkout = await storage.getCheckoutPublic(Number(checkoutId));
+      const product = await storage.getProduct(Number(productId));
+      if (!checkout || !product) return res.status(404).json({ message: "Checkout/Produto não encontrado" });
+      if (product.status !== "approved") return res.status(403).json({ message: "Produto não aprovado" });
+
+      const sale = await storage.createSale({
+        checkoutId: Number(checkoutId),
+        productId: Number(productId),
+        userId: checkout.ownerId,
+        amount: totalUsdCents || 0,
+        status: "pending",
+        customerEmail: customerData?.email || null,
+      });
+
+      console.log(`[MOBILE PAYMENT] ${paymentMethod.toUpperCase()} sale created — id=${sale.id}, phone=${mobilePhone}, amount=${totalMinor} ${currency}`);
+
+      return res.json({ id: sale.id, status: "pending", paymentMethod, message: "Pedido registado. Aguarde confirmação do pagamento." });
+    } catch (err: any) {
+      console.error("Error creating mobile sale:", err);
+      return res.status(500).json({ message: err.message || "Erro ao registar pedido" });
+    }
+  });
+
   app.post("/api/paypal/create-order", async (req, res) => {
     try {
       const { createOrderBodySchema, createOrder } = await import("./paypal");
