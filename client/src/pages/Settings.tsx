@@ -26,9 +26,6 @@ type Integration = {
 };
 
 const defaultLocal = {
-  paypalClientId: "",
-  paypalClientSecret: "",
-  paypalWebhookId: "",
   facebookPixelId: "",
   facebookAccessToken: "",
   utmfyToken: "",
@@ -37,31 +34,6 @@ const defaultLocal = {
 };
 
 const integrations: Integration[] = [
-  {
-    id: "paypal",
-    name: "PayPal",
-    description: "Receba pagamentos via PayPal",
-    icon: "https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_111x69.jpg",
-    configured: (s) => !!s.paypalClientId && !!s.paypalClientSecret,
-    fields: [
-      {
-        key: "paypalClientId",
-        label: "Client ID",
-        placeholder: "Cole aqui o Client ID do PayPal",
-      },
-      {
-        key: "paypalClientSecret",
-        label: "Client Secret",
-        placeholder: "Cole aqui o Client Secret",
-        type: "password",
-      },
-      {
-        key: "paypalWebhookId",
-        label: "Webhook ID (opcional)",
-        placeholder: "ID do webhook PayPal",
-      },
-    ],
-  },
   {
     id: "webhook",
     name: "Integração Webhook",
@@ -118,7 +90,6 @@ const integrationIconFallback: Record<string, string> = {
   webhook: "🔗",
   meta: "📘",
   utmify: "📊",
-  paypal: "💳",
 };
 
 function IntegrationIcon({ integration }: { integration: Integration }) {
@@ -156,9 +127,6 @@ export default function Settings() {
   useEffect(() => {
     if (settings) {
       const s = {
-        paypalClientId: settings.paypalClientId || "",
-        paypalClientSecret: settings.paypalClientSecret || "",
-        paypalWebhookId: settings.paypalWebhookId || "",
         facebookPixelId: settings.facebookPixelId || "",
         facebookAccessToken: settings.facebookAccessToken || "",
         utmfyToken: settings.utmfyToken || "",
