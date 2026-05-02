@@ -719,8 +719,48 @@ export async function registerRoutes(
   app.get("/api/users-v2", requireAuth, async (req, res) => {
     if ((req as any).user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado." });
     try {
-      const list = await adminAuth.listUsers(1000);
-      res.json(list.users.map(u => ({ id: u.uid, email: u.email, username: u.displayName || u.email, createdAt: u.metadata.creationTime })));
+      // Collect unique user IDs from the DB (Firebase listUsers() requires service account credentials)
+      const conn = await getPool().connect();
+      let uidSet: Set<string>;
+      try {
+        const [s, c, sa, b] = await Promise.all([
+          conn.query(`SELECT DISTINCT user_id::text AS uid FROM settings  WHERE user_id IS NOT NULL`),
+          conn.query(`SELECT DISTINCT owner_id::text AS uid FROM checkouts WHERE owner_id IS NOT NULL`),
+          conn.query(`SELECT DISTINCT user_id::text AS uid FROM sales      WHERE user_id IS NOT NULL`),
+          conn.query(`SELECT DISTINCT user_id::text AS uid FROM bank_accounts WHERE user_id IS NOT NULL`),
+        ]);
+        uidSet = new Set<string>([
+          ...s.rows.map((r: any) => r.uid),
+          ...c.rows.map((r: any) => r.uid),
+          ...sa.rows.map((r: any) => r.uid),
+          ...b.rows.map((r: any) => r.uid),
+        ]);
+      } finally {
+        conn.release();
+      }
+
+      const uids = Array.from(uidSet);
+
+      // Try to enrich each UID with Firebase email/name
+      const users = await Promise.all(
+        uids.map(async (uid) => {
+          try {
+            const u = await adminAuth.getUser(uid);
+            return {
+              id: uid,
+              uid,
+              email: u.email || uid,
+              username: u.displayName || u.email || uid,
+              createdAt: u.metadata.creationTime,
+            };
+          } catch {
+            // Firebase lookup failed — return UID only
+            return { id: uid, uid, email: uid, username: uid, createdAt: null };
+          }
+        })
+      );
+
+      res.json(users);
     } catch (err: any) {
       console.error("Error listing users:", err);
       res.status(500).json({ message: err.message || "Erro ao listar usuários" });
