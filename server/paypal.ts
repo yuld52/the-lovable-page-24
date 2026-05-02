@@ -206,7 +206,17 @@ export const createOrderBodySchema = z.object({
   totalUsdCents: z.number().int().nonnegative(),
   totalMinor: z.number().int().nonnegative(),
   orderBumpProductIds: z.array(z.number().int().positive()).optional(),
-  customerData: z.any().optional(),
+  customerData: z.object({
+    email: z.string().optional(),
+    name: z.string().optional(),
+    phone: z.string().nullable().optional(),
+    document: z.string().nullable().optional(),
+  }).optional(),
+  utmSource: z.string().nullable().optional(),
+  utmMedium: z.string().nullable().optional(),
+  utmCampaign: z.string().nullable().optional(),
+  utmContent: z.string().nullable().optional(),
+  utmTerm: z.string().nullable().optional(),
 });
 
 export const refundBodySchema = z.object({

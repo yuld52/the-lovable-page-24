@@ -371,6 +371,7 @@ export async function registerRoutes(
   app.post("/api/paypal/create-order", async (req, res) => {
     try {
       const { createOrderBodySchema, createOrder } = await import("./paypal");
+      const { sendUtmifyOrder } = await import("./tracking");
       const body = createOrderBodySchema.parse(req.body);
       const checkout = await storage.getCheckoutPublic(body.checkoutId);
       const product = await storage.getProduct(body.productId);
@@ -392,7 +393,7 @@ export async function registerRoutes(
         { currency: body.currency, amountMinor: body.totalMinor, description: product.name }
       );
 
-      await storage.createSale({
+      const sale = await storage.createSale({
         checkoutId: body.checkoutId,
         productId: body.productId,
         userId: checkout.ownerId,
@@ -402,7 +403,42 @@ export async function registerRoutes(
         paypalOrderId: order.id,
         paypalCurrency: body.currency,
         paypalAmountMinor: body.totalMinor,
+        utmSource: body.utmSource || null,
+        utmMedium: body.utmMedium || null,
+        utmCampaign: body.utmCampaign || null,
+        utmContent: body.utmContent || null,
+        utmTerm: body.utmTerm || null,
       });
+
+      // Utmify — waiting_payment
+      if (settings?.utmfyToken) {
+        sendUtmifyOrder({
+          token: settings.utmfyToken,
+          orderId: String(sale?.id ?? order.id),
+          status: "waiting_payment",
+          paymentMethod: "paypal",
+          createdAt: new Date(),
+          approvedAt: null,
+          refundedAt: null,
+          currency: body.currency,
+          totalAmountMinor: body.totalMinor,
+          customer: {
+            name: body.customerData?.name || null,
+            email: body.customerData?.email || null,
+            phone: body.customerData?.phone || null,
+            document: body.customerData?.document || null,
+          },
+          products: [{ id: product.id, name: product.name, priceInCents: body.totalUsdCents }],
+          tracking: {
+            utmSource: body.utmSource || null,
+            utmMedium: body.utmMedium || null,
+            utmCampaign: body.utmCampaign || null,
+            utmContent: body.utmContent || null,
+            utmTerm: body.utmTerm || null,
+          },
+          isTest: (settings.environment || "production") === "sandbox",
+        }).catch((e) => console.error("[UTMIFY] waiting_payment error:", e));
+      }
 
       res.json({ id: order.id });
     } catch (err: any) {
@@ -414,6 +450,7 @@ export async function registerRoutes(
   app.post("/api/paypal/capture-order/:orderId", async (req, res) => {
     try {
       const { captureOrder } = await import("./paypal");
+      const { sendUtmifyOrder } = await import("./tracking");
       const sale = await storage.getSaleByPaypalOrderId(req.params.orderId);
       if (!sale) return res.status(404).json({ message: "Venda não encontrada" });
 
@@ -429,6 +466,39 @@ export async function registerRoutes(
       );
 
       await storage.updateSaleStatus(sale.id, "paid");
+
+      // Utmify — paid
+      if (settings?.utmfyToken) {
+        const product = sale.productId ? await storage.getProduct(Number(sale.productId)) : null;
+        const now = new Date();
+        sendUtmifyOrder({
+          token: settings.utmfyToken,
+          orderId: String(sale.id),
+          status: "paid",
+          paymentMethod: "paypal",
+          createdAt: sale.createdAt ? new Date(sale.createdAt) : now,
+          approvedAt: now,
+          refundedAt: null,
+          currency: sale.paypalCurrency || "USD",
+          totalAmountMinor: sale.paypalAmountMinor || sale.amount || 0,
+          customer: {
+            name: null,
+            email: sale.customerEmail || null,
+          },
+          products: product
+            ? [{ id: product.id, name: product.name, priceInCents: sale.amount || 0 }]
+            : [{ id: sale.productId || 0, name: "Produto", priceInCents: sale.amount || 0 }],
+          tracking: {
+            utmSource: sale.utmSource || null,
+            utmMedium: sale.utmMedium || null,
+            utmCampaign: sale.utmCampaign || null,
+            utmContent: sale.utmContent || null,
+            utmTerm: sale.utmTerm || null,
+          },
+          isTest: (settings.environment || "production") === "sandbox",
+        }).catch((e) => console.error("[UTMIFY] paid error:", e));
+      }
+
       res.json({ status: captured.status || "COMPLETED" });
     } catch (err: any) {
       console.error("Error capturing PayPal order:", err);

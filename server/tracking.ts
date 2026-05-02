@@ -58,61 +58,112 @@ function isEnabled(settings: SettingsLike | null | undefined, dest: TrackingDest
   return (settings.trackPurchaseRefund ?? true) === true;
 }
 
-export async function sendUtmfyEvent(
-  settings: SettingsLike | null | undefined,
-  event: "view" | "view_content" | "checkout" | "payment_pending" | "purchase" | "refund",
-  saleOrLike: SaleLike,
-) {
-  const token = settings?.utmfyToken;
-  if (!token) {
-    console.log("⚠️ [UTMIFY] Token não configurado, evento não será enviado");
-    return;
-  }
+function formatUtcDatetime(date: Date): string {
+  return date.toISOString().replace("T", " ").substring(0, 19);
+}
+
+export type UtmifyOrderParams = {
+  token: string;
+  orderId: string;
+  status: "waiting_payment" | "paid" | "refused" | "refunded" | "chargedback";
+  paymentMethod: "paypal" | "credit_card" | "pix" | "boleto" | "free_price";
+  createdAt: Date;
+  approvedAt?: Date | null;
+  refundedAt?: Date | null;
+  currency: string;
+  totalAmountMinor: number;
+  customer: { name?: string | null; email?: string | null; phone?: string | null; document?: string | null };
+  products: Array<{ id: string | number; name: string; priceInCents: number; quantity?: number }>;
+  tracking: {
+    utmSource?: string | null;
+    utmMedium?: string | null;
+    utmCampaign?: string | null;
+    utmContent?: string | null;
+    utmTerm?: string | null;
+  };
+  isTest?: boolean;
+};
+
+export async function sendUtmifyOrder(params: UtmifyOrderParams): Promise<void> {
+  const { token, orderId, status, paymentMethod, createdAt, approvedAt, refundedAt,
+    currency, totalAmountMinor, customer, products, tracking, isTest } = params;
+
+  const gatewayFee = Math.round(totalAmountMinor * 0.039 + 30);
+  const userCommission = Math.max(1, totalAmountMinor - gatewayFee);
+  const cur = (currency || "USD").toUpperCase();
 
   const payload = {
-    event,
-    value: saleOrLike.amount / 100,
-    currency: "BRL",
-    transaction_id: String(saleOrLike.id),
+    orderId: String(orderId),
+    platform: "Meteorfy",
+    paymentMethod,
+    status,
+    createdAt: formatUtcDatetime(createdAt),
+    approvedDate: approvedAt ? formatUtcDatetime(approvedAt) : null,
+    refundedAt: refundedAt ? formatUtcDatetime(refundedAt) : null,
     customer: {
-      email: saleOrLike.customerEmail ?? undefined,
+      name: customer.name || customer.email || "Cliente",
+      email: customer.email || "",
+      phone: customer.phone || null,
+      document: customer.document || null,
     },
-    utm: {
-      source: saleOrLike.utmSource ?? undefined,
-      medium: saleOrLike.utmMedium ?? undefined,
-      campaign: saleOrLike.utmCampaign ?? undefined,
-      content: saleOrLike.utmContent ?? undefined,
-      term: saleOrLike.utmTerm ?? undefined,
+    products: products.map(p => ({
+      id: String(p.id),
+      name: p.name,
+      planId: null,
+      planName: null,
+      quantity: p.quantity ?? 1,
+      priceInCents: p.priceInCents,
+    })),
+    trackingParameters: {
+      src: null,
+      sck: null,
+      utm_source: tracking.utmSource || null,
+      utm_campaign: tracking.utmCampaign || null,
+      utm_medium: tracking.utmMedium || null,
+      utm_content: tracking.utmContent || null,
+      utm_term: tracking.utmTerm || null,
     },
+    commission: {
+      totalPriceInCents: totalAmountMinor,
+      gatewayFeeInCents: gatewayFee,
+      userCommissionInCents: userCommission,
+      ...(cur !== "BRL" ? { currency: cur } : {}),
+    },
+    isTest: isTest === true ? true : false,
   };
 
-  console.log("📤 [UTMIFY] Enviando para API:", { event, payload });
+  console.log("📤 [UTMIFY] Enviando pedido:", { orderId, status, paymentMethod, totalAmountMinor });
 
   try {
-    const response = await fetch("https://api.utmify.com.br/api/events", {
+    const response = await fetch("https://api.utmify.com.br/api-credentials/orders", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        "x-api-token": token,
       },
       body: JSON.stringify(payload),
     });
 
     const responseText = await response.text();
-    console.log("📥 [UTMIFY] Resposta da API:", {
-      status: response.status,
-      statusText: response.statusText,
-      body: responseText
-    });
-
     if (!response.ok) {
-      console.error("❌ [UTMIFY] Erro na resposta da API:", response.status, responseText);
+      console.error("❌ [UTMIFY] Erro:", response.status, responseText);
     } else {
-      console.log("✅ [UTMIFY] Evento enviado com sucesso!");
+      console.log("✅ [UTMIFY] Pedido enviado com sucesso:", response.status);
     }
   } catch (err) {
-    console.error("❌ [UTMIFY] Erro ao enviar evento:", err);
+    console.error("❌ [UTMIFY] Erro de rede:", err);
   }
+}
+
+// Legacy event sender kept for top-of-funnel (page view / checkout intent)
+export async function sendUtmfyEvent(
+  settings: SettingsLike | null | undefined,
+  event: "view" | "view_content" | "checkout" | "payment_pending" | "purchase" | "refund",
+  saleOrLike: SaleLike,
+) {
+  // Top-of-funnel events are not supported by the Utmify orders API.
+  // Only order status changes (waiting_payment / paid / refunded) are sent.
+  console.log(`ℹ️ [UTMIFY] Evento top-of-funnel '${event}' ignorado (usar sendUtmifyOrder para pedidos)`);
 }
 
 export async function sendMetaCapiEvent(

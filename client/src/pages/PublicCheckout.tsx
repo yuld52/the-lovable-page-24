@@ -146,6 +146,18 @@ export default function PublicCheckout() {
     }
   });
 
+  // Capture UTM params from URL at page load
+  const utmParams = useMemo(() => {
+    const sp = new URLSearchParams(window.location.search);
+    return {
+      utmSource: sp.get("utm_source"),
+      utmMedium: sp.get("utm_medium"),
+      utmCampaign: sp.get("utm_campaign"),
+      utmContent: sp.get("utm_content"),
+      utmTerm: sp.get("utm_term"),
+    };
+  }, []);
+
   const config: CheckoutConfig = checkoutData?.config || defaultConfig;
   const [timerSeconds, setTimerSeconds] = useState(config.timerMinutes * 60);
   const { data: autoLanguage } = useAutoLanguage();
@@ -214,6 +226,7 @@ export default function PublicCheckout() {
         totalMinor,
         orderBumpProductIds: orderBumpSelected,
         customerData: { email: formData.email, name: formData.name },
+        ...utmParams,
       });
     } catch (err: any) {
       toast({ title: "Erro", description: "Falha de rede ao criar pedido PayPal.", variant: "destructive" });
