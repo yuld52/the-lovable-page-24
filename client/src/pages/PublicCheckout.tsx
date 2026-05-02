@@ -556,7 +556,7 @@ export default function PublicCheckout() {
             )}
             <div className="p-4">
               <div className="flex items-center gap-4">
-                {product.imageUrl ? <img src={product.imageUrl} alt={product.name} className="w-20 h-20 object-contain" /> : <div className="w-20 h-20 rounded-sm flex items-center justify-center font-bold" style={{ backgroundColor: config.backgroundColor, color: config.textColor }}>{product.name?.charAt(0)}</div>}
+                {product.imageUrl ? <img src={product.imageUrl} alt={product.name} className="w-20 h-20 object-cover rounded-xl" /> : <div className="w-20 h-20 rounded-sm flex items-center justify-center font-bold" style={{ backgroundColor: config.backgroundColor, color: config.textColor }}>{product.name?.charAt(0)}</div>}
                 <div className="flex-1">
                   <h2 className="font-bold text-[17px]">{product.name}</h2>
                   <div className="text-lg font-bold" style={{ color: config.primaryColor }}>{moneyFromUsdCents(product.price)}</div>
