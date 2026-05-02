@@ -695,7 +695,6 @@ export class NeonStorage {
       let query = `
         SELECT * FROM sales 
         WHERE user_id = $1 
-        AND status = 'paid'
         AND created_at >= $2 
         AND created_at <= $3
       `;
