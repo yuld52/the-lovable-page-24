@@ -1,8 +1,8 @@
 import type { Express, Request, Response } from "express";
 
-const OPENROUTER_API_KEY = "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";
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "openai/gpt-oss-120b:free";
+const MODEL = "openai/gpt-4o-mini";
 
 interface ChatMessage {
   role: "user" | "assistant" | "system";
