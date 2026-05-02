@@ -339,9 +339,15 @@ export default function Financeiro() {
                       {userWithdrawals.map((w) => (
                         <tr key={w.id} className="hover:bg-zinc-800/20 transition-colors">
                           <td className="px-6 py-4">
-                            <span className={`text-xs font-bold ${w.pixKeyType === 'mpesa' ? 'text-red-400' : 'text-orange-400'}`}>
-                              {METHOD_LABELS[w.pixKeyType] || w.pixKeyType || '—'}
-                            </span>
+                            {w.pixKeyType === 'mpesa' || w.pixKeyType === 'emola' ? (
+                              <img
+                                src={w.pixKeyType === 'mpesa' ? '/mpesa-logo.svg' : '/emola-logo.svg'}
+                                alt={METHOD_LABELS[w.pixKeyType]}
+                                className="h-6 w-auto object-contain"
+                              />
+                            ) : (
+                              <span className="text-xs font-bold text-zinc-400">{w.pixKeyType || '—'}</span>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             <span className="text-sm text-zinc-300">{w.pixKey || '—'}</span>
@@ -503,10 +509,10 @@ export default function Financeiro() {
                 {bankAccounts.map((acc) => (
                   <div key={acc.id} className="flex items-center justify-between bg-zinc-900/50 border border-zinc-800/50 rounded-xl px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold ${
-                        acc.type === 'mpesa' ? 'bg-red-600' : acc.type === 'emola' ? 'bg-orange-500' : 'bg-purple-600'
-                      }`}>
-                        {acc.type === 'mpesa' ? 'M' : acc.type === 'emola' ? 'E' : 'P'}
+                      <div className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center bg-zinc-800 shrink-0">
+                        {acc.type === 'mpesa' || acc.type === 'emola'
+                          ? <img src={acc.type === 'mpesa' ? '/mpesa-logo.svg' : '/emola-logo.svg'} alt={acc.type} className="w-full h-full object-cover" />
+                          : <span className="text-white text-xs font-bold">P</span>}
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-white">{METHOD_LABELS[acc.type]}</p>
@@ -573,14 +579,12 @@ export default function Financeiro() {
             </CardHeader>
             <CardContent className="space-y-3">
               {[
-                { label: "M-Pesa", rate: "10%", color: "bg-red-600", letter: "M" },
-                { label: "e-Mola", rate: "10%", color: "bg-orange-500", letter: "E" },
+                { label: "M-Pesa", rate: "10%", logo: "/mpesa-logo.svg" },
+                { label: "e-Mola", rate: "10%", logo: "/emola-logo.svg" },
               ].map((m) => (
                 <div key={m.label} className="flex items-center justify-between bg-zinc-900/50 border border-zinc-800/50 rounded-xl px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${m.color}`}>
-                      {m.letter}
-                    </div>
+                    <img src={m.logo} alt={m.label} className="h-7 w-auto object-contain rounded" />
                     <span className="text-sm text-white font-medium">{m.label}</span>
                   </div>
                   <span className="text-sm font-bold text-purple-400">{m.rate}</span>
@@ -672,15 +676,15 @@ export default function Financeiro() {
                       <button
                         key={m}
                         onClick={() => { setWithdrawMethod(m); setPixKey(""); setSelectedAccountId(null); }}
-                        className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                        className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border flex items-center justify-center gap-2 ${
                           withdrawMethod === m
                             ? m === "mpesa"
-                              ? "bg-red-600 border-red-500 text-white shadow"
-                              : "bg-orange-500 border-orange-400 text-white shadow"
+                              ? "bg-red-600/20 border-red-500 text-white shadow"
+                              : "bg-orange-500/20 border-orange-400 text-white shadow"
                             : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
                         }`}
                       >
-                        {METHOD_LABELS[m]}
+                        <img src={m === "mpesa" ? "/mpesa-logo.svg" : "/emola-logo.svg"} alt={METHOD_LABELS[m]} className="h-5 w-auto object-contain" />
                       </button>
                     ))}
                   </div>
@@ -724,8 +728,8 @@ export default function Financeiro() {
                               onClick={() => { setSelectedAccountId(acc.id); setPixKey(acc.phone); }}
                               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${isSelected ? color : "border-zinc-800 hover:border-zinc-600"}`}
                             >
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ${dotColor}`}>
-                                {acc.type === "mpesa" ? "M" : "E"}
+                              <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 bg-zinc-800 flex items-center justify-center">
+                                <img src={acc.type === "mpesa" ? "/mpesa-logo.svg" : "/emola-logo.svg"} alt={acc.type} className="w-full h-full object-cover" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-semibold text-white leading-tight">{METHOD_LABELS[acc.type]}</p>
@@ -1054,16 +1058,16 @@ export default function Financeiro() {
               <div className="space-y-3">
                 <p className="text-sm text-zinc-400">Selecione o tipo de conta que deseja adicionar:</p>
                 {([
-                  { type: "mpesa" as const, label: "M-Pesa", sub: "Carteira móvel Moçambique", color: "bg-red-600", letter: "M", border: "hover:border-red-500/50" },
-                  { type: "emola" as const, label: "e-Mola", sub: "Carteira móvel Moçambique", color: "bg-orange-500", letter: "E", border: "hover:border-orange-500/50" },
+                  { type: "mpesa" as const, label: "M-Pesa", sub: "Carteira móvel Moçambique", logo: "/mpesa-logo.svg", border: "hover:border-red-500/50" },
+                  { type: "emola" as const, label: "e-Mola", sub: "Carteira móvel Moçambique", logo: "/emola-logo.svg", border: "hover:border-orange-500/50" },
                 ]).map((m) => (
                   <button
                     key={m.type}
                     onClick={() => { setNewAccount({ type: m.type, phone: "", name: "" }); setAddAccountStep(2); }}
                     className={`w-full flex items-center gap-4 p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl transition-all ${m.border} hover:bg-zinc-900 text-left`}
                   >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shrink-0 ${m.color}`}>
-                      {m.letter}
+                    <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-zinc-800">
+                      <img src={m.logo} alt={m.label} className="w-full h-full object-cover" />
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-white">{m.label}</p>
