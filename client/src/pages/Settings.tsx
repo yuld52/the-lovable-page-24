@@ -38,6 +38,31 @@ const defaultLocal = {
 
 const integrations: Integration[] = [
   {
+    id: "paypal",
+    name: "PayPal",
+    description: "Receba pagamentos via PayPal",
+    icon: "https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_111x69.jpg",
+    configured: (s) => !!s.paypalClientId && !!s.paypalClientSecret,
+    fields: [
+      {
+        key: "paypalClientId",
+        label: "Client ID",
+        placeholder: "Cole aqui o Client ID do PayPal",
+      },
+      {
+        key: "paypalClientSecret",
+        label: "Client Secret",
+        placeholder: "Cole aqui o Client Secret",
+        type: "password",
+      },
+      {
+        key: "paypalWebhookId",
+        label: "Webhook ID (opcional)",
+        placeholder: "ID do webhook PayPal",
+      },
+    ],
+  },
+  {
     id: "webhook",
     name: "Integração Webhook",
     description: "Notificações de vendas via URL",
