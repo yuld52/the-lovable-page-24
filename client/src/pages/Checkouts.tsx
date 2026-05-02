@@ -79,66 +79,59 @@ export default function Checkouts() {
           </Button>
         </Card>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
           {checkouts?.map((checkout) => (
-            <Card key={checkout.id} className="bg-[#18181b] border-zinc-800/60 hover:border-purple-500/30 transition-all cursor-pointer group overflow-hidden w-full flex flex-row items-center p-4 gap-6">
-              <div className="w-24 h-24 bg-zinc-900 rounded-lg flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-purple-500/5 to-blue-500/5 border border-zinc-800/50">
-                <ShoppingCart className="w-8 h-8 text-zinc-700" />
+            <Card key={checkout.id} className="bg-[#18181b] border-zinc-800/60 hover:border-purple-500/30 transition-all cursor-pointer group overflow-hidden w-full flex flex-row items-center px-3 py-2.5 gap-3">
+              <div className="w-10 h-10 bg-zinc-900 rounded-lg flex-shrink-0 flex items-center justify-center border border-zinc-800/50">
+                <ShoppingCart className="w-4 h-4 text-zinc-600" />
               </div>
 
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg sm:text-xl md:text-2xl font-extrabold text-white group-hover:text-purple-400 transition-colors break-words whitespace-normal h-auto">
+                <h3 className="text-sm font-semibold text-white group-hover:text-purple-400 transition-colors truncate">
                   {checkout.name}
                 </h3>
-                <p className="mt-1 font-normal text-foreground text-sm sm:text-base break-words whitespace-normal h-auto">
+                <p className="text-xs text-zinc-500 truncate">
                   {products?.find(p => p.id === checkout.productId)?.name || 'Produto desconhecido'}
                 </p>
-                <div className="flex items-center gap-4 mt-2">
-                  <div className="flex flex-col">
-                    <p className="text-xs font-medium text-zinc-500">
-                      {Intl.NumberFormat('en-US', {
-                        notation: "compact",
-                        maximumFractionDigits: 1
-                      }).format(checkout.views || 0)} visualizações
-                    </p>
-                  </div>
-                </div>
+                <p className="text-[10px] text-zinc-600 mt-0.5">
+                  {Intl.NumberFormat('en-US', { notation: "compact", maximumFractionDigits: 1 }).format(checkout.views || 0)} visualizações
+                </p>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-0.5 flex-shrink-0">
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="text-zinc-400 hover:text-white h-10 w-10"
+                  className="text-zinc-500 hover:text-white h-7 w-7"
                   onClick={(e) => {
                     e.stopPropagation();
                     const link = `${window.location.origin}/checkout/${checkout.slug}`;
                     window.open(link, '_blank');
                   }}
                 >
-                  <ExternalLink className="w-4 h-4" />
+                  <ExternalLink className="w-3 h-3" />
                 </Button>
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 h-10 w-10"
+                  className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 h-7 w-7"
                   onClick={(e) => {
                     e.stopPropagation();
                     setLocation(`/checkouts/edit/${checkout.id}`);
                   }}
                 >
-                  <Pencil className="w-4 h-4" />
+                  <Pencil className="w-3 h-3" />
                 </Button>
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-10 w-10"
+                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 w-7"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDelete(checkout.id);
                   }}
                 >
-                  {deleteCheckout.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  {deleteCheckout.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                 </Button>
               </div>
             </Card>
