@@ -9,6 +9,8 @@ import { ptBR } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const MPESA_LOGO = "https://yt3.googleusercontent.com/ytc/AIdro_k9S-mKWfmtSx85sbylUgINsr7-ErWacXBh0R39hZ_2rg=s900-c-k-c0x00ffffff-no-rj";
 const EMOLA_LOGO  = "https://play-lh.googleusercontent.com/2TGAhJ55tiyhCwW0ZM43deGv4lUTFTBMoq83mnAO6-bU5hi2NPyKX8BN8iKt13irK7Y";
@@ -77,33 +79,138 @@ export default function Sales() {
     });
   }, [sales, products, searchTerm, statusFilter]);
 
-  const handleExportCSV = () => {
+  const handleExportPDF = () => {
     if (!filteredSales || filteredSales.length === 0) return;
-    const headers = ["ID", "Produto", "Conta", "Valor (USD)", "Método", "Status", "Data"];
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const now = format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+
+    // ── Header band ──
+    doc.setFillColor(18, 18, 20);
+    doc.rect(0, 0, pageW, 22, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(168, 85, 247); // purple
+    doc.text("Meteorfy", 14, 13);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(161, 161, 170); // zinc-400
+    doc.text("Relatório de Vendas", 14, 19);
+    doc.text(`Gerado em ${now}`, pageW - 14, 19, { align: "right" });
+
+    // ── Summary row ──
+    const paidSales = filteredSales.filter(s => s.status === "paid" || s.status === "captured");
+    const totalRevenue = paidSales.reduce((s, sale) => s + (sale.amount || 0), 0);
+    const pending = filteredSales.filter(s => s.status === "pending").length;
+
+    const summaryY = 29;
+    const summaryItems = [
+      { label: "Total de vendas", value: String(filteredSales.length) },
+      { label: "Aprovadas", value: String(paidSales.length) },
+      { label: "Pendentes", value: String(pending) },
+      { label: "Receita confirmada", value: `$${(totalRevenue / 100).toFixed(2)} USD` },
+    ];
+    const colW = (pageW - 28) / summaryItems.length;
+
+    doc.setFillColor(24, 24, 27);
+    doc.roundedRect(14, summaryY - 5, pageW - 28, 18, 3, 3, "F");
+
+    summaryItems.forEach((item, i) => {
+      const x = 14 + i * colW + colW / 2;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(255, 255, 255);
+      doc.text(item.value, x, summaryY + 3, { align: "center" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(113, 113, 122);
+      doc.text(item.label.toUpperCase(), x, summaryY + 9, { align: "center" });
+    });
+
+    // ── Table ──
+    const statusLabel: Record<string, string> = {
+      paid: "Aprovada", captured: "Aprovada", pending: "Pendente",
+      failed: "Falhada", refunded: "Reembolso",
+    };
+
+    const methodLabel: Record<string, string> = {
+      mpesa: "M-Pesa", emola: "e-Mola", paypal: "PayPal",
+    };
+
     const rows = filteredSales.map((sale) => {
       const product = products?.find((p) => p.id === sale.productId);
+      const method = (sale as any).paymentMethod || (sale.paypalOrderId ? "paypal" : "—");
       return [
-        sale.paypalOrderId ? sale.paypalOrderId.slice(-8) : String(sale.id).padStart(8, "0"),
+        sale.paypalOrderId ? `#${sale.paypalOrderId.slice(-8)}` : `#${String(sale.id).padStart(8, "0")}`,
         product?.name || "Produto Removido",
-        sale.customerEmail || "",
-        ((sale.amount || 0) / 100).toFixed(2),
-        (sale as any).paymentMethod || (sale.paypalOrderId ? "paypal" : "—"),
-        sale.status,
-        sale.createdAt ? format(new Date(sale.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "",
+        sale.customerEmail || "—",
+        `$${((sale.amount || 0) / 100).toFixed(2)}`,
+        methodLabel[method] || method,
+        statusLabel[sale.status] || sale.status,
+        sale.createdAt ? format(new Date(sale.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "—",
       ];
     });
-    const csv = [headers, ...rows]
-      .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `vendas-${format(new Date(), "yyyy-MM-dd")}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+
+    autoTable(doc, {
+      startY: summaryY + 17,
+      head: [["ID", "Produto", "Email do Cliente", "Valor", "Método", "Status", "Data"]],
+      body: rows,
+      theme: "grid",
+      styles: {
+        font: "helvetica",
+        fontSize: 8,
+        cellPadding: { top: 4, bottom: 4, left: 5, right: 5 },
+        textColor: [228, 228, 231],
+        lineColor: [39, 39, 42],
+        lineWidth: 0.3,
+        fillColor: [18, 18, 20],
+      },
+      headStyles: {
+        fillColor: [39, 39, 42],
+        textColor: [113, 113, 122],
+        fontStyle: "bold",
+        fontSize: 7,
+        halign: "left",
+      },
+      alternateRowStyles: { fillColor: [24, 24, 27] },
+      columnStyles: {
+        0: { cellWidth: 28, textColor: [113, 113, 122], font: "courier" },
+        1: { cellWidth: 48 },
+        2: { cellWidth: 60 },
+        3: { cellWidth: 24, halign: "right", fontStyle: "bold", textColor: [255, 255, 255] },
+        4: { cellWidth: 22, halign: "center" },
+        5: { cellWidth: 24, halign: "center" },
+        6: { cellWidth: 34, textColor: [113, 113, 122] },
+      },
+      didParseCell(data) {
+        if (data.column.index === 5 && data.section === "body") {
+          const val = data.cell.raw as string;
+          if (val === "Aprovada") data.cell.styles.textColor = [52, 211, 153];
+          else if (val === "Pendente") data.cell.styles.textColor = [251, 191, 36];
+          else if (val === "Falhada") data.cell.styles.textColor = [248, 113, 113];
+          else data.cell.styles.textColor = [113, 113, 122];
+        }
+      },
+      margin: { left: 14, right: 14 },
+    });
+
+    // ── Footer on each page ──
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFillColor(18, 18, 20);
+      doc.rect(0, doc.internal.pageSize.getHeight() - 10, pageW, 10, "F");
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(63, 63, 70);
+      doc.text("© 2026 Meteorfy Inc. — Confidencial", 14, doc.internal.pageSize.getHeight() - 3);
+      doc.text(`Página ${i} / ${pageCount}`, pageW - 14, doc.internal.pageSize.getHeight() - 3, { align: "right" });
+    }
+
+    doc.save(`meteorfy-vendas-${format(new Date(), "yyyy-MM-dd")}.pdf`);
   };
 
   return (
@@ -134,12 +241,12 @@ export default function Sales() {
           </Select>
         </div>
         <Button
-          onClick={handleExportCSV}
+          onClick={handleExportPDF}
           disabled={!filteredSales || filteredSales.length === 0}
           className="bg-[#18181b] hover:bg-zinc-800 text-white border border-zinc-800 h-11 px-5 rounded-xl flex items-center gap-2 font-semibold disabled:opacity-40"
         >
           <FileText className="w-4 h-4" />
-          Exportar CSV
+          Exportar PDF
         </Button>
       </div>
 
