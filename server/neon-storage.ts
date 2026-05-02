@@ -396,6 +396,29 @@ export class NeonStorage {
     }
   }
 
+  // Persist user email so it can be shown in admin without Firebase credentials
+  async saveUserEmail(userId: string, email: string): Promise<void> {
+    if (!userId || !email) return;
+    try {
+      const client = await getPool().connect();
+      try {
+        // Ensure email column exists (idempotent)
+        await client.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS email TEXT`);
+        // Upsert: create settings row if missing, otherwise just update email
+        await client.query(`
+          INSERT INTO settings (user_id, email)
+          VALUES ($1, $2)
+          ON CONFLICT (user_id) DO UPDATE SET email = EXCLUDED.email
+        `, [userId, email]);
+      } finally {
+        client.release();
+      }
+    } catch (err) {
+      // Non-critical — never crash the request over this
+      console.warn("[saveUserEmail]", (err as any)?.message);
+    }
+  }
+
   // Settings
   async getSettings(userId: string): Promise<any | undefined> {
     try {

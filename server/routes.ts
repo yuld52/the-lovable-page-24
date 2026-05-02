@@ -144,7 +144,13 @@ export async function registerRoutes(
 
   app.get("/api/user", requireAuth, async (req, res) => {
     try {
-      res.json((req as any).user);
+      const user = (req as any).user;
+      res.json(user);
+      // Persist email so admin can display it without Firebase credentials
+      if (user?.id && user?.email) {
+        storage.saveUserEmail(String(user.id), String(user.email))
+          .catch(() => {});
+      }
     } catch (err: any) {
       res.status(500).json({ message: err.message });
     }
@@ -741,20 +747,39 @@ export async function registerRoutes(
 
       const uids = Array.from(uidSet);
 
-      // Try to enrich each UID with Firebase email/name
+      // Fetch emails saved in settings (populated on each user login via /api/user)
+      const emailConn = await getPool().connect();
+      let emailMap: Record<string, string> = {};
+      try {
+        const emailResult = await emailConn.query(
+          `SELECT user_id::text AS uid, email FROM settings WHERE user_id = ANY($1) AND email IS NOT NULL`,
+          [uids]
+        );
+        emailResult.rows.forEach((r: any) => {
+          if (r.email) emailMap[r.uid] = r.email;
+        });
+      } catch {
+        // email column may not exist yet — ignore
+      } finally {
+        emailConn.release();
+      }
+
+      // Try Firebase as secondary enrichment (may fail without service account)
       const users = await Promise.all(
         uids.map(async (uid) => {
+          const dbEmail = emailMap[uid];
+          if (dbEmail) {
+            return { id: uid, uid, email: dbEmail, username: dbEmail, createdAt: null };
+          }
           try {
             const u = await adminAuth.getUser(uid);
             return {
-              id: uid,
-              uid,
+              id: uid, uid,
               email: u.email || uid,
               username: u.displayName || u.email || uid,
               createdAt: u.metadata.creationTime,
             };
           } catch {
-            // Firebase lookup failed — return UID only
             return { id: uid, uid, email: uid, username: uid, createdAt: null };
           }
         })
