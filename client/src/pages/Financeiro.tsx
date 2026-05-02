@@ -88,11 +88,10 @@ export default function Financeiro() {
   });
 
   // Calculate real financial data
-  // totalEarnings = all sales (paid + pending) for display purposes
+  // All amounts (sales and withdrawals) are stored in MTn minor units (MTn cents)
   const totalEarnings = sales?.reduce((sum, s) => sum + (s.amount || 0), 0) || 0;
   const approvedWithdrawals = userWithdrawals?.filter(w => w.status === 'approved').reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
   const pendingWithdrawalsAmount = userWithdrawals?.filter(w => w.status === 'pending').reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
-  // availableBalance = all earnings minus already withdrawn/pending amounts
   const availableBalance = Math.max(0, totalEarnings - approvedWithdrawals - pendingWithdrawalsAmount);
 
   const handleWithdraw = async () => {
@@ -431,10 +430,7 @@ export default function Financeiro() {
                           </td>
                           <td className="px-6 py-4">
                             <span className="text-sm font-bold text-white">
-                              {new Intl.NumberFormat('pt-MZ', {
-                                style: 'currency',
-                                currency: 'MZN'
-                              }).format((sale.amount || 0) / 100)}
+                              {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format((sale.amount || 0) / 100)}
                             </span>
                           </td>
                           <td className="px-6 py-4">
