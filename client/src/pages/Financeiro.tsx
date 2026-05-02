@@ -32,7 +32,6 @@ export default function Financeiro() {
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [addAccountStep, setAddAccountStep] = useState<1 | 2 | 3>(1);
   const [newAccount, setNewAccount] = useState<{ type: "mpesa" | "emola"; phone: string; name: string }>({ type: "mpesa", phone: "", name: "" });
-  const [withdrawCurrency, setWithdrawCurrency] = useState<"MZN" | "USD" | "BRL">("MZN");
 
   // Withdrawal dialog state
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
@@ -56,8 +55,6 @@ export default function Financeiro() {
     mpesa: "Ex: 84 XXX XXXX",
     emola: "Ex: 86 XXX XXXX",
   };
-  const CURRENCY_FLAGS: Record<string, string> = { MZN: "🇲🇿", USD: "🇺🇸", BRL: "🇧🇷" };
-  const CURRENCY_MIN: Record<string, number> = { MZN: 600, USD: 50, BRL: 250 };
 
   const { data: stats, isLoading: statsLoading } = useStats();
   const { data: sales, isLoading: salesLoading } = useSales();
@@ -580,33 +577,6 @@ export default function Financeiro() {
             <DialogTitle className="text-lg font-bold text-white">Solicitar Saque</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            {/* Currency selector */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Carteira</label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["MZN", "USD", "BRL"] as const).map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => { setWithdrawCurrency(c); setAmount(""); }}
-                    className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all border ${
-                      withdrawCurrency === c
-                        ? "bg-purple-600/20 border-purple-500 text-purple-300"
-                        : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
-                    }`}
-                  >
-                    <span>{CURRENCY_FLAGS[c]}</span>
-                    <span>{c}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-gradient-to-r from-emerald-600/20 to-emerald-500/10 border border-emerald-500/20">
-                <span className="text-xs text-zinc-400">Elegível para Saque em {withdrawCurrency}:</span>
-                <span className="text-sm font-bold text-emerald-400">
-                  {new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(availableBalance / 100)} {withdrawCurrency}
-                </span>
-              </div>
-            </div>
-
             {/* Method selector */}
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Método</label>
