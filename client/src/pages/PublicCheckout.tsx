@@ -204,34 +204,52 @@ export default function PublicCheckout() {
     const totalUsdCents = calculateTotal();
     const totalMinor = convertUsdCentsToCurrencyMinor(totalUsdCents, currency, usdToCurrencyRate);
 
-    const res = await apiRequest("POST", "/api/paypal/create-order", {
-      checkoutId: Number(checkoutData?.id),
-      productId: Number(product?.id),
-      currency,
-      totalUsdCents,
-      totalMinor,
-      orderBumpProductIds: orderBumpSelected,
-      customerData: {
-        email: formData.email,
-        name: formData.name
-      }
-    });
+    let res: Response;
+    try {
+      res = await apiRequest("POST", "/api/paypal/create-order", {
+        checkoutId: Number(checkoutData?.id),
+        productId: Number(product?.id),
+        currency,
+        totalUsdCents,
+        totalMinor,
+        orderBumpProductIds: orderBumpSelected,
+        customerData: { email: formData.email, name: formData.name },
+      });
+    } catch (err: any) {
+      toast({ title: "Erro", description: "Falha de rede ao criar pedido PayPal.", variant: "destructive" });
+      throw err;
+    }
 
-    const data = await res.json();
-    return data.id;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = data?.message || "Erro ao criar pedido PayPal";
+      toast({ title: "Erro", description: msg, variant: "destructive" });
+      throw new Error(msg);
+    }
+    if (!data?.id) {
+      toast({ title: "Erro", description: "Resposta inválida do PayPal.", variant: "destructive" });
+      throw new Error("PayPal order ID ausente");
+    }
+    return String(data.id);
   };
 
   const handleApprove = async (orderId: string) => {
     setIsProcessing(true);
     try {
       const res = await apiRequest("POST", `/api/paypal/capture-order/${orderId}`);
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast({ title: "Erro", description: data?.message || "Falha ao capturar pagamento.", variant: "destructive" });
+        return;
+      }
       if (data.status === "COMPLETED" || data.status === "paid") {
         setIsPaid(true);
-        toast({ title: "Sucesso", description: "Pagamento realizado com sucesso!" });
+        toast({ title: "Pagamento confirmado!", description: "O seu pagamento foi processado com sucesso." });
+      } else {
+        toast({ title: "Atenção", description: `Estado do pagamento: ${data.status}`, variant: "destructive" });
       }
     } catch (err: any) {
-      toast({ title: "Erro", description: "Falha ao processar pagamento.", variant: "destructive" });
+      toast({ title: "Erro", description: "Falha ao processar pagamento. Tente novamente.", variant: "destructive" });
     } finally {
       setIsProcessing(false);
     }
