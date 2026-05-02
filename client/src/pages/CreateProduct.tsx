@@ -194,9 +194,19 @@ export default function CreateProduct() {
     }
   };
 
+  const getMinPrice = (currency: string) => currency === "MZN" ? 50 : 3.90;
+
+  const isPriceBelowMin = () => {
+    const price = parseFloat(newProduct.price);
+    if (isNaN(price)) return false;
+    return price < getMinPrice(newProduct.currency);
+  };
+
   const isStepValid = () => {
     if (step === 1) {
-      return newProduct.name.trim() !== "" && newProduct.price.trim() !== "";
+      if (!newProduct.name.trim() || !newProduct.price.trim()) return false;
+      if (isPriceBelowMin()) return false;
+      return true;
     }
     if (step === 2) {
       return newProduct.paymentMethods.length > 0;
@@ -228,11 +238,14 @@ export default function CreateProduct() {
           newProduct.deliveryUrl.trim()
         );
 
+      const minPriceMsg = newProduct.currency === "MZN" ? "50 MT" : `3,90 ${newProduct.currency}`;
       toast({
         title: "Campos obrigatórios",
         description:
           step === 1
-            ? "Preencha o nome e o preço do produto para continuar."
+            ? (newProduct.name.trim() && newProduct.price.trim() && isPriceBelowMin())
+              ? `O preço mínimo do produto é ${minPriceMsg}.`
+              : "Preencha o nome e o preço do produto para continuar."
             : step === 2
               ? "Selecione pelo menos um método de pagamento."
               : isUrlInvalid
@@ -454,6 +467,16 @@ export default function CreateProduct() {
                     />
                     {showErrors && !newProduct.price && (
                       <p className="text-[10px] text-red-500 font-medium ml-1">Campo obrigatório</p>
+                    )}
+                    {showErrors && newProduct.price && isPriceBelowMin() && (
+                      <p className="text-[10px] text-red-500 font-medium ml-1">
+                        Preço mínimo: {newProduct.currency === "MZN" ? "50 MT" : `3,90 ${newProduct.currency}`}
+                      </p>
+                    )}
+                    {!showErrors && (
+                      <p className="text-[11px] text-zinc-500 ml-1">
+                        Mínimo: {newProduct.currency === "MZN" ? "50 MT" : `3,90 ${newProduct.currency}`}
+                      </p>
                     )}
                   </div>
                 </div>

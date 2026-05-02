@@ -90,6 +90,7 @@ function Router() {
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/withdrawals" component={AdminWithdrawals} />
       <Route path="/admin/revenue-ranking" component={AdminRevenueRanking} />
+      <Route path="/admin/rules-fees" component={AdminRulesFees} />
       <Route path="/admin/settings" component={AdminSettings} />
       
       {/* Fallback to 404 */}

@@ -147,6 +147,16 @@ export async function registerRoutes(
   app.post("/api/products", requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
+
+      // Minimum price validation (price stored in cents)
+      const priceCents = Number(req.body.price);
+      const currency = String(req.body.currency || "USD").toUpperCase();
+      const minCents = currency === "MZN" ? 5000 : 390; // 50 MZN or 3.90 others
+      if (isNaN(priceCents) || priceCents < minCents) {
+        const minDisplay = currency === "MZN" ? "50 MT" : `3.90 ${currency}`;
+        return res.status(400).json({ message: `O preço mínimo do produto é ${minDisplay}.` });
+      }
+
       const productData = {
         ...req.body,
         ownerId: userId,
@@ -174,6 +184,18 @@ export async function registerRoutes(
   app.patch("/api/products/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id as string);
+
+      // Minimum price validation if price is being updated
+      if (req.body.price !== undefined) {
+        const priceCents = Number(req.body.price);
+        const currency = String(req.body.currency || "USD").toUpperCase();
+        const minCents = currency === "MZN" ? 5000 : 390;
+        if (isNaN(priceCents) || priceCents < minCents) {
+          const minDisplay = currency === "MZN" ? "50 MT" : `3.90 ${currency}`;
+          return res.status(400).json({ message: `O preço mínimo do produto é ${minDisplay}.` });
+        }
+      }
+
       const result = await storage.updateProduct(id, req.body);
       res.json(result);
     } catch (err: any) {
