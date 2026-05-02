@@ -24,7 +24,6 @@ const navItems = [
   { href: "/admin/withdrawals", label: "Aprovação de Saques", icon: ArrowDownToLine },
   { href: "/admin/revenue-ranking", label: "Ranking de Faturamento", icon: Trophy },
   { href: "/admin/rules-fees", label: "Regras e Taxas", icon: Percent },
-  { href: "/admin/settings", label: "Configurações", icon: Settings },
 ];
 
 export function AdminSidebar() {
