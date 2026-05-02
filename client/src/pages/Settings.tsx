@@ -56,7 +56,7 @@ const integrations: Integration[] = [
     id: "meta",
     name: "Pixel da Meta",
     description: "ID do pixel para rastreamento",
-    icon: "/integrations/meta.svg",
+    icon: "https://static.xx.fbcdn.net/rsrc.php/y-/r/yhD4cqC_Wzs.webp",
     configured: (s) => !!s.facebookPixelId,
     fields: [
       {
@@ -76,7 +76,7 @@ const integrations: Integration[] = [
     id: "utmify",
     name: "UTMify",
     description: "Parâmetros UTM para campanhas",
-    icon: "/integrations/utmify.svg",
+    icon: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9Z5N3ZwwpiIdsxNQn2KEOV1M8afws1emhnQ&s",
     configured: (s) => !!s.utmfyToken,
     fields: [
       {
