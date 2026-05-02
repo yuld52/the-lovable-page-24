@@ -283,6 +283,7 @@ export default function PublicCheckout() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("");
   const [mobilePhone, setMobilePhone] = useState("");
   const [mobileSubmitting, setMobileSubmitting] = useState(false);
+  const [showPhoneError, setShowPhoneError] = useState(false);
 
   // Validate Mozambique mobile prefix (strip country code 258 then check first 2 digits)
   const getMobilePhoneError = (method: string, phone: string): string => {
@@ -313,14 +314,16 @@ export default function PublicCheckout() {
       return;
     }
     if (!mobilePhone) {
+      setShowPhoneError(true);
       toast({ title: "Erro", description: "Insira o número de telemóvel.", variant: "destructive" });
       return;
     }
     const phoneErr = getMobilePhoneError(selectedPaymentMethod, mobilePhone);
     if (phoneErr) {
-      toast({ title: "Número inválido", description: phoneErr, variant: "destructive" });
+      setShowPhoneError(true);
       return;
     }
+    setShowPhoneError(false);
     setMobileSubmitting(true);
     try {
       const totalUsdCents = calculateTotal();
@@ -658,14 +661,14 @@ export default function PublicCheckout() {
                         <PhoneInput
                           country="mz"
                           value={mobilePhone}
-                          onChange={setMobilePhone}
+                          onChange={(val) => { setMobilePhone(val); setShowPhoneError(false); }}
                           preferredCountries={["mz"]}
                           placeholder="86 12 34 567"
                           inputStyle={{
                             width: "100%",
                             height: "44px",
                             borderRadius: "6px",
-                            border: getMobilePhoneError(selectedPaymentMethod, mobilePhone) ? "1px solid #ef4444" : "1px solid #d1d5db",
+                            border: showPhoneError && getMobilePhoneError(selectedPaymentMethod, mobilePhone) ? "1px solid #ef4444" : "1px solid #d1d5db",
                             backgroundColor: config.backgroundColor,
                             color: config.textColor,
                             fontSize: "14px",
@@ -673,12 +676,12 @@ export default function PublicCheckout() {
                           containerStyle={{ width: "100%" }}
                           buttonStyle={{
                             backgroundColor: "transparent",
-                            border: getMobilePhoneError(selectedPaymentMethod, mobilePhone) ? "1px solid #ef4444" : "1px solid #d1d5db",
+                            border: showPhoneError && getMobilePhoneError(selectedPaymentMethod, mobilePhone) ? "1px solid #ef4444" : "1px solid #d1d5db",
                             borderRight: "none",
                             borderRadius: "6px 0 0 6px",
                           }}
                         />
-                        {getMobilePhoneError(selectedPaymentMethod, mobilePhone) && (
+                        {showPhoneError && getMobilePhoneError(selectedPaymentMethod, mobilePhone) && (
                           <p className="text-red-500 text-xs mt-1">
                             {getMobilePhoneError(selectedPaymentMethod, mobilePhone)}
                           </p>
@@ -717,7 +720,7 @@ export default function PublicCheckout() {
                     {isMobile(selectedPaymentMethod) && (
                       <Button
                         onClick={handleMobileSubmit}
-                        disabled={mobileSubmitting || !mobilePhone || !!getMobilePhoneError(selectedPaymentMethod, mobilePhone)}
+                        disabled={mobileSubmitting || !mobilePhone}
                         className="w-full h-12 text-base font-bold text-white"
                         style={{ backgroundColor: activePrimary }}
                       >
