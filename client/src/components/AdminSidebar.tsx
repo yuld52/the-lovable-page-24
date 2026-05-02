@@ -7,6 +7,7 @@ import {
   LogOut,
   Shield,
   ArrowDownToLine,
+  Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
@@ -20,6 +21,7 @@ const navItems = [
   { href: "/admin/products", label: "Aprovação de Produtos", icon: Package },
   { href: "/admin/users", label: "Gerenciar Usuários", icon: Users },
   { href: "/admin/withdrawals", label: "Aprovação de Saques", icon: ArrowDownToLine },
+  { href: "/admin/revenue-ranking", label: "Ranking de Faturamento", icon: Trophy },
   { href: "/admin/settings", label: "Configurações", icon: Settings },
 ];
 
