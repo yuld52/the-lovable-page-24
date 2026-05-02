@@ -11,7 +11,7 @@ import { getVapidPublicKey, saveSubscription } from "./services/notification";
 
 import { registerTrackingRoutes } from "./trackingRoutes";
 import { registerChatRoutes } from "./chat";
-import { sendBuyerConfirmation, sendSellerNewSale, sendWithdrawalUpdate, sendWithdrawalReceived } from "./email";
+import { sendBuyerConfirmation, sendSellerNewSale, sendWithdrawalUpdate, sendWithdrawalReceived, sendProductApproved, sendProductRejected, sendNewBankAccount, sendWelcomeEmail } from "./email";
 
 function fmtUsd(cents: number) { return `$${(cents / 100).toFixed(2)} USD`; }
 function fmtMzn(minor: number) { return `MZN ${(minor / 100).toFixed(2)}`; }
@@ -126,6 +126,19 @@ export async function registerRoutes(
       res.json({ exists: false });
     } catch (err) {
       res.json({ exists: false });
+    }
+  });
+
+  // ── Welcome email after new registration ──
+  app.post("/api/auth/send-welcome", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ message: "E-mail é obrigatório" });
+      sendWelcomeEmail({ to: email })
+        .catch((e: any) => console.error("[EMAIL] welcome:", e?.message));
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
     }
   });
 
@@ -900,6 +913,21 @@ export async function registerRoutes(
       const id = parseInt(req.params.id as string);
       const product = await storage.approveProduct(id);
       res.json(product);
+      // ── Email: product approved (fire-and-forget) ──
+      if (product?.userId) {
+        adminAuth.getUser(String(product.userId))
+          .then((u) => {
+            if (u.email) {
+              sendProductApproved({
+                to: u.email,
+                productName: product.name || "Produto",
+                productId: product.id,
+              }).catch((e: any) => console.error("[EMAIL] product approved:", e?.message));
+            }
+          })
+          .catch((e: any) => console.error("[EMAIL] user lookup (approve product):", e?.message));
+      }
+      // ──────────────────────────────────────────────
     } catch (err: any) {
       console.error("Error approving product:", err);
       res.status(500).json({ message: err.message || "Erro ao aprovar produto" });
@@ -913,6 +941,21 @@ export async function registerRoutes(
       const id = parseInt(req.params.id as string);
       const product = await storage.rejectProduct(id);
       res.json(product);
+      // ── Email: product rejected (fire-and-forget) ──
+      if (product?.userId) {
+        adminAuth.getUser(String(product.userId))
+          .then((u) => {
+            if (u.email) {
+              sendProductRejected({
+                to: u.email,
+                productName: product.name || "Produto",
+                productId: product.id,
+              }).catch((e: any) => console.error("[EMAIL] product rejected:", e?.message));
+            }
+          })
+          .catch((e: any) => console.error("[EMAIL] user lookup (reject product):", e?.message));
+      }
+      // ──────────────────────────────────────────────
     } catch (err: any) {
       console.error("Error rejecting product:", err);
       res.status(500).json({ message: err.message || "Erro ao rejeitar produto" });
@@ -939,6 +982,20 @@ export async function registerRoutes(
       if (!phone) return res.status(400).json({ message: "Número/email é obrigatório" });
       const result = await storage.createBankAccount(userId, type, phone, name);
       res.status(201).json(result);
+      // ── Email: new bank account (fire-and-forget) ──
+      adminAuth.getUser(userId)
+        .then((u) => {
+          if (u.email) {
+            sendNewBankAccount({
+              to: u.email,
+              method: type === "mpesa" ? "M-Pesa" : type === "emola" ? "e-Mola" : type,
+              phone,
+              name: name || "",
+            }).catch((e: any) => console.error("[EMAIL] new bank account:", e?.message));
+          }
+        })
+        .catch((e: any) => console.error("[EMAIL] user lookup (bank account):", e?.message));
+      // ──────────────────────────────────────────────
     } catch (err: any) {
       res.status(500).json({ message: err.message });
     }

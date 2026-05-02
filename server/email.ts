@@ -284,3 +284,194 @@ export async function sendWithdrawalReceived(opts: {
     html: baseLayout("Pedido de Saque", body),
   });
 }
+
+// ─────────────────────────────────────────────────────────────
+// 5. SELLER — Product Approved
+// ─────────────────────────────────────────────────────────────
+export async function sendProductApproved(opts: {
+  to: string;
+  productName: string;
+  productId: number;
+}) {
+  const { to, productName, productId } = opts;
+  const dashUrl = `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "meteorfy.com"}/products`;
+  const body = `
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding-bottom:24px;text-align:center;">
+          <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:${BRAND.green}1a;border-radius:50%;margin-bottom:12px;">
+            <span style="font-size:28px;">🚀</span>
+          </div>
+          <h1 style="margin:0 0 4px;font-size:20px;font-weight:800;color:${BRAND.text};">Produto aprovado!</h1>
+          <p style="margin:0;font-size:14px;color:${BRAND.muted};">O seu produto foi analisado e está aprovado para venda.</p>
+        </td>
+      </tr>
+      ${divider()}
+      <tr><td style="padding:16px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          ${row("Produto", productName, BRAND.green)}
+          ${row("ID", `#${productId}`, BRAND.muted)}
+          ${row("Status", "Aprovado ✅", BRAND.green)}
+        </table>
+      </td></tr>
+      ${divider()}
+      <tr>
+        <td style="padding-top:20px;text-align:center;">
+          <a href="${dashUrl}" style="display:inline-block;background:${BRAND.purple};color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:12px 28px;border-radius:10px;">
+            Ver Produtos →
+          </a>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding-top:16px;font-size:13px;color:${BRAND.muted};line-height:1.6;text-align:center;">
+          O seu produto já está disponível nos checkouts e pode receber vendas agora.
+        </td>
+      </tr>
+    </table>`;
+
+  return resend.emails.send({
+    from: FROM,
+    to,
+    subject: `🚀 Produto aprovado — ${productName}`,
+    html: baseLayout("Produto Aprovado", body),
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// 6. SELLER — Product Rejected
+// ─────────────────────────────────────────────────────────────
+export async function sendProductRejected(opts: {
+  to: string;
+  productName: string;
+  productId: number;
+}) {
+  const { to, productName, productId } = opts;
+  const body = `
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding-bottom:24px;text-align:center;">
+          <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:${BRAND.red}1a;border-radius:50%;margin-bottom:12px;">
+            <span style="font-size:28px;">⛔</span>
+          </div>
+          <h1 style="margin:0 0 4px;font-size:20px;font-weight:800;color:${BRAND.text};">Produto não aprovado</h1>
+          <p style="margin:0;font-size:14px;color:${BRAND.muted};">O seu produto foi recusado pela equipa da Meteorfy.</p>
+        </td>
+      </tr>
+      ${divider()}
+      <tr><td style="padding:16px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          ${row("Produto", productName)}
+          ${row("ID", `#${productId}`, BRAND.muted)}
+          ${row("Status", "Recusado ⛔", BRAND.red)}
+        </table>
+      </td></tr>
+      ${divider()}
+      <tr>
+        <td style="padding-top:16px;font-size:13px;color:${BRAND.muted};line-height:1.6;">
+          Se tiver dúvidas sobre a recusa ou quiser corrigir o produto, entre em contacto com o suporte da Meteorfy. Pode editar e resubmeter o produto para nova análise.
+        </td>
+      </tr>
+    </table>`;
+
+  return resend.emails.send({
+    from: FROM,
+    to,
+    subject: `⛔ Produto recusado — ${productName}`,
+    html: baseLayout("Produto Recusado", body),
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// 7. SELLER — New Bank Account Added
+// ─────────────────────────────────────────────────────────────
+export async function sendNewBankAccount(opts: {
+  to: string;
+  method: string;
+  phone: string;
+  name: string;
+}) {
+  const { to, method, phone, name } = opts;
+  const ismpesa = method.toLowerCase().includes("pesa");
+  const iconBg = ismpesa ? "#e11d48" : "#f97316";
+  const body = `
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding-bottom:24px;text-align:center;">
+          <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:${iconBg}22;border-radius:50%;margin-bottom:12px;">
+            <span style="font-size:28px;">📱</span>
+          </div>
+          <h1 style="margin:0 0 4px;font-size:20px;font-weight:800;color:${BRAND.text};">Método de saque adicionado</h1>
+          <p style="margin:0;font-size:14px;color:${BRAND.muted};">Uma nova conta de saque foi registada na sua conta.</p>
+        </td>
+      </tr>
+      ${divider()}
+      <tr><td style="padding:16px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          ${row("Método", method)}
+          ${row("Titular", name || "—")}
+          ${row("Número", phone)}
+        </table>
+      </td></tr>
+      ${divider()}
+      <tr>
+        <td style="padding-top:16px;padding-bottom:4px;background:#27272a;border-radius:10px;padding:14px 16px;margin-top:12px;">
+          <p style="margin:0;font-size:12px;color:${BRAND.red};font-weight:700;">⚠ Não reconhece esta acção?</p>
+          <p style="margin:6px 0 0;font-size:12px;color:${BRAND.muted};">Se não adicionou esta conta, aceda à sua conta imediatamente e remova-a ou altere a sua senha.</p>
+        </td>
+      </tr>
+    </table>`;
+
+  return resend.emails.send({
+    from: FROM,
+    to,
+    subject: `📱 Novo método de saque — ${method} (${phone})`,
+    html: baseLayout("Novo Método de Saque", body),
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// 8. NEW USER — Welcome + Email Verification reminder
+// ─────────────────────────────────────────────────────────────
+export async function sendWelcomeEmail(opts: {
+  to: string;
+}) {
+  const { to } = opts;
+  const dashUrl = `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "meteorfy.com"}/dashboard`;
+  const body = `
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding-bottom:24px;text-align:center;">
+          <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:${BRAND.purple}22;border-radius:50%;margin-bottom:12px;">
+            <span style="font-size:28px;">👋</span>
+          </div>
+          <h1 style="margin:0 0 4px;font-size:20px;font-weight:800;color:${BRAND.text};">Bem-vindo à Meteorfy!</h1>
+          <p style="margin:0;font-size:14px;color:${BRAND.muted};">A sua conta foi criada com sucesso.</p>
+        </td>
+      </tr>
+      ${divider()}
+      <tr><td style="padding:16px 0;">
+        <p style="margin:0 0 12px;font-size:13px;color:${BRAND.muted};">Aqui está o que pode fazer na Meteorfy:</p>
+        <table width="100%" cellpadding="0" cellspacing="0">
+          ${row("📦 Produtos", "Crie e gira os seus produtos digitais")}
+          ${row("🛒 Checkouts", "Crie páginas de checkout personalizadas")}
+          ${row("📊 Vendas", "Acompanhe as suas transações em tempo real")}
+          ${row("💰 Saques", "Solicite saques via M-Pesa ou e-Mola")}
+        </table>
+      </td></tr>
+      ${divider()}
+      <tr>
+        <td style="padding-top:20px;text-align:center;">
+          <a href="${dashUrl}" style="display:inline-block;background:${BRAND.purple};color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:12px 28px;border-radius:10px;">
+            Ir para o Dashboard →
+          </a>
+        </td>
+      </tr>
+    </table>`;
+
+  return resend.emails.send({
+    from: FROM,
+    to,
+    subject: `👋 Bem-vindo à Meteorfy!`,
+    html: baseLayout("Bem-vindo", body),
+  });
+}
