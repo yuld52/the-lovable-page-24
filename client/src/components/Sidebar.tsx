@@ -20,6 +20,8 @@ import { useState } from "react";
 import { useUser } from "@/hooks/use-user";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
+import { useUsdRates } from "@/hooks/use-currency";
+import { convertUsdCentsToCurrencyMinor, formatMoney } from "@/lib/currency";
 
 const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
@@ -51,8 +53,15 @@ export function Sidebar() {
   ];
 
   const { data: stats } = useStats();
-  // revenuePaid is totalRevenue/100 — already in whole MTn units
-  const currentRevenue = stats?.revenuePaid || 0;
+  const { data: usdRates } = useUsdRates();
+  // revenuePaid is raw USD cents — convert to MZN for display
+  const revenuePaidUsdCents = stats?.revenuePaid || 0;
+  const mznRate = usdRates?.["MZN"] ?? 0;
+  // MZN minor units (MTn cents), then whole MTn for goal comparison
+  const currentRevenueMznMinor = mznRate > 0
+    ? convertUsdCentsToCurrencyMinor(revenuePaidUsdCents, "MZN", mznRate)
+    : 0;
+  const currentRevenueMtn = currentRevenueMznMinor / 100;
 
   const goals = [
     { label: "10K", value: 10000 },
@@ -63,8 +72,8 @@ export function Sidebar() {
     { label: "1B", value: 1000000000 },
   ];
 
-  const currentGoal = goals.find((g) => currentRevenue < g.value) || goals[goals.length - 1];
-  const progress = Math.min((currentRevenue / currentGoal.value) * 100, 100);
+  const currentGoal = goals.find((g) => currentRevenueMtn < g.value) || goals[goals.length - 1];
+  const progress = Math.min((currentRevenueMtn / currentGoal.value) * 100, 100);
 
   const handleLogout = async () => {
     try {
@@ -97,7 +106,9 @@ export function Sidebar() {
                 <span className="text-[10px] font-normal text-white block">Faturamento</span>
                 <div className="flex items-center gap-1 mb-1">
                   <span className="text-xs font-bold text-foreground whitespace-nowrap">
-                    {new Intl.NumberFormat("pt-MZ", { style: "currency", currency: "MZN" }).format(currentRevenue)}
+                    {mznRate > 0
+                      ? formatMoney({ currency: "MZN", minor: currentRevenueMznMinor })
+                      : "—"}
                   </span>
                   <span className="text-xs font-bold text-foreground whitespace-nowrap">/ MT {currentGoal.label}</span>
                 </div>

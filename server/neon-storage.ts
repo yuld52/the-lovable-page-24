@@ -743,16 +743,16 @@ export class NeonStorage {
                  saleDate.getFullYear() === d.getFullYear();
         });
         const dayTotal = daySales.reduce((sum: number, s: any) => sum + (Number(s.amount) || 0), 0);
-        chartData.push({ name: key, sales: dayTotal / 100 });
+        chartData.push({ name: key, sales: dayTotal });
       }
       
       return {
-        salesToday: totalRevenue / 100,
-        revenuePaid: totalRevenue / 100,
+        salesToday: totalRevenue,
+        revenuePaid: totalRevenue,
         salesApproved: sales.length,
         conversionRate,
         revenueTarget: 10000,
-        revenueCurrent: totalRevenue / 100,
+        revenueCurrent: totalRevenue,
         chartData,
       };
     } catch (error) {

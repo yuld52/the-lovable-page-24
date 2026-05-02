@@ -12,6 +12,8 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { apiRequest } from "@/lib/queryClient";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useUsdRates } from "@/hooks/use-currency";
+import { convertUsdCentsToCurrencyMinor, formatMoney } from "@/lib/currency";
 import {
   Dialog,
   DialogContent,
@@ -74,6 +76,8 @@ export default function Financeiro() {
   const { data: stats, isLoading: statsLoading } = useStats();
   const { data: sales, isLoading: salesLoading } = useSales();
   const { data: products } = useProducts();
+  const { data: usdRates } = useUsdRates();
+  const mznRate = usdRates?.["MZN"] ?? 0;
 
   const { data: userWithdrawals } = useQuery<any[]>({
     queryKey: ["/api/withdrawals"],
@@ -88,11 +92,16 @@ export default function Financeiro() {
   });
 
   // Calculate real financial data
-  // All amounts (sales and withdrawals) are stored in MTn minor units (MTn cents)
-  const totalEarnings = sales?.reduce((sum, s) => sum + (s.amount || 0), 0) || 0;
-  const approvedWithdrawals = userWithdrawals?.filter(w => w.status === 'approved').reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
-  const pendingWithdrawalsAmount = userWithdrawals?.filter(w => w.status === 'pending').reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
-  const availableBalance = Math.max(0, totalEarnings - approvedWithdrawals - pendingWithdrawalsAmount);
+  // Sale amounts are in USD cents (product.price, currency="USD").
+  // Withdrawal amounts are in MZN minor units (user enters MTn, server × 100).
+  // Convert sales to MZN minor units using live exchange rate, then subtract withdrawals.
+  const totalEarningsUsdCents = sales?.reduce((sum, s) => sum + (s.amount || 0), 0) || 0;
+  const totalEarningsMznMinor = mznRate > 0
+    ? convertUsdCentsToCurrencyMinor(totalEarningsUsdCents, "MZN", mznRate)
+    : 0;
+  const approvedWithdrawalsMznMinor = userWithdrawals?.filter(w => w.status === 'approved').reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
+  const pendingWithdrawalsMznMinor = userWithdrawals?.filter(w => w.status === 'pending').reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
+  const availableBalanceMznMinor = Math.max(0, totalEarningsMznMinor - approvedWithdrawalsMznMinor - pendingWithdrawalsMznMinor);
 
   const handleWithdraw = async () => {
     if (!amount || !pixKey) {
@@ -106,7 +115,7 @@ export default function Financeiro() {
 
     const amountFloat = parseFloat(amount);
     const amountCents = Math.round(amountFloat * 100);
-    if (amountCents > availableBalance) {
+    if (amountCents > availableBalanceMznMinor) {
       toast({
         title: "Saldo insuficiente",
         description: "O valor solicitado excede o saldo disponível.",
@@ -266,7 +275,7 @@ export default function Financeiro() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-white">
-                  {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(availableBalance / 100)}
+                  {mznRate > 0 ? formatMoney({ currency: "MZN", minor: availableBalanceMznMinor }) : "—"}
                 </div>
                 <p className="text-xs text-zinc-500 mt-1">Disponível para saque</p>
               </CardContent>
@@ -279,7 +288,7 @@ export default function Financeiro() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-white">
-                  {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(totalEarnings / 100)}
+                  {mznRate > 0 ? formatMoney({ currency: "MZN", minor: totalEarningsMznMinor }) : "—"}
                 </div>
                 <p className="text-xs text-zinc-500 mt-1">Histórico de vendas</p>
               </CardContent>
@@ -292,7 +301,7 @@ export default function Financeiro() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-white">
-                  {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(pendingWithdrawalsAmount / 100)}
+                  {formatMoney({ currency: "MZN", minor: pendingWithdrawalsMznMinor })}
                 </div>
                 <p className="text-xs text-zinc-500 mt-1">Aguardando processamento</p>
               </CardContent>
@@ -339,7 +348,7 @@ export default function Financeiro() {
                           </td>
                           <td className="px-6 py-4">
                             <span className="text-sm font-bold text-white">
-                              {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format((w.amount || 0) / 100)}
+                              {formatMoney({ currency: "MZN", minor: w.amount || 0 })}
                             </span>
                           </td>
                           <td className="px-6 py-4">
@@ -430,7 +439,9 @@ export default function Financeiro() {
                           </td>
                           <td className="px-6 py-4">
                             <span className="text-sm font-bold text-white">
-                              {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format((sale.amount || 0) / 100)}
+                              {mznRate > 0
+                                ? formatMoney({ currency: "MZN", minor: convertUsdCentsToCurrencyMinor(sale.amount || 0, "MZN", mznRate) })
+                                : "—"}
                             </span>
                           </td>
                           <td className="px-6 py-4">
