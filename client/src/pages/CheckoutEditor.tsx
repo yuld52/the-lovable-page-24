@@ -60,6 +60,7 @@ const defaultConfig: CheckoutConfig = {
   showAddress: false,
   checkoutLanguage: "pt",
   checkoutCurrency: "AUTO",
+  paymentMethods: ["paypal", "mpesa", "emola", "googlepay"],
 };
 
 

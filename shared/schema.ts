@@ -117,6 +117,7 @@ export type CheckoutConfig = {
   checkoutLanguage: CheckoutLanguage | "AUTO";
   checkoutCurrency?: CheckoutCurrency;
   previewCurrency?: CheckoutCurrency;
+  paymentMethods?: string[];
 };
 
 export const settings = pgTable("settings", {
