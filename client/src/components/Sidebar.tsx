@@ -13,7 +13,6 @@ import {
   DollarSign,
   Folder,
   Users,
-  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStats } from "@/hooks/use-stats";
@@ -248,23 +247,6 @@ export function Sidebar() {
             )}
           </div>
 
-          {isAdmin && (
-            <div className="pt-2 mt-2 border-t border-border/40">
-              <Link href="/admin">
-                <button
-                  className={cn(
-                    "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-                    location.startsWith("/admin")
-                      ? "bg-red-600 text-white shadow-lg"
-                      : "text-red-400 hover:text-white hover:bg-red-600/20 border border-red-500/20",
-                  )}
-                >
-                  <Shield size={18} strokeWidth={2.5} />
-                  Painel Admin
-                </button>
-              </Link>
-            </div>
-          )}
         </nav>
       </div>
 
