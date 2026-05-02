@@ -1,9 +1,9 @@
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { DollarSign, ArrowDownToLine, History, Loader2, PieChart, CreditCard, Plus, Trash2, Check, Clock, AlertCircle, ArrowLeft, ShieldCheck, Banknote, Info } from "lucide-react";
+import { DollarSign, ArrowDownToLine, History, Loader2, PieChart, CreditCard, Plus, Trash2, Check, Clock, AlertCircle, ArrowLeft, ShieldCheck, Banknote, Info, FileText, User, Home, ChevronDown, ChevronUp, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useStats } from "@/hooks/use-stats";
 import { useSales } from "@/hooks/use-sales";
@@ -38,6 +38,18 @@ export default function Financeiro() {
   const [showWithdrawForm, setShowWithdrawForm] = useState(false);
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+
+  // Identity verification state
+  const [docsOpen, setDocsOpen] = useState(true);
+  const [residenceOpen, setResidenceOpen] = useState(false);
+  const [idFront, setIdFront] = useState<File | null>(null);
+  const [idBack, setIdBack] = useState<File | null>(null);
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
+  const [proofOfAddress, setProofOfAddress] = useState<File | null>(null);
+  const idFrontRef = useRef<HTMLInputElement>(null);
+  const idBackRef = useRef<HTMLInputElement>(null);
+  const selfieRef = useRef<HTMLInputElement>(null);
+  const proofRef = useRef<HTMLInputElement>(null);
 
   const METHOD_LABELS: Record<string, string> = {
     mpesa: "M-Pesa",
@@ -679,12 +691,146 @@ export default function Financeiro() {
               })()}
             </div>
 
+            {/* Identity Verification */}
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-amber-400">Verificação de Identidade Necessária</p>
+                <p className="text-[11px] text-amber-300/70 mt-0.5">Para realizar seu primeiro saque, precisamos confirmar sua identidade. Envie os documentos abaixo junto com sua solicitação.</p>
+              </div>
+            </div>
+
+            {/* Documentos de Identidade */}
+            <div className="rounded-xl border border-zinc-800 overflow-hidden">
+              <button
+                onClick={() => setDocsOpen(!docsOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-zinc-900/50 hover:bg-zinc-900 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-purple-400" />
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-white">Documentos de Identidade <span className="text-red-400">*</span></p>
+                    <p className="text-[11px] text-zinc-500">
+                      {[idFront, idBack, selfieFile].filter(Boolean).length}/3 documentos enviados
+                    </p>
+                  </div>
+                </div>
+                {docsOpen ? <ChevronUp className="w-4 h-4 text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-zinc-400" />}
+              </button>
+
+              {docsOpen && (
+                <div className="px-4 py-3 space-y-4 bg-zinc-950/30">
+                  {/* ID front + back */}
+                  <div>
+                    <p className="text-xs font-medium text-zinc-300 mb-2">Documento de Identidade <span className="text-red-400">*</span></p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* Front */}
+                      <div>
+                        <p className="text-[10px] text-zinc-500 mb-1">Frente</p>
+                        <input ref={idFrontRef} type="file" accept="image/jpg,image/jpeg,image/png" className="hidden" onChange={e => setIdFront(e.target.files?.[0] || null)} />
+                        <button
+                          onClick={() => idFrontRef.current?.click()}
+                          className={`w-full border-2 border-dashed rounded-lg py-4 flex flex-col items-center gap-1 transition-colors ${idFront ? "border-purple-500/50 bg-purple-500/5" : "border-zinc-700 hover:border-zinc-500"}`}
+                        >
+                          {idFront ? <Check className="w-5 h-5 text-purple-400" /> : <FileText className="w-5 h-5 text-zinc-500" />}
+                          <p className="text-[10px] text-zinc-400 text-center">{idFront ? idFront.name.slice(0, 14) + "…" : "Clique para enviar"}</p>
+                          {!idFront && <p className="text-[9px] text-zinc-600">JPG, JPEG ou PNG (máx. 5MB)</p>}
+                        </button>
+                      </div>
+                      {/* Back */}
+                      <div>
+                        <p className="text-[10px] text-zinc-500 mb-1">Verso</p>
+                        <input ref={idBackRef} type="file" accept="image/jpg,image/jpeg,image/png" className="hidden" onChange={e => setIdBack(e.target.files?.[0] || null)} />
+                        <button
+                          onClick={() => idBackRef.current?.click()}
+                          className={`w-full border-2 border-dashed rounded-lg py-4 flex flex-col items-center gap-1 transition-colors ${idBack ? "border-purple-500/50 bg-purple-500/5" : "border-zinc-700 hover:border-zinc-500"}`}
+                        >
+                          {idBack ? <Check className="w-5 h-5 text-purple-400" /> : <FileText className="w-5 h-5 text-zinc-500" />}
+                          <p className="text-[10px] text-zinc-400 text-center">{idBack ? idBack.name.slice(0, 14) + "…" : "Clique para enviar"}</p>
+                          {!idBack && <p className="text-[9px] text-zinc-600">JPG, JPEG ou PNG (máx. 5MB)</p>}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Selfie */}
+                  <div>
+                    <p className="text-xs font-medium text-zinc-300 mb-2">Selfie com o Documento <span className="text-red-400">*</span></p>
+                    <input ref={selfieRef} type="file" accept="image/jpg,image/jpeg,image/png" className="hidden" onChange={e => setSelfieFile(e.target.files?.[0] || null)} />
+                    <button
+                      onClick={() => selfieRef.current?.click()}
+                      className={`w-full border-2 border-dashed rounded-lg py-5 flex flex-col items-center gap-1.5 transition-colors ${selfieFile ? "border-purple-500/50 bg-purple-500/5" : "border-zinc-700 hover:border-zinc-500"}`}
+                    >
+                      {selfieFile ? <Check className="w-6 h-6 text-purple-400" /> : <User className="w-6 h-6 text-zinc-500" />}
+                      <p className="text-[11px] text-zinc-400">{selfieFile ? selfieFile.name.slice(0, 20) + "…" : "Clique para enviar selfie"}</p>
+                      {!selfieFile && <p className="text-[10px] text-zinc-600">JPG, JPEG ou PNG (máx. 5MB)</p>}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Comprovativo de Residência */}
+            <div className="rounded-xl border border-zinc-800 overflow-hidden">
+              <button
+                onClick={() => setResidenceOpen(!residenceOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-zinc-900/50 hover:bg-zinc-900 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Home className="w-4 h-4 text-purple-400" />
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-white">Comprovativo de Residência <span className="text-red-400">*</span></p>
+                    <p className="text-[11px] text-zinc-500">{proofOfAddress ? "1/1 documento enviado" : "0/1 documento enviado"}</p>
+                  </div>
+                </div>
+                {residenceOpen ? <ChevronUp className="w-4 h-4 text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-zinc-400" />}
+              </button>
+
+              {residenceOpen && (
+                <div className="px-4 py-3 bg-zinc-950/30">
+                  <input ref={proofRef} type="file" accept="image/jpg,image/jpeg,image/png" className="hidden" onChange={e => setProofOfAddress(e.target.files?.[0] || null)} />
+                  <button
+                    onClick={() => proofRef.current?.click()}
+                    className={`w-full border-2 border-dashed rounded-lg py-5 flex flex-col items-center gap-1.5 transition-colors ${proofOfAddress ? "border-purple-500/50 bg-purple-500/5" : "border-zinc-700 hover:border-zinc-500"}`}
+                  >
+                    {proofOfAddress ? <Check className="w-6 h-6 text-purple-400" /> : <Upload className="w-6 h-6 text-zinc-500" />}
+                    <p className="text-[11px] text-zinc-400">{proofOfAddress ? proofOfAddress.name.slice(0, 20) + "…" : "Clique para enviar"}</p>
+                    {!proofOfAddress && <p className="text-[10px] text-zinc-600">JPG, JPEG ou PNG (máx. 5MB)</p>}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Tip */}
+            <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 px-3 py-2.5">
+              <p className="text-[11px] text-blue-300 leading-relaxed">
+                <span className="font-bold text-blue-400">Dicas:</span> Certifique-se de que todos os documentos estão visíveis, bem iluminados e sem cortes. A verificação leva 1-3 dias úteis.
+              </p>
+            </div>
+
+            {/* Fee summary */}
+            <div className="space-y-1 border-t border-zinc-800 pt-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-400">Taxa de Saque:</span>
+                <span className="font-semibold text-white">10%</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-400">Você receberá:</span>
+                <span className="font-bold text-emerald-400">
+                  {amount
+                    ? new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2 }).format(parseFloat(amount) * 0.9) + " MZN"
+                    : "0,00 MZN"}
+                </span>
+              </div>
+            </div>
+
             <Button
               onClick={() => { setShowWithdrawForm(false); setShowWithdrawDialog(true); }}
               disabled={!amount || !pixKey}
-              className={`w-full text-white h-11 mt-2 ${METHOD_COLORS[withdrawMethod]}`}
+              className={`w-full text-white h-11 ${METHOD_COLORS[withdrawMethod]}`}
             >
-              Continuar
+              <DollarSign className="w-4 h-4 mr-1" />
+              Sacar
             </Button>
           </div>
         </DialogContent>
