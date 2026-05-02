@@ -886,7 +886,7 @@ export async function registerRoutes(
       const user = (req as any).user;
       if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
       const id = parseInt(req.params.id as string);
-      const { adminNote } = req.body;
+      const { adminNote } = req.body || {};
       const withdrawal = await storage.updateWithdrawalStatus(id, 'approved', adminNote);
       res.json(withdrawal);
       // ── Email: withdrawal approved (fire-and-forget) ──
@@ -919,7 +919,7 @@ export async function registerRoutes(
       const user = (req as any).user;
       if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
       const id = parseInt(req.params.id as string);
-      const { adminNote } = req.body;
+      const { adminNote } = req.body || {};
       const withdrawal = await storage.updateWithdrawalStatus(id, 'rejected', adminNote);
       res.json(withdrawal);
       // ── Email: withdrawal rejected (fire-and-forget) ──
