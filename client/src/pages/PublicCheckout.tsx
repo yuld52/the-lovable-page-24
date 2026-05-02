@@ -583,56 +583,64 @@ export default function PublicCheckout() {
               </div>
             )}
             <div className="p-4 space-y-4">
-              {/* Payment method selector — only if product has multiple or mobile methods */}
+              {/* Payment method selector */}
               {(() => {
-                const methods: string[] = product?.paymentMethods || ["paypal"];
-                const hasMobile = methods.some(m => m === "mpesa" || m === "emola");
-                const hasPaypal = methods.includes("paypal");
-                const showSelector = methods.length > 1 || hasMobile;
-
-                const METHOD_META: Record<string, { label: string; sub: string; badge: string; badgeBg: string; letter: string }> = {
-                  paypal: { label: "PayPal", sub: "Pagamento internacional", badge: "PP", badgeBg: "#003087", letter: "P" },
-                  mpesa:  { label: "M-Pesa", sub: "Carteira móvel Moçambique", badge: "M",  badgeBg: "#e11d48", letter: "M" },
-                  emola:  { label: "e-Mola", sub: "Carteira móvel Moçambique", badge: "E",  badgeBg: "#f97316", letter: "E" },
+                const METHOD_META: Record<string, { label: string; badgeBg: string; letter: string }> = {
+                  paypal: { label: "PayPal",  badgeBg: "#003087", letter: "P" },
+                  mpesa:  { label: "M-Pesa",  badgeBg: "#e11d48", letter: "M" },
+                  emola:  { label: "e-Mola",  badgeBg: "#f97316", letter: "E" },
                 };
+
+                const allMethods: string[] = product?.paymentMethods || ["paypal"];
+                // Only show methods we know how to render
+                const knownMethods = allMethods.filter(m => METHOD_META[m]);
+                const isMobile = (m: string) => m === "mpesa" || m === "emola";
+                const showSelector = knownMethods.length > 1;
+                const activePrimary = config.primaryColor || "#22a559";
 
                 return (
                   <>
+                    {/* Selector cards — only when 2+ methods */}
                     {showSelector && (
                       <div className="space-y-2">
                         <label className="block text-sm font-semibold" style={{ color: config.textColor }}>
                           Selecione o método de pagamento <span className="text-red-500">*</span>
                         </label>
-                        <div className="grid grid-cols-2 gap-2">
-                          {methods.filter(m => METHOD_META[m]).map(m => {
+                        <div className={`grid gap-2 ${knownMethods.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
+                          {knownMethods.map(m => {
                             const meta = METHOD_META[m];
                             const isSelected = selectedPaymentMethod === m;
                             return (
                               <button
                                 key={m}
+                                type="button"
                                 onClick={() => setSelectedPaymentMethod(m)}
-                                className={`flex flex-col items-center gap-2 py-4 px-3 rounded-xl border-2 transition-all ${
-                                  isSelected
-                                    ? "border-[var(--primary)] bg-[var(--primary-soft)]"
-                                    : "border-gray-200 hover:border-gray-300 bg-white"
-                                }`}
+                                className="flex items-center gap-2.5 px-3 py-3.5 rounded-xl border-2 transition-all text-left"
                                 style={{
-                                  ["--primary" as any]: config.primaryColor,
-                                  ["--primary-soft" as any]: getSoftBackgroundColor(config.primaryColor),
-                                  borderColor: isSelected ? config.primaryColor : undefined,
-                                  backgroundColor: isSelected ? getSoftBackgroundColor(config.primaryColor) : undefined,
+                                  borderColor: isSelected ? activePrimary : "#e5e7eb",
+                                  backgroundColor: isSelected ? getSoftBackgroundColor(activePrimary) : "#ffffff",
                                 }}
                               >
-                                <div className="flex items-center gap-2 w-full">
-                                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${isSelected ? "border-[4px]" : "border-gray-300"}`}
-                                    style={{ borderColor: isSelected ? config.primaryColor : undefined }}>
-                                    {isSelected && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.primaryColor }} />}
-                                  </div>
-                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: meta.badgeBg }}>
-                                    {meta.letter}
-                                  </div>
-                                  <span className="text-sm font-semibold" style={{ color: config.textColor }}>{meta.label}</span>
+                                {/* Radio dot */}
+                                <div
+                                  className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
+                                  style={{ borderColor: isSelected ? activePrimary : "#d1d5db" }}
+                                >
+                                  {isSelected && (
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: activePrimary }} />
+                                  )}
                                 </div>
+                                {/* Logo badge */}
+                                <div
+                                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
+                                  style={{ backgroundColor: meta.badgeBg }}
+                                >
+                                  {meta.letter}
+                                </div>
+                                {/* Label */}
+                                <span className="text-sm font-semibold leading-tight" style={{ color: config.textColor }}>
+                                  {meta.label}
+                                </span>
                               </button>
                             );
                           })}
@@ -640,9 +648,9 @@ export default function PublicCheckout() {
                       </div>
                     )}
 
-                    {/* Mobile phone input for M-Pesa / e-Mola */}
-                    {(selectedPaymentMethod === "mpesa" || selectedPaymentMethod === "emola") && (
-                      <div className="space-y-1">
+                    {/* Phone input — M-Pesa or e-Mola */}
+                    {isMobile(selectedPaymentMethod) && (
+                      <div className="space-y-2">
                         <label className="block text-sm font-semibold" style={{ color: config.textColor }}>
                           Número {selectedPaymentMethod === "mpesa" ? "M-Pesa" : "e-Mola"} <span className="text-red-500">*</span>
                         </label>
@@ -651,6 +659,7 @@ export default function PublicCheckout() {
                           value={mobilePhone}
                           onChange={setMobilePhone}
                           preferredCountries={["mz"]}
+                          placeholder="86 12 34 567"
                           inputStyle={{
                             width: "100%",
                             height: "44px",
@@ -661,33 +670,40 @@ export default function PublicCheckout() {
                             fontSize: "14px",
                           }}
                           containerStyle={{ width: "100%" }}
-                          buttonStyle={{ backgroundColor: "transparent", border: "1px solid #d1d5db", borderRight: "none", borderRadius: "6px 0 0 6px" }}
+                          buttonStyle={{
+                            backgroundColor: "transparent",
+                            border: "1px solid #d1d5db",
+                            borderRight: "none",
+                            borderRadius: "6px 0 0 6px",
+                          }}
                         />
                         <Button
                           onClick={handleMobileSubmit}
                           disabled={mobileSubmitting || !mobilePhone}
-                          className="w-full h-12 text-base font-bold mt-2 text-white"
-                          style={{ backgroundColor: config.primaryColor }}
+                          className="w-full h-12 text-base font-bold text-white"
+                          style={{ backgroundColor: activePrimary }}
                         >
-                          {mobileSubmitting
-                            ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> A processar…</>
-                            : `Pagar ${moneyFromUsdCents(calculateTotal())} via ${selectedPaymentMethod === "mpesa" ? "M-Pesa" : "e-Mola"}`}
+                          {mobileSubmitting ? (
+                            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />A processar…</>
+                          ) : (
+                            `Pagar ${moneyFromUsdCents(calculateTotal())} via ${selectedPaymentMethod === "mpesa" ? "M-Pesa" : "e-Mola"}`
+                          )}
                         </Button>
                       </div>
                     )}
 
-                    {/* PayPal */}
-                    {(selectedPaymentMethod === "paypal" || (!hasMobile && hasPaypal)) && (
-                      <div>
-                        <PayPalVisual
-                          clientId={paypalConfig?.clientId}
-                          currency={currency}
-                          environment={paypalConfig?.environment}
-                          createOrder={handleCreateOrder}
-                          onApprove={handleApprove}
-                          locale={activeLanguage === 'pt' ? 'pt_BR' : activeLanguage === 'es' ? 'es_ES' : 'en_US'}
-                        />
-                      </div>
+                    {/* PayPal button — show when selected OR when initialising and paypal is available */}
+                    {(selectedPaymentMethod === "paypal" ||
+                      (!selectedPaymentMethod && knownMethods.includes("paypal")) ||
+                      knownMethods.length === 0) && (
+                      <PayPalVisual
+                        clientId={paypalConfig?.clientId}
+                        currency={currency}
+                        environment={paypalConfig?.environment}
+                        createOrder={handleCreateOrder}
+                        onApprove={handleApprove}
+                        locale={activeLanguage === 'pt' ? 'pt_BR' : activeLanguage === 'es' ? 'es_ES' : 'en_US'}
+                      />
                     )}
                   </>
                 );
