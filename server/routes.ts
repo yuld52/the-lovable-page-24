@@ -577,6 +577,39 @@ export async function registerRoutes(
     }
   });
 
+  // --- CONTAS BANCÁRIAS ---
+  app.get("/api/bank-accounts", requireAuth, async (req, res) => {
+    try {
+      const userId = String((req as any).user?.id || "");
+      const result = await storage.getBankAccounts(userId);
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.post("/api/bank-accounts", requireAuth, async (req, res) => {
+    try {
+      const userId = String((req as any).user?.id || "");
+      const { type, phone } = req.body;
+      if (!type || !phone) return res.status(400).json({ message: "Tipo e número são obrigatórios" });
+      const result = await storage.createBankAccount(userId, type, phone);
+      res.status(201).json(result);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.delete("/api/bank-accounts/:id", requireAuth, async (req, res) => {
+    try {
+      const userId = String((req as any).user?.id || "");
+      await storage.deleteBankAccount(parseInt(req.params.id), userId);
+      res.status(204).end();
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
   // --- CHECKOUTS (Admin) ---
   app.get("/api/admin/checkouts", requireAuth, async (req, res) => {
     try {

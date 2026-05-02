@@ -11,7 +11,7 @@ import { useProducts } from "@/hooks/use-products";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { apiRequest } from "@/lib/queryClient";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -109,17 +109,46 @@ export default function Financeiro() {
     }
   };
 
+  const { data: bankAccounts, isLoading: accountsLoading } = useQuery<any[]>({
+    queryKey: ["/api/bank-accounts"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/bank-accounts");
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
   const addAccountMutation = useMutation({
     mutationFn: async (account: typeof newAccount) => {
-      return Promise.resolve(account);
+      const res = await apiRequest("POST", "/api/bank-accounts", account);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Erro ao salvar conta");
+      }
+      return res.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bank-accounts"] });
       toast({ title: "Conta salva!", description: "Sua conta de pagamento foi cadastrada." });
       setShowAddAccount(false);
       setNewAccount({ type: "mpesa", phone: "" });
     },
+    onError: (err: any) => {
+      toast({ title: "Erro", description: err.message || "Não foi possível salvar a conta.", variant: "destructive" });
+    }
+  });
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await apiRequest("DELETE", `/api/bank-accounts/${id}`);
+      if (!res.ok) throw new Error("Erro ao apagar conta");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bank-accounts"] });
+      toast({ title: "Conta removida", description: "Conta de pagamento removida com sucesso." });
+    },
     onError: () => {
-      toast({ title: "Erro", description: "Não foi possível salvar a conta.", variant: "destructive" });
+      toast({ title: "Erro", description: "Não foi possível remover a conta.", variant: "destructive" });
     }
   });
 
@@ -350,7 +379,7 @@ export default function Financeiro() {
                 Cadastre M-Pesa, e-Mola ou PIX para receber os seus saques.
               </CardDescription>
             </div>
-            <Button 
+            <Button
               onClick={() => setShowAddAccount(true)}
               className="bg-purple-600 hover:bg-purple-500 text-white"
               size="sm"
@@ -360,15 +389,48 @@ export default function Financeiro() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
-                <CreditCard className="w-8 h-8 text-zinc-500" />
+            {accountsLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
               </div>
-              <h3 className="text-lg font-medium text-white mb-2">Nenhuma conta cadastrada</h3>
-              <p className="text-sm text-zinc-500 max-w-sm">
-                Cadastre suas contas bancárias para receber pagamentos via PIX ou transferência.
-              </p>
-            </div>
+            ) : !bankAccounts || bankAccounts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
+                  <CreditCard className="w-8 h-8 text-zinc-500" />
+                </div>
+                <h3 className="text-lg font-medium text-white mb-2">Nenhuma conta cadastrada</h3>
+                <p className="text-sm text-zinc-500 max-w-sm">
+                  Cadastre suas contas para receber saques via M-Pesa, e-Mola ou PIX.
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {bankAccounts.map((acc) => (
+                  <div key={acc.id} className="flex items-center justify-between bg-zinc-900/50 border border-zinc-800/50 rounded-xl px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold ${
+                        acc.type === 'mpesa' ? 'bg-red-600' : acc.type === 'emola' ? 'bg-orange-500' : 'bg-purple-600'
+                      }`}>
+                        {acc.type === 'mpesa' ? 'M' : acc.type === 'emola' ? 'E' : 'P'}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-white">{METHOD_LABELS[acc.type]}</p>
+                        <p className="text-xs text-zinc-400">{acc.phone}</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 w-8"
+                      onClick={() => deleteAccountMutation.mutate(acc.id)}
+                      disabled={deleteAccountMutation.isPending}
+                    >
+                      {deleteAccountMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
