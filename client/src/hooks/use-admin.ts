@@ -53,6 +53,37 @@ export function useAdminCheckouts() {
   });
 }
 
+export function useAdminRevenueRanking() {
+  return useQuery({
+    queryKey: ["admin", "revenue-ranking"],
+    queryFn: async () => {
+      const user = auth.currentUser;
+      if (!user) return [];
+
+      const idToken = await getIdToken(user);
+      const response = await fetch("/api/admin/revenue-ranking", {
+        headers: { "Authorization": `Bearer ${idToken}` },
+      });
+
+      if (!response.ok) {
+        console.error("Failed to fetch revenue ranking:", response.status);
+        return [];
+      }
+
+      return response.json() as Promise<{
+        rank: number;
+        ownerId: string;
+        email: string;
+        paidRevenue: number;
+        paidSales: number;
+        lastSaleAt: string | null;
+      }[]>;
+    },
+    staleTime: 1000 * 60 * 2,
+    refetchOnWindowFocus: false,
+  });
+}
+
 export function useAdminApproveProduct() {
   const queryClient = useQueryClient();
   return useMutation({

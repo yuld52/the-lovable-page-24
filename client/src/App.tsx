@@ -25,6 +25,7 @@ import AdminProducts from "@/pages/AdminProducts";
 import AdminUsers from "@/pages/AdminUsers";
 import AdminSettings from "@/pages/AdminSettings";
 import AdminWithdrawals from "@/pages/AdminWithdrawals";
+import AdminRevenueRanking from "@/pages/AdminRevenueRanking";
 import Profile from "@/pages/Profile";
 import MembersArea from "@/pages/MembersArea";
 import FAQ from "@/pages/FAQ";
@@ -87,6 +88,7 @@ function Router() {
       <Route path="/admin/products" component={AdminProducts} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/withdrawals" component={AdminWithdrawals} />
+      <Route path="/admin/revenue-ranking" component={AdminRevenueRanking} />
       <Route path="/admin/settings" component={AdminSettings} />
       
       {/* Fallback to 404 */}

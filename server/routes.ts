@@ -805,6 +805,77 @@ export async function registerRoutes(
     }
   });
 
+  // --- RANKING DE FATURAMENTO (Admin) ---
+  app.get("/api/admin/revenue-ranking", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
+
+      const client = await (await import("./neon-storage")).neonStorage;
+      const pool = (client as any);
+
+      // Query: sum of paid/captured sales grouped by checkout owner
+      const { Pool: PgPool, neonConfig } = await import("@neondatabase/serverless");
+      const ws = (await import("ws")).default;
+      neonConfig.webSocketConstructor = ws;
+      const dbUrl = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || "";
+      const pg = new PgPool({ connectionString: dbUrl });
+      const conn = await pg.connect();
+
+      try {
+        const result = await conn.query(`
+          SELECT
+            c.owner_id,
+            COALESCE(SUM(s.amount), 0)::bigint AS total_revenue,
+            COUNT(s.id)::int AS total_sales,
+            COUNT(CASE WHEN s.status IN ('paid', 'captured') THEN 1 END)::int AS paid_sales,
+            COALESCE(SUM(CASE WHEN s.status IN ('paid', 'captured') THEN s.amount ELSE 0 END), 0)::bigint AS paid_revenue,
+            MAX(s.created_at) AS last_sale_at
+          FROM checkouts c
+          LEFT JOIN sales s ON s.checkout_id = c.id AND s.status IN ('paid', 'captured')
+          WHERE c.owner_id IS NOT NULL
+          GROUP BY c.owner_id
+          HAVING COALESCE(SUM(CASE WHEN s.status IN ('paid', 'captured') THEN s.amount ELSE 0 END), 0) > 0
+          ORDER BY paid_revenue DESC
+          LIMIT 100
+        `);
+
+        const rows = result.rows;
+
+        // Enrich with Firebase user emails
+        let userMap: Record<string, string> = {};
+        try {
+          const ownerIds = rows.map((r: any) => r.owner_id).filter(Boolean);
+          if (ownerIds.length > 0) {
+            const firebaseUsers = await adminAuth.getUsers(ownerIds.map((uid: string) => ({ uid })));
+            firebaseUsers.users.forEach(u => {
+              userMap[u.uid] = u.email || u.displayName || u.uid;
+            });
+          }
+        } catch (e) {
+          console.warn("[revenue-ranking] Could not enrich with Firebase emails:", e);
+        }
+
+        const ranking = rows.map((row: any, idx: number) => ({
+          rank: idx + 1,
+          ownerId: row.owner_id,
+          email: userMap[row.owner_id] || row.owner_id,
+          paidRevenue: Number(row.paid_revenue),
+          paidSales: Number(row.paid_sales),
+          lastSaleAt: row.last_sale_at,
+        }));
+
+        res.json(ranking);
+      } finally {
+        conn.release();
+        await pg.end();
+      }
+    } catch (error: any) {
+      console.error("Error getting revenue ranking:", error);
+      res.status(500).json({ message: error.message || "Erro ao buscar ranking" });
+    }
+  });
+
   // --- TESTE DE BANCO (Health Check) ---
   app.get("/api/db-test", async (_req, res) => {
     try {
