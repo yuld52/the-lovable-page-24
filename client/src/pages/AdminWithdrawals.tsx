@@ -71,7 +71,7 @@ export default function AdminWithdrawals() {
     const search = searchTerm.toLowerCase();
     const matchSearch =
       (w.username || w.user_email || "").toLowerCase().includes(search) ||
-      (w.pix_key || w.pixKey || "").toLowerCase().includes(search);
+      (w.pix_key || "").toLowerCase().includes(search);
     const matchTab = activeTab === "all" || w.status === "pending";
     return matchSearch && matchTab;
   });
@@ -104,13 +104,13 @@ export default function AdminWithdrawals() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold text-white">Aprovação de Saques</h1>
-              <p className="text-sm text-muted-foreground">Aprove ou rejeite solicitações de saque</p>
+              <p className="text-sm text-muted-foreground">Aprove ou rejeite solicitações de saque via PIX</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <Input
-                  placeholder="Pesquisar por e-mail ou conta..."
+                  placeholder="Pesquisar por e-mail ou PIX..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 bg-zinc-900/50 border-zinc-800 h-10 w-72 text-sm"
@@ -166,7 +166,7 @@ export default function AdminWithdrawals() {
                       <tr className="bg-zinc-950/50 border-b border-zinc-800/50">
                         <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Usuário</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Valor</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Conta</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Chave PIX</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Data</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Status</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-right">Ações</th>

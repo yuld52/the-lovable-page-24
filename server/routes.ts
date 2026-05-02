@@ -453,58 +453,21 @@ export async function registerRoutes(
     }
   });
 
-  // --- CONTAS BANCÁRIAS ---
-  app.get("/api/bank-accounts", requireAuth, async (req, res) => {
-    try {
-      const userId = String((req as any).user?.id || "");
-      const accounts = await storage.getBankAccounts(userId);
-      res.json(accounts);
-    } catch (err: any) {
-      console.error("Error getting bank accounts:", err);
-      res.status(500).json({ message: err.message || "Erro ao buscar contas" });
-    }
-  });
-
-  app.post("/api/bank-accounts", requireAuth, async (req, res) => {
-    try {
-      const userId = String((req as any).user?.id || "");
-      const { type, phone } = req.body;
-      if (!type || !phone) return res.status(400).json({ message: "type e phone são obrigatórios" });
-      const account = await storage.createBankAccount({ userId, type, phone });
-      res.status(201).json(account);
-    } catch (err: any) {
-      console.error("Error creating bank account:", err);
-      res.status(500).json({ message: err.message || "Erro ao adicionar conta" });
-    }
-  });
-
-  app.delete("/api/bank-accounts/:id", requireAuth, async (req, res) => {
-    try {
-      const userId = String((req as any).user?.id || "");
-      const id = parseInt(req.params.id as string);
-      await storage.deleteBankAccount(id, userId);
-      res.json({ ok: true });
-    } catch (err: any) {
-      console.error("Error deleting bank account:", err);
-      res.status(500).json({ message: err.message || "Erro ao remover conta" });
-    }
-  });
-
   // --- SAQUES (Withdrawals) ---
   app.post("/api/withdrawals", requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
-      const { amount, method, account } = req.body;
+      const { amount, pixKey, pixKeyType } = req.body;
 
-      if (!amount || !account) {
-        return res.status(400).json({ message: "Valor e conta são obrigatórios" });
+      if (!amount || !pixKey) {
+        return res.status(400).json({ message: "Amount and pixKey are required" });
       }
 
       const withdrawal = await storage.createWithdrawal({
         userId,
         amount: Math.round(parseFloat(amount) * 100),
-        pixKey: account,
-        pixKeyType: method || 'mpesa'
+        pixKey,
+        pixKeyType: pixKeyType || 'email'
       });
 
       res.status(201).json(withdrawal);
