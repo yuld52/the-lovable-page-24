@@ -78,16 +78,21 @@ export default function Financeiro() {
   const { data: userWithdrawals } = useQuery<any[]>({
     queryKey: ["/api/withdrawals"],
     queryFn: async () => {
-      const res = await apiRequest("GET", "/api/withdrawals");
-      if (!res.ok) return [];
-      return res.json();
+      try {
+        const res = await apiRequest("GET", "/api/withdrawals");
+        return res.json();
+      } catch {
+        return [];
+      }
     },
   });
 
   // Calculate real financial data
-  const totalEarnings = sales?.filter(s => s.status === 'paid').reduce((sum, s) => sum + (s.amount || 0), 0) || 0;
+  // totalEarnings = all sales (paid + pending) for display purposes
+  const totalEarnings = sales?.reduce((sum, s) => sum + (s.amount || 0), 0) || 0;
   const approvedWithdrawals = userWithdrawals?.filter(w => w.status === 'approved').reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
   const pendingWithdrawalsAmount = userWithdrawals?.filter(w => w.status === 'pending').reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
+  // availableBalance = all earnings minus already withdrawn/pending amounts
   const availableBalance = Math.max(0, totalEarnings - approvedWithdrawals - pendingWithdrawalsAmount);
 
   const handleWithdraw = async () => {
