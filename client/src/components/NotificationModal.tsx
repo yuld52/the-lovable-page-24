@@ -46,6 +46,11 @@ export function NotificationModal({ isOpen, onClose }: NotificationModalProps) {
       await updateSettings.mutateAsync({ salesNotifications: true });
       setIsActive(true);
       toast({ title: "Notificações ativadas!", description: "Você receberá alertas de vendas em tempo real." });
+      const token = await user.getIdToken();
+      fetch("/api/push/notify-activated", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      }).catch(() => {});
     } catch (err: any) {
       toast({ 
         title: "Falha na ativação", 

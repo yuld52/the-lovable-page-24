@@ -90,6 +90,23 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/push/notify-activated", requireAuth, async (req, res) => {
+    try {
+      const userId = String((req as any).user?.id || "");
+      const { sendNotification } = await import("./services/notification");
+      await sendNotification({
+        userId,
+        type: "system",
+        title: "Notificações ativas",
+        body: "Você receberá alertas de vendas em tempo real.",
+      });
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error("Push notify-activated error:", err);
+      res.status(500).json({ message: err.message || "Failed to send activation notification" });
+    }
+  });
+
   // --- AUTENTICAÇÃO ---
   app.post("/api/auth/check-email", async (req, res) => {
     try {
