@@ -733,21 +733,9 @@ export default function CheckoutEditor() {
                 </div>
               </div>
               <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl space-y-4">
-                <Label className="text-xs text-zinc-400 font-bold uppercase">Cor de Fundo</Label>
-                <div className="flex justify-center py-2">
-                  <ColorPicker value={config.backgroundColor} onChange={(c) => setConfig({ ...config, backgroundColor: c })} />
-                </div>
-              </div>
-              <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl space-y-4">
                 <Label className="text-xs text-zinc-400 font-bold uppercase">Cor do Timer</Label>
                 <div className="flex justify-center py-2">
                   <ColorPicker value={config.timerColor || "#000000"} onChange={(c) => setConfig({ ...config, timerColor: c })} />
-                </div>
-              </div>
-              <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl space-y-4">
-                <Label className="text-xs text-zinc-400 font-bold uppercase">Cor do Texto</Label>
-                <div className="flex justify-center py-2">
-                  <ColorPicker value={config.textColor} onChange={(c) => setConfig({ ...config, textColor: c })} />
                 </div>
               </div>
             </div>
