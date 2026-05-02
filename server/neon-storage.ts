@@ -512,7 +512,7 @@ export class NeonStorage {
     try {
       const client = await getPool().connect();
       try {
-        let query = `SELECT * FROM sales WHERE status = 'paid'`;
+        let query = `SELECT * FROM sales WHERE 1=1`;
         const params: any[] = [];
         
         if (userId) {
