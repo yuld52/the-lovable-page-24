@@ -33,6 +33,7 @@ export default function Financeiro() {
   
   // Withdrawal dialog state
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
+  const [showWithdrawForm, setShowWithdrawForm] = useState(false);
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
 
   const { data: stats, isLoading: statsLoading } = useStats();
@@ -194,62 +195,32 @@ export default function Financeiro() {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-1">
-              <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg sticky top-8">
-                <CardHeader>
-                  <CardTitle className="text-base font-bold text-white">Solicitar Saque</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-zinc-400 uppercase">Valor (R$)</label>
-                    <Input 
-                      type="number" 
-                      placeholder="0,00" 
-                      value={amount} 
-                      onChange={(e) => setAmount(e.target.value)}
-                      className="bg-zinc-900/50 border-zinc-800 h-11 text-white" 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-zinc-400 uppercase">Chave PIX</label>
-                    <Input 
-                      placeholder="E-mail, CPF ou telefone" 
-                      value={pixKey} 
-                      onChange={(e) => setPixKey(e.target.value)}
-                      className="bg-zinc-900/50 border-zinc-800 h-11 text-white" 
-                    />
-                  </div>
-                  <Button 
-                    onClick={() => setShowWithdrawDialog(true)}
-                    disabled={isLoading || !amount || !pixKey}
-                    className="w-full bg-purple-600 hover:bg-purple-500 text-white h-11"
-                  >
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Solicitar Saque"}
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="md:col-span-2">
-              <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-base font-bold text-white">Histórico de Saques</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mb-4">
-                      <ArrowDownToLine className="w-8 h-8 text-zinc-400" />
-                    </div>
-                    <h3 className="text-lg font-medium text-white mb-2">Nenhum saque realizado</h3>
-                    <p className="text-sm text-zinc-500 max-w-sm">
-                      Quando você realizar saques, eles aparecerão aqui. O processamento leva até 3 dias úteis.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          <div className="flex justify-end mb-4">
+            <Button
+              onClick={() => setShowWithdrawForm(true)}
+              className="bg-purple-600 hover:bg-purple-500 text-white gap-2"
+            >
+              <ArrowDownToLine className="w-4 h-4" />
+              Solicitar Saque
+            </Button>
           </div>
+
+          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-base font-bold text-white">Histórico de Saques</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
+                  <ArrowDownToLine className="w-8 h-8 text-zinc-500" />
+                </div>
+                <h3 className="text-lg font-medium text-white mb-2">Nenhum saque realizado</h3>
+                <p className="text-sm text-zinc-500 max-w-sm">
+                  Quando você realizar saques, eles aparecerão aqui. O processamento leva até 3 dias úteis.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </>
       )}
 
@@ -378,6 +349,43 @@ export default function Financeiro() {
           </CardContent>
         </Card>
       )}
+
+      {/* Withdraw Form Dialog */}
+      <Dialog open={showWithdrawForm} onOpenChange={(v) => { if (!v) { setShowWithdrawForm(false); setAmount(""); setPixKey(""); } }}>
+        <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-white">Solicitar Saque</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Valor (R$)</label>
+              <Input
+                type="number"
+                placeholder="0,00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Chave PIX</label>
+              <Input
+                placeholder="E-mail, CPF ou telefone"
+                value={pixKey}
+                onChange={(e) => setPixKey(e.target.value)}
+                className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
+              />
+            </div>
+            <Button
+              onClick={() => { setShowWithdrawForm(false); setShowWithdrawDialog(true); }}
+              disabled={!amount || !pixKey}
+              className="w-full bg-purple-600 hover:bg-purple-500 text-white h-11 mt-2"
+            >
+              Solicitar Saque
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Withdrawal Confirmation Dialog */}
       <Dialog open={showWithdrawDialog} onOpenChange={setShowWithdrawDialog}>
