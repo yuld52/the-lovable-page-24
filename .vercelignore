@@ -1,0 +1,9 @@
+node_modules
+.replit
+replit.md
+replit.nix
+start-all.js
+generate_vapid.cjs
+attached_assets
+public/uploads
+dist

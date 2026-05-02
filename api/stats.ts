@@ -13,7 +13,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const auth = await verifyAuth(req);
-  
+
   try {
     const client = await getDbClient();
     try {
@@ -21,7 +21,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
       const { period, productId, startDate: startDateStr, endDate: endDateStr } = req.query;
-      
+
       let startDate = new Date();
       startDate.setHours(0, 0, 0, 0);
       let endDate = new Date();
@@ -30,7 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (period === "custom" && startDateStr && endDateStr) {
         startDate = new Date(startDateStr as string);
         endDate = new Date(endDateStr as string);
-      } else if (period === "1") { // Yesterday
+      } else if (period === "1") {
         startDate.setDate(startDate.getDate() - 1);
         endDate = new Date(startDate);
         endDate.setHours(23, 59, 59, 999);
@@ -49,56 +49,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         AND created_at >= $2 
         AND created_at <= $3
       `;
-      
+
       const params: any[] = [userId, startDate, endDate];
-      
+
       if (productId && productId !== "all") {
         query += ` AND product_id = $4`;
         params.push(productId);
       }
 
       const result = await client.query(query, params);
-      const sales = result.rows.map(row => toCamelCase(row));
-      
-      // Get views from checkouts
-      const checkoutsResult = await client.query(`
-        SELECT * FROM checkouts 
-        WHERE owner_id = $1`
-      `, [userId]);
-      
+      const sales = result.rows.map((row: any) => toCamelCase(row));
+
+      const checkoutsResult = await client.query(
+        `SELECT * FROM checkouts WHERE owner_id = $1`,
+        [userId]
+      );
+
       let totalViews = 0;
       checkoutsResult.rows.forEach((row: any) => {
         if (productId && productId !== "all") {
           if (String(row.product_id) === String(productId)) {
-            totalViews += (row.views || 0);
+            totalViews += row.views || 0;
           }
         } else {
-          totalViews += (row.views || 0);
+          totalViews += row.views || 0;
         }
       });
-      
+
       const totalRevenue = sales.reduce((sum: number, s: any) => sum + (Number(s.amount) || 0), 0);
       const conversionRate = totalViews > 0 ? (sales.length / totalViews) * 100 : 0;
-      
-      // Chart Data
+
       const chartData: { name: string; sales: number }[] = [];
       const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       for (let i = diffDays; i >= 0; i--) {
         const d = new Date(endDate);
         d.setDate(endDate.getDate() - i);
         const key = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
         const daySales = sales.filter((s: any) => {
-          const saleDate = new Date(s.created_at);
-          return saleDate.getDate() === d.getDate() && 
-                 saleDate.getMonth() === d.getMonth() && 
-                 saleDate.getFullYear() === d.getFullYear();
+          const saleDate = new Date(s.createdAt);
+          return (
+            saleDate.getDate() === d.getDate() &&
+            saleDate.getMonth() === d.getMonth() &&
+            saleDate.getFullYear() === d.getFullYear()
+          );
         });
         const dayTotal = daySales.reduce((sum: number, s: any) => sum + (Number(s.amount) || 0), 0);
         chartData.push({ name: key, sales: dayTotal / 100 });
       }
-      
+
       return res.json({
         salesToday: totalRevenue / 100,
         revenuePaid: totalRevenue / 100,
@@ -113,14 +113,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   } catch (error: any) {
     console.error("Stats API error:", error);
-    return res.status(500).json({ 
-      salesToday: 0, 
-      revenuePaid: 0, 
-      salesApproved: 0, 
-      conversionRate: 0, 
-      revenueTarget: 10000, 
-      revenueCurrent: 0, 
-      chartData: [] 
+    return res.status(500).json({
+      salesToday: 0,
+      revenuePaid: 0,
+      salesApproved: 0,
+      conversionRate: 0,
+      revenueTarget: 10000,
+      revenueCurrent: 0,
+      chartData: [],
     });
   }
 }

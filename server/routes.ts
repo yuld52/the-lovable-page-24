@@ -21,8 +21,10 @@ export async function registerRoutes(
   registerTrackingRoutes(app, storage as any);
   registerChatRoutes(app);
 
-  // Pasta de uploads locais
-  const uploadsDir = path.join(process.cwd(), "public", "uploads");
+  // Pasta de uploads — usa /tmp no Vercel (serverless), pasta local no Replit
+  const uploadsDir = process.env.VERCEL
+    ? "/tmp/uploads"
+    : path.join(process.cwd(), "public", "uploads");
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
