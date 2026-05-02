@@ -20,6 +20,8 @@ import { useState } from "react";
 import { useUser } from "@/hooks/use-user";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
+import { useUsdRates } from "@/hooks/use-currency";
+import { convertUsdCentsToCurrencyMinor, formatMoney } from "@/lib/currency";
 
 const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
@@ -51,7 +53,15 @@ export function Sidebar() {
   ];
 
   const { data: stats } = useStats();
-  const currentRevenue = stats?.revenuePaid || 0;
+  const { data: usdRates } = useUsdRates();
+
+  // revenuePaid is in USD cents — convert to MZN for display and goal progress
+  const revenuePaidUsdCents = stats?.revenuePaid || 0;
+  const mznRate = usdRates?.["MZN"] ?? 1;
+  const currentRevenueMznMinor = convertUsdCentsToCurrencyMinor(revenuePaidUsdCents, "MZN", mznRate);
+  // currentRevenueMzn is in whole MTn (e.g. 110.81)
+  const currentRevenueMzn = currentRevenueMznMinor / 100;
+  const formattedRevenue = formatMoney({ currency: "MZN", minor: currentRevenueMznMinor });
 
   const goals = [
     { label: "10K", value: 10000 },
@@ -62,8 +72,8 @@ export function Sidebar() {
     { label: "1B", value: 1000000000 },
   ];
 
-  const currentGoal = goals.find((g) => currentRevenue < g.value) || goals[goals.length - 1];
-  const progress = Math.min((currentRevenue / currentGoal.value) * 100, 100);
+  const currentGoal = goals.find((g) => currentRevenueMzn < g.value) || goals[goals.length - 1];
+  const progress = Math.min((currentRevenueMzn / currentGoal.value) * 100, 100);
 
   const handleLogout = async () => {
     try {
@@ -96,7 +106,7 @@ export function Sidebar() {
                 <span className="text-[10px] font-normal text-white block">Faturamento</span>
                 <div className="flex items-center gap-1 mb-1">
                   <span className="text-xs font-bold text-foreground whitespace-nowrap">
-                    {new Intl.NumberFormat("pt-MZ", { style: "currency", currency: "MZN" }).format(currentRevenue)}
+                    {formattedRevenue}
                   </span>
                   <span className="text-xs font-bold text-foreground whitespace-nowrap">/ MT {currentGoal.label}</span>
                 </div>
