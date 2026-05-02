@@ -630,34 +630,7 @@ export default function PublicCheckout() {
                       </div>
                     )}
 
-                    {/* Order bump — above the pay button */}
-                    {orderBumpProductsData.length > 0 && (
-                      <div className="space-y-3">
-                        {orderBumpProductsData.map(p => (
-                          <div key={p.id} className="rounded-lg border-2 border-dashed" style={{ borderColor: config.primaryColor }}>
-                            <div className="flex items-start gap-3 p-3">
-                              <div className="flex-1">
-                                <h4 className="text-[17px] font-medium">{p.name}</h4>
-                                <div className="mt-1 font-bold text-sm" style={{ color: config.primaryColor }}>+ {moneyFromUsdCents(p.price)}</div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 p-3 cursor-pointer" style={{ backgroundColor: getSoftBackgroundColor(config.primaryColor) }} onClick={() => {
-                              const isSelected = orderBumpSelected.some(selectedId => String(selectedId) === String(p.id));
-                              if (isSelected) {
-                                setOrderBumpSelected(orderBumpSelected.filter(selectedId => String(selectedId) !== String(p.id)));
-                              } else {
-                                setOrderBumpSelected([...orderBumpSelected, Number(p.id)]);
-                              }
-                            }}>
-                              <Checkbox checked={orderBumpSelected.some(selectedId => String(selectedId) === String(p.id))} />
-                              <span className="text-sm font-medium" style={{ color: "#000000" }}>{t.addToOrder}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Phone input — M-Pesa or e-Mola */}
+                    {/* Phone number field — M-Pesa/e-Mola: above order bump */}
                     {isMobile(selectedPaymentMethod) && (
                       <div className="space-y-2">
                         <label className="block text-sm font-semibold" style={{ color: config.textColor }}>
@@ -686,19 +659,50 @@ export default function PublicCheckout() {
                             borderRadius: "6px 0 0 6px",
                           }}
                         />
-                        <Button
-                          onClick={handleMobileSubmit}
-                          disabled={mobileSubmitting || !mobilePhone}
-                          className="w-full h-12 text-base font-bold text-white"
-                          style={{ backgroundColor: activePrimary }}
-                        >
-                          {mobileSubmitting ? (
-                            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />A processar…</>
-                          ) : (
-                            `Pagar ${moneyFromUsdCents(calculateTotal())} via ${selectedPaymentMethod === "mpesa" ? "M-Pesa" : "e-Mola"}`
-                          )}
-                        </Button>
                       </div>
+                    )}
+
+                    {/* Order bump — above pay button */}
+                    {orderBumpProductsData.length > 0 && (
+                      <div className="space-y-3">
+                        {orderBumpProductsData.map(p => (
+                          <div key={p.id} className="rounded-lg border-2 border-dashed" style={{ borderColor: config.primaryColor }}>
+                            <div className="flex items-start gap-3 p-3">
+                              <div className="flex-1">
+                                <h4 className="text-[17px] font-medium">{p.name}</h4>
+                                <div className="mt-1 font-bold text-sm" style={{ color: config.primaryColor }}>+ {moneyFromUsdCents(p.price)}</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 p-3 cursor-pointer" style={{ backgroundColor: getSoftBackgroundColor(config.primaryColor) }} onClick={() => {
+                              const isSelected = orderBumpSelected.some(selectedId => String(selectedId) === String(p.id));
+                              if (isSelected) {
+                                setOrderBumpSelected(orderBumpSelected.filter(selectedId => String(selectedId) !== String(p.id)));
+                              } else {
+                                setOrderBumpSelected([...orderBumpSelected, Number(p.id)]);
+                              }
+                            }}>
+                              <Checkbox checked={orderBumpSelected.some(selectedId => String(selectedId) === String(p.id))} />
+                              <span className="text-sm font-medium" style={{ color: "#000000" }}>{t.addToOrder}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Pay button — M-Pesa or e-Mola: below order bump */}
+                    {isMobile(selectedPaymentMethod) && (
+                      <Button
+                        onClick={handleMobileSubmit}
+                        disabled={mobileSubmitting || !mobilePhone}
+                        className="w-full h-12 text-base font-bold text-white"
+                        style={{ backgroundColor: activePrimary }}
+                      >
+                        {mobileSubmitting ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />A processar…</>
+                        ) : (
+                          `Pagar ${moneyFromUsdCents(calculateTotal())} via ${selectedPaymentMethod === "mpesa" ? "M-Pesa" : "e-Mola"}`
+                        )}
+                      </Button>
                     )}
 
                     {/* Google Pay — show "coming soon" notice */}
@@ -710,7 +714,7 @@ export default function PublicCheckout() {
                       </div>
                     )}
 
-                    {/* PayPal button — show when selected OR when initialising and paypal is available */}
+                    {/* PayPal button */}
                     {(selectedPaymentMethod === "paypal" ||
                       (!selectedPaymentMethod && knownMethods.includes("paypal")) ||
                       knownMethods.length === 0) && (
