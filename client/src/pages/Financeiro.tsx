@@ -385,16 +385,17 @@ export default function Financeiro() {
                   <button
                     key={m}
                     onClick={() => { setWithdrawMethod(m); setPixKey(""); }}
-                    className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                    className={`py-2 px-1 rounded-xl text-xs font-bold transition-all border flex flex-col items-center gap-1 ${
                       withdrawMethod === m
                         ? m === "mpesa"
-                          ? "bg-red-600 border-red-500 text-white shadow"
+                          ? "bg-red-600/20 border-red-500 text-white shadow"
                           : m === "emola"
-                          ? "bg-orange-500 border-orange-400 text-white shadow"
-                          : "bg-purple-600 border-purple-500 text-white shadow"
+                          ? "bg-orange-500/20 border-orange-400 text-white shadow"
+                          : "bg-purple-600/20 border-purple-500 text-white shadow"
                         : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
                     }`}
                   >
+                    <img src={`/integrations/${m}.svg`} alt={METHOD_LABELS[m]} className="w-8 h-8 rounded-lg" />
                     {METHOD_LABELS[m]}
                   </button>
                 ))}
@@ -535,16 +536,17 @@ export default function Financeiro() {
                   <button
                     key={t}
                     onClick={() => setNewAccount({ ...newAccount, type: t, phone: "" })}
-                    className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                    className={`py-2 px-1 rounded-xl text-xs font-bold transition-all border flex flex-col items-center gap-1 ${
                       newAccount.type === t
                         ? t === "mpesa"
-                          ? "bg-red-600 border-red-500 text-white shadow"
+                          ? "bg-red-600/20 border-red-500 text-white shadow"
                           : t === "emola"
-                          ? "bg-orange-500 border-orange-400 text-white shadow"
-                          : "bg-purple-600 border-purple-500 text-white shadow"
+                          ? "bg-orange-500/20 border-orange-400 text-white shadow"
+                          : "bg-purple-600/20 border-purple-500 text-white shadow"
                         : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
                     }`}
                   >
+                    <img src={`/integrations/${t}.svg`} alt={METHOD_LABELS[t]} className="w-8 h-8 rounded-lg" />
                     {METHOD_LABELS[t]}
                   </button>
                 ))}
