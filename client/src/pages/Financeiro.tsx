@@ -26,11 +26,11 @@ export default function Financeiro() {
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState("");
   const [pixKey, setPixKey] = useState("");
-  const [withdrawMethod, setWithdrawMethod] = useState<"mpesa" | "emola" | "pix">("mpesa");
+  const [withdrawMethod, setWithdrawMethod] = useState<"mpesa" | "emola">("mpesa");
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"visao" | "historico" | "contas">("visao");
   const [showAddAccount, setShowAddAccount] = useState(false);
-  const [newAccount, setNewAccount] = useState<{ type: "mpesa" | "emola" | "pix"; phone: string }>({ type: "mpesa", phone: "" });
+  const [newAccount, setNewAccount] = useState<{ type: "mpesa" | "emola"; phone: string }>({ type: "mpesa", phone: "" });
 
   // Withdrawal dialog state
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
@@ -41,22 +41,18 @@ export default function Financeiro() {
   const METHOD_LABELS: Record<string, string> = {
     mpesa: "M-Pesa",
     emola: "e-Mola",
-    pix: "PIX",
   };
   const METHOD_COLORS: Record<string, string> = {
     mpesa: "bg-red-600 hover:bg-red-500",
     emola: "bg-orange-500 hover:bg-orange-400",
-    pix: "bg-purple-600 hover:bg-purple-500",
   };
   const KEY_LABELS: Record<string, string> = {
     mpesa: "Número M-Pesa",
     emola: "Número e-Mola",
-    pix: "Chave PIX",
   };
   const KEY_PLACEHOLDERS: Record<string, string> = {
     mpesa: "Ex: 84 XXX XXXX",
     emola: "Ex: 86 XXX XXXX",
-    pix: "E-mail, CPF ou telefone",
   };
 
   const { data: stats, isLoading: statsLoading } = useStats();
@@ -389,7 +385,7 @@ export default function Financeiro() {
             <div>
               <CardTitle className="text-base font-bold text-white">Contas de Pagamento</CardTitle>
               <CardDescription className="text-xs text-zinc-500">
-                Cadastre M-Pesa, e-Mola ou PIX para receber os seus saques.
+                Cadastre M-Pesa ou e-Mola para receber os seus saques.
               </CardDescription>
             </div>
             <Button
@@ -413,7 +409,7 @@ export default function Financeiro() {
                 </div>
                 <h3 className="text-lg font-medium text-white mb-2">Nenhuma conta cadastrada</h3>
                 <p className="text-sm text-zinc-500 max-w-sm">
-                  Cadastre suas contas para receber saques via M-Pesa, e-Mola ou PIX.
+                  Cadastre suas contas para receber saques via M-Pesa ou e-Mola.
                 </p>
               </div>
             ) : (
@@ -460,8 +456,8 @@ export default function Financeiro() {
             {/* Method selector */}
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Método</label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["mpesa", "emola", "pix"] as const).map((m) => (
+              <div className="grid grid-cols-2 gap-2">
+                {(["mpesa", "emola"] as const).map((m) => (
                   <button
                     key={m}
                     onClick={() => { setWithdrawMethod(m); setPixKey(""); setSelectedAccountId(null); }}
@@ -469,9 +465,7 @@ export default function Financeiro() {
                       withdrawMethod === m
                         ? m === "mpesa"
                           ? "bg-red-600 border-red-500 text-white shadow"
-                          : m === "emola"
-                          ? "bg-orange-500 border-orange-400 text-white shadow"
-                          : "bg-purple-600 border-purple-500 text-white shadow"
+                          : "bg-orange-500 border-orange-400 text-white shadow"
                         : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
                     }`}
                   >
@@ -671,8 +665,8 @@ export default function Financeiro() {
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Tipo de Conta</label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["mpesa", "emola", "pix"] as const).map((t) => (
+              <div className="grid grid-cols-2 gap-2">
+                {(["mpesa", "emola"] as const).map((t) => (
                   <button
                     key={t}
                     onClick={() => setNewAccount({ ...newAccount, type: t, phone: "" })}
@@ -680,9 +674,7 @@ export default function Financeiro() {
                       newAccount.type === t
                         ? t === "mpesa"
                           ? "bg-red-600 border-red-500 text-white shadow"
-                          : t === "emola"
-                          ? "bg-orange-500 border-orange-400 text-white shadow"
-                          : "bg-purple-600 border-purple-500 text-white shadow"
+                          : "bg-orange-500 border-orange-400 text-white shadow"
                         : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
                     }`}
                   >

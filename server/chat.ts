@@ -74,7 +74,7 @@ A Meteorfy é uma plataforma completa de vendas digitais que permite a produtore
 
 ### 5. FINANCEIRO (SAQUES)
 - O vendedor pode solicitar saque do saldo disponível
-- Saques são feitos via Pix (chave Pix: CPF, e-mail, telefone ou chave aleatória)
+- Saques são feitos via M-Pesa ou e-Mola (número de telefone)
 - O saque precisa ser aprovado manualmente pelo admin
 - Status do saque: pending (pendente), approved (aprovado), rejected (rejeitado)
 - Acesse em: Menu lateral → Financeiro
