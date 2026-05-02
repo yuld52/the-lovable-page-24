@@ -4,11 +4,12 @@ import ws from "ws";
 // Configure WebSocket for Neon serverless
 neonConfig.webSocketConstructor = ws;
 
-// Get database URL from environment
+// Get database URL from environment — prefer NEON_DATABASE_URL (has all tables)
+// DATABASE_URL is the Replit-managed Postgres (empty), so we skip it
 function getDatabaseUrl(): string {
-  const url = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL || "";
+  const url = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || "";
   if (!url) {
-    console.error("❌ DATABASE_URL não configurada no .env");
+    console.error("❌ NEON_DATABASE_URL não configurada");
     return "";
   }
   return url;
