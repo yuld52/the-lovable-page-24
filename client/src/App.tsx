@@ -26,6 +26,7 @@ import AdminUsers from "@/pages/AdminUsers";
 import AdminSettings from "@/pages/AdminSettings";
 import AdminWithdrawals from "@/pages/AdminWithdrawals";
 import AdminRevenueRanking from "@/pages/AdminRevenueRanking";
+import AdminRulesFees from "@/pages/AdminRulesFees";
 import Profile from "@/pages/Profile";
 import MembersArea from "@/pages/MembersArea";
 import FAQ from "@/pages/FAQ";

@@ -8,6 +8,7 @@ import {
   Shield,
   ArrowDownToLine,
   Trophy,
+  Percent,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";

@@ -805,6 +805,50 @@ export async function registerRoutes(
     }
   });
 
+  // --- REGRAS E TAXAS (Admin) ---
+  app.get("/api/admin/platform-config", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
+      const config = await storage.getPlatformConfig();
+      res.json(config);
+    } catch (error: any) {
+      console.error("Error getting platform config:", error);
+      res.status(500).json({ message: error.message || "Erro ao buscar configurações" });
+    }
+  });
+
+  app.post("/api/admin/platform-config", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
+      await storage.setPlatformConfig(req.body);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error saving platform config:", error);
+      res.status(500).json({ message: error.message || "Erro ao salvar configurações" });
+    }
+  });
+
+  // Endpoint público para usuários lerem as regras/taxas
+  app.get("/api/platform-config", async (_req, res) => {
+    try {
+      const config = await storage.getPlatformConfig();
+      // Expõe apenas campos seguros (sem segredos)
+      const safe = {
+        platformFeePercent: config.platformFeePercent || "0",
+        minWithdrawalAmount: config.minWithdrawalAmount || "0",
+        withdrawalProcessingDays: config.withdrawalProcessingDays || "3",
+        allowedCountries: config.allowedCountries || "",
+        termsOfService: config.termsOfService || "",
+        feeNotes: config.feeNotes || "",
+      };
+      res.json(safe);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // --- RANKING DE FATURAMENTO (Admin) ---
   app.get("/api/admin/revenue-ranking", requireAuth, async (req, res) => {
     try {
