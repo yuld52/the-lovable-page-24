@@ -3,14 +3,12 @@ import crypto from "crypto";
 export type TrackingDestination = "meta" | "utmfy";
 
 export type TrackingEventName =
-  // Meta standard
   | "PageView"
   | "ViewContent"
   | "Purchase"
   | "Refund"
-  // Internal canonical (we map to provider names)
-  | "checkout" // UTMfy style
-  | "payment_pending" // UTMfy custom
+  | "checkout"
+  | "payment_pending"
   | "purchase"
   | "refund";
 
@@ -18,17 +16,17 @@ type SettingsLike = {
   utmfyToken?: string | null;
   facebookPixelId?: string | null;
   facebookAccessToken?: string | null;
-  // toggles
   metaEnabled?: boolean | null;
   utmfyEnabled?: boolean | null;
   trackTopFunnel?: boolean | null;
   trackCheckout?: boolean | null;
   trackPurchaseRefund?: boolean | null;
+  webhookUrl?: string | null;
 };
 
 type SaleLike = {
   id: number;
-  amount: number; // cents (USD cents in DB, we convert to value)
+  amount: number;
   customerEmail?: string | null;
   utmSource?: string | null;
   utmMedium?: string | null;
@@ -46,13 +44,10 @@ function sha256LowerTrim(value: string) {
 
 function isEnabled(settings: SettingsLike | null | undefined, dest: TrackingDestination, category: "top" | "checkout" | "purchase_refund") {
   if (!settings) return false;
-
   const metaEnabled = settings.metaEnabled ?? true;
   const utmfyEnabled = settings.utmfyEnabled ?? true;
-
   if (dest === "meta" && !metaEnabled) return false;
   if (dest === "utmfy" && !utmfyEnabled) return false;
-
   if (category === "top") return (settings.trackTopFunnel ?? true) === true;
   if (category === "checkout") return (settings.trackCheckout ?? true) === true;
   return (settings.trackPurchaseRefund ?? true) === true;
@@ -61,6 +56,84 @@ function isEnabled(settings: SettingsLike | null | undefined, dest: TrackingDest
 function formatUtcDatetime(date: Date): string {
   return date.toISOString().replace("T", " ").substring(0, 19);
 }
+
+// ─── WEBHOOK ──────────────────────────────────────────────────────────────────
+
+export type WebhookEventName = "sale.pending" | "sale.paid" | "sale.refunded";
+
+export type WebhookSaleData = {
+  id: number;
+  status: string;
+  amount: number;
+  currency: string;
+  paypalOrderId?: string | null;
+  customerEmail?: string | null;
+  customerName?: string | null;
+  productId?: number | null;
+  productName?: string | null;
+  checkoutId?: number | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmContent?: string | null;
+  utmTerm?: string | null;
+  createdAt?: string | null;
+  paidAt?: string | null;
+};
+
+export async function sendWebhookNotification(
+  webhookUrl: string | null | undefined,
+  event: WebhookEventName,
+  data: WebhookSaleData,
+): Promise<void> {
+  if (!webhookUrl) return;
+
+  const payload = {
+    event,
+    timestamp: new Date().toISOString(),
+    data,
+  };
+
+  const bodyStr = JSON.stringify(payload);
+  const secret = process.env.WEBHOOK_SECRET || "meteorfy-secret";
+  const signature = crypto.createHmac("sha256", secret).update(bodyStr).digest("hex");
+
+  console.log(`📡 [WEBHOOK] Disparando '${event}' → ${webhookUrl}`);
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Meteorfy-Signature": `sha256=${signature}`,
+        "X-Meteorfy-Event": event,
+        "User-Agent": "Meteorfy-Webhook/1.0",
+      },
+      body: bodyStr,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.error(`❌ [WEBHOOK] Erro HTTP ${response.status}: ${text.substring(0, 200)}`);
+    } else {
+      console.log(`✅ [WEBHOOK] Entregue com sucesso (${response.status})`);
+    }
+  } catch (err: any) {
+    if (err?.name === "AbortError") {
+      console.error("❌ [WEBHOOK] Timeout (>10s)");
+    } else {
+      console.error("❌ [WEBHOOK] Erro de entrega:", err?.message || err);
+    }
+  }
+}
+
+// ─── UTMIFY ───────────────────────────────────────────────────────────────────
 
 export type UtmifyOrderParams = {
   token: string;
@@ -129,7 +202,7 @@ export async function sendUtmifyOrder(params: UtmifyOrderParams): Promise<void> 
       userCommissionInCents: userCommission,
       ...(cur !== "BRL" ? { currency: cur } : {}),
     },
-    isTest: isTest === true ? true : false,
+    isTest: isTest === true,
   };
 
   console.log("📤 [UTMIFY] Enviando pedido:", { orderId, status, paymentMethod, totalAmountMinor });
@@ -155,47 +228,65 @@ export async function sendUtmifyOrder(params: UtmifyOrderParams): Promise<void> 
   }
 }
 
-// Legacy event sender kept for top-of-funnel (page view / checkout intent)
 export async function sendUtmfyEvent(
   settings: SettingsLike | null | undefined,
   event: "view" | "view_content" | "checkout" | "payment_pending" | "purchase" | "refund",
   saleOrLike: SaleLike,
 ) {
-  // Top-of-funnel events are not supported by the Utmify orders API.
-  // Only order status changes (waiting_payment / paid / refunded) are sent.
   console.log(`ℹ️ [UTMIFY] Evento top-of-funnel '${event}' ignorado (usar sendUtmifyOrder para pedidos)`);
 }
+
+// ─── META CAPI ────────────────────────────────────────────────────────────────
+
+export type MetaCapiOptions = {
+  currency?: string;
+  clientIp?: string | null;
+  clientUserAgent?: string | null;
+  fbc?: string | null;
+  fbp?: string | null;
+  eventId?: string | null;
+};
 
 export async function sendMetaCapiEvent(
   settings: SettingsLike | null | undefined,
   eventName: "PageView" | "ViewContent" | "Purchase" | "Refund",
   like: SaleLike,
-) {
+  options?: MetaCapiOptions,
+): Promise<void> {
   const pixelId = settings?.facebookPixelId;
   const accessToken = settings?.facebookAccessToken;
 
-  if (!pixelId) return;
-  if (!accessToken) return;
+  if (!pixelId || !accessToken) return;
 
   const email = like.customerEmail;
   const hashedEmail = email ? sha256LowerTrim(email) : undefined;
+  const eventId = options?.eventId || crypto.randomUUID();
+  const currency = (options?.currency || "USD").toUpperCase();
+  const value = like.amount / 100;
+
+  const userData: Record<string, any> = {};
+  if (hashedEmail) userData.em = [hashedEmail];
+  if (options?.clientIp) userData.client_ip_address = options.clientIp;
+  if (options?.clientUserAgent) userData.client_user_agent = options.clientUserAgent;
+  if (options?.fbc) userData.fbc = options.fbc;
+  if (options?.fbp) userData.fbp = options.fbp;
 
   const payload = {
     data: [
       {
         event_name: eventName,
         event_time: Math.floor(Date.now() / 1000),
+        event_id: eventId,
         action_source: "website",
-        user_data: {
-          ...(hashedEmail ? { em: [hashedEmail] } : {}),
-        },
-        custom_data: {
-          currency: "BRL",
-          value: like.amount / 100,
-        },
+        user_data: userData,
+        custom_data: eventName === "Purchase" || eventName === "Refund"
+          ? { currency, value }
+          : {},
       },
     ],
   };
+
+  console.log(`📘 [META CAPI] Evento '${eventName}' pixelId=${pixelId} eventId=${eventId}`);
 
   await fetch(
     `https://graph.facebook.com/v18.0/${encodeURIComponent(pixelId)}/events?access_token=${encodeURIComponent(accessToken)}`,
@@ -204,22 +295,41 @@ export async function sendMetaCapiEvent(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     },
-  ).catch((err) => {
-    console.error("Meta CAPI event error:", err);
+  ).then(async (r) => {
+    if (!r.ok) {
+      const text = await r.text().catch(() => "");
+      console.error(`❌ [META CAPI] Erro ${r.status}: ${text.substring(0, 300)}`);
+    } else {
+      console.log(`✅ [META CAPI] Evento '${eventName}' enviado`);
+    }
+  }).catch((err) => {
+    console.error("❌ [META CAPI] Erro de rede:", err);
   });
 }
 
-export async function processPurchaseTracking(settings: SettingsLike | null | undefined, sale: SaleLike) {
+// ─── ORCHESTRATORS ────────────────────────────────────────────────────────────
+
+export async function processPurchaseTracking(
+  settings: SettingsLike | null | undefined,
+  sale: SaleLike,
+  options?: MetaCapiOptions,
+) {
   await Promise.all([
-    isEnabled(settings, "utmfy", "purchase_refund") ? sendUtmfyEvent(settings, "purchase", sale) : Promise.resolve(),
-    isEnabled(settings, "meta", "purchase_refund") ? sendMetaCapiEvent(settings, "Purchase", sale) : Promise.resolve(),
+    isEnabled(settings, "meta", "purchase_refund")
+      ? sendMetaCapiEvent(settings, "Purchase", sale, options)
+      : Promise.resolve(),
   ]);
 }
 
-export async function processRefundTracking(settings: SettingsLike | null | undefined, sale: SaleLike) {
+export async function processRefundTracking(
+  settings: SettingsLike | null | undefined,
+  sale: SaleLike,
+  options?: MetaCapiOptions,
+) {
   await Promise.all([
-    isEnabled(settings, "utmfy", "purchase_refund") ? sendUtmfyEvent(settings, "refund", sale) : Promise.resolve(),
-    isEnabled(settings, "meta", "purchase_refund") ? sendMetaCapiEvent(settings, "Refund", sale) : Promise.resolve(),
+    isEnabled(settings, "meta", "purchase_refund")
+      ? sendMetaCapiEvent(settings, "Refund", sale, options)
+      : Promise.resolve(),
   ]);
 }
 
@@ -227,12 +337,12 @@ export async function processTopFunnelTracking(
   settings: SettingsLike | null | undefined,
   event: "PageView" | "ViewContent",
   like: SaleLike,
+  options?: MetaCapiOptions,
 ) {
-  const utmfyEvent = event === "PageView" ? "view" : "view_content";
-
   await Promise.all([
-    isEnabled(settings, "meta", "top") ? sendMetaCapiEvent(settings, event, like) : Promise.resolve(),
-    isEnabled(settings, "utmfy", "top") ? sendUtmfyEvent(settings, utmfyEvent, like) : Promise.resolve(),
+    isEnabled(settings, "meta", "top")
+      ? sendMetaCapiEvent(settings, event, like, options)
+      : Promise.resolve(),
   ]);
 }
 
@@ -240,17 +350,12 @@ export async function processCheckoutEventTracking(
   settings: SettingsLike | null | undefined,
   like: SaleLike,
 ) {
-  await Promise.all([
-    isEnabled(settings, "utmfy", "checkout") ? sendUtmfyEvent(settings, "checkout", like) : Promise.resolve(),
-    // Meta: we intentionally don't send a standard event here in the MVP (keeps taxonomy clean)
-  ]);
+  // No outbound event for checkout-intent in current integrations
 }
 
 export async function processPaymentPendingTracking(
   settings: SettingsLike | null | undefined,
   like: SaleLike,
 ) {
-  await Promise.all([
-    isEnabled(settings, "utmfy", "checkout") ? sendUtmfyEvent(settings, "payment_pending", like) : Promise.resolve(),
-  ]);
+  // Handled via sendUtmifyOrder waiting_payment in routes
 }

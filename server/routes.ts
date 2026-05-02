@@ -347,6 +347,29 @@ export async function registerRoutes(
     }
   });
 
+  // --- PUBLIC TRACKING CONFIG ---
+  app.get("/api/public/tracking-config/:slug", async (req, res) => {
+    try {
+      const slug = req.params.slug;
+      const checkout = await storage.getCheckoutBySlug(slug);
+      if (!checkout) return res.status(404).json({ message: "Checkout não encontrado" });
+
+      let settings = checkout.ownerId ? await storage.getSettings(String(checkout.ownerId)) : null;
+      if (!settings) settings = await storage.getAnySettings();
+
+      res.json({
+        pixelId: settings?.facebookPixelId ?? null,
+        metaEnabled: settings?.metaEnabled ?? false,
+        trackTopFunnel: settings?.trackTopFunnel ?? true,
+        trackCheckout: settings?.trackCheckout ?? true,
+        trackPurchaseRefund: settings?.trackPurchaseRefund ?? true,
+      });
+    } catch (err: any) {
+      console.error("Error getting tracking config:", err);
+      res.status(500).json({ message: err.message || "Erro" });
+    }
+  });
+
   // --- PAYPAL ---
   app.get("/api/paypal/public-config", async (req, res) => {
     try {
@@ -421,9 +444,21 @@ export async function registerRoutes(
         utmTerm: body.utmTerm || null,
       });
 
+      const isTest = (settings.environment || "production") === "sandbox";
+      const trackingCommon = {
+        utmSource: body.utmSource || null,
+        utmMedium: body.utmMedium || null,
+        utmCampaign: body.utmCampaign || null,
+        utmContent: body.utmContent || null,
+        utmTerm: body.utmTerm || null,
+      };
+
+      // Fire-and-forget tracking (non-blocking)
+      const { sendUtmifyOrder: _sendUtmify, sendWebhookNotification, sendMetaCapiEvent } = await import("./tracking");
+
       // Utmify — waiting_payment
       if (settings?.utmfyToken) {
-        sendUtmifyOrder({
+        _sendUtmify({
           token: settings.utmfyToken,
           orderId: String(sale?.id ?? order.id),
           status: "waiting_payment",
@@ -440,18 +475,30 @@ export async function registerRoutes(
             document: body.customerData?.document || null,
           },
           products: [{ id: product.id, name: product.name, priceInCents: body.totalUsdCents }],
-          tracking: {
-            utmSource: body.utmSource || null,
-            utmMedium: body.utmMedium || null,
-            utmCampaign: body.utmCampaign || null,
-            utmContent: body.utmContent || null,
-            utmTerm: body.utmTerm || null,
-          },
-          isTest: (settings.environment || "production") === "sandbox",
+          tracking: trackingCommon,
+          isTest,
         }).catch((e) => console.error("[UTMIFY] waiting_payment error:", e));
       }
 
-      res.json({ id: order.id });
+      // Webhook — sale.pending
+      if (settings?.webhookUrl) {
+        sendWebhookNotification(settings.webhookUrl, "sale.pending", {
+          id: sale?.id ?? 0,
+          status: "pending",
+          amount: body.totalUsdCents,
+          currency: paypalCurrency,
+          paypalOrderId: order.id,
+          customerEmail: body.customerData?.email || null,
+          customerName: body.customerData?.name || null,
+          productId: product.id,
+          productName: product.name,
+          checkoutId: body.checkoutId,
+          ...trackingCommon,
+          createdAt: new Date().toISOString(),
+        }).catch((e) => console.error("[WEBHOOK] pending error:", e));
+      }
+
+      res.json({ id: order.id, saleId: sale?.id ?? null });
     } catch (err: any) {
       console.error("Error creating PayPal order:", err);
       res.status(500).json({ message: err.message || "Erro ao criar pedido" });
@@ -461,7 +508,7 @@ export async function registerRoutes(
   app.post("/api/paypal/capture-order/:orderId", async (req, res) => {
     try {
       const { captureOrder } = await import("./paypal");
-      const { sendUtmifyOrder } = await import("./tracking");
+      const { sendUtmifyOrder, sendWebhookNotification, sendMetaCapiEvent } = await import("./tracking");
       const sale = await storage.getSaleByPaypalOrderId(req.params.orderId);
       if (!sale) return res.status(404).json({ message: "Venda não encontrada" });
 
@@ -478,10 +525,21 @@ export async function registerRoutes(
 
       await storage.updateSaleStatus(sale.id, "paid");
 
+      const now = new Date();
+      const isTest = (settings.environment || "production") === "sandbox";
+      const product = sale.productId ? await storage.getProduct(Number(sale.productId)) : null;
+      const saleCurrency = sale.paypalCurrency || "USD";
+      const saleAmountMinor = sale.paypalAmountMinor || sale.amount || 0;
+      const trackingData = {
+        utmSource: sale.utmSource || null,
+        utmMedium: sale.utmMedium || null,
+        utmCampaign: sale.utmCampaign || null,
+        utmContent: sale.utmContent || null,
+        utmTerm: sale.utmTerm || null,
+      };
+
       // Utmify — paid
       if (settings?.utmfyToken) {
-        const product = sale.productId ? await storage.getProduct(Number(sale.productId)) : null;
-        const now = new Date();
         sendUtmifyOrder({
           token: settings.utmfyToken,
           orderId: String(sale.id),
@@ -490,24 +548,54 @@ export async function registerRoutes(
           createdAt: sale.createdAt ? new Date(sale.createdAt) : now,
           approvedAt: now,
           refundedAt: null,
-          currency: sale.paypalCurrency || "USD",
-          totalAmountMinor: sale.paypalAmountMinor || sale.amount || 0,
-          customer: {
-            name: null,
-            email: sale.customerEmail || null,
-          },
+          currency: saleCurrency,
+          totalAmountMinor: saleAmountMinor,
+          customer: { name: null, email: sale.customerEmail || null },
           products: product
             ? [{ id: product.id, name: product.name, priceInCents: sale.amount || 0 }]
             : [{ id: sale.productId || 0, name: "Produto", priceInCents: sale.amount || 0 }],
-          tracking: {
-            utmSource: sale.utmSource || null,
-            utmMedium: sale.utmMedium || null,
-            utmCampaign: sale.utmCampaign || null,
-            utmContent: sale.utmContent || null,
-            utmTerm: sale.utmTerm || null,
-          },
-          isTest: (settings.environment || "production") === "sandbox",
+          tracking: trackingData,
+          isTest,
         }).catch((e) => console.error("[UTMIFY] paid error:", e));
+      }
+
+      // Webhook — sale.paid
+      if (settings?.webhookUrl) {
+        sendWebhookNotification(settings.webhookUrl, "sale.paid", {
+          id: sale.id,
+          status: "paid",
+          amount: sale.amount || 0,
+          currency: saleCurrency,
+          paypalOrderId: sale.paypalOrderId || null,
+          customerEmail: sale.customerEmail || null,
+          productId: sale.productId || null,
+          productName: product?.name || null,
+          checkoutId: sale.checkoutId || null,
+          ...trackingData,
+          createdAt: sale.createdAt ? new Date(sale.createdAt).toISOString() : null,
+          paidAt: now.toISOString(),
+        }).catch((e) => console.error("[WEBHOOK] paid error:", e));
+      }
+
+      // Meta CAPI — Purchase
+      if (settings?.facebookPixelId && settings?.facebookAccessToken && (settings?.metaEnabled ?? true) && (settings?.trackPurchaseRefund ?? true)) {
+        const clientIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress || null;
+        const clientUserAgent = req.headers["user-agent"] || null;
+        const fbc = req.headers["x-meta-fbc"] as string | null || null;
+        const fbp = req.headers["x-meta-fbp"] as string | null || null;
+        const eventId = req.headers["x-meta-event-id"] as string | null || null;
+
+        sendMetaCapiEvent(
+          settings,
+          "Purchase",
+          {
+            id: sale.id,
+            amount: sale.amount || 0,
+            customerEmail: sale.customerEmail || null,
+            ...trackingData,
+          },
+          { currency: saleCurrency, clientIp, clientUserAgent, fbc, fbp, eventId: eventId || undefined },
+        ).catch((e) => console.error("[META CAPI] Purchase error:", e));
       }
 
       res.json({ status: captured.status || "COMPLETED" });

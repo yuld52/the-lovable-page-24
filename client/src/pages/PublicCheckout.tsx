@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Product, Checkout, CheckoutConfig, CheckoutLanguage } from "@shared/schema";
 import { getTranslations } from "@shared/translations";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -21,6 +21,52 @@ import { PayPalVisual } from "@/components/payments/PayPalVisual";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { LoadingScreen } from "@/components/LoadingScreen";
+
+// ─── Meta Pixel helpers ───────────────────────────────────────────────────────
+declare global {
+  interface Window {
+    fbq?: (...args: any[]) => void;
+    _fbq?: any;
+  }
+}
+
+function injectMetaPixel(pixelId: string) {
+  if (document.getElementById("fb-pixel-script")) return;
+  (function (f: any, b: Document, e: string, v: string) {
+    if (f.fbq) return;
+    const n: any = (f.fbq = function () {
+      n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+    });
+    if (!f._fbq) f._fbq = n;
+    n.push = n;
+    n.loaded = true;
+    n.version = "2.0";
+    n.queue = [];
+    const t = b.createElement(e) as HTMLScriptElement;
+    t.id = "fb-pixel-script";
+    t.async = true;
+    t.src = v;
+    const s = b.getElementsByTagName(e)[0];
+    s.parentNode?.insertBefore(t, s);
+  })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
+
+  window.fbq!("init", pixelId);
+}
+
+function firePixelEvent(
+  eventName: string,
+  params?: Record<string, any>,
+  eventId?: string,
+) {
+  if (typeof window.fbq !== "function") return;
+  const opts = eventId ? { eventID: eventId } : {};
+  window.fbq("track", eventName, params || {}, opts);
+}
+
+function getCookie(name: string): string | null {
+  const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+  return match ? match[2] : null;
+}
 
 const defaultConfig: CheckoutConfig = {
   timerMinutes: 10,
@@ -118,6 +164,8 @@ export default function PublicCheckout() {
   const [isPaid, setIsPaid] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+  const pixelInitialized = useRef(false);
+  const pageViewFired = useRef(false);
 
   const { data: publicData, isLoading: isLoadingCheckout, error: checkoutError } = useQuery<{ checkout: any; product: any; extraProducts: any[] } | null>({
     queryKey: ["public-checkout", slug],
@@ -145,6 +193,53 @@ export default function PublicCheckout() {
       return res.json();
     }
   });
+
+  const { data: trackingConfig } = useQuery({
+    queryKey: ["tracking-config", slug],
+    enabled: !!slug,
+    queryFn: async () => {
+      const res = await fetch(`/api/public/tracking-config/${encodeURIComponent(slug!)}`);
+      if (!res.ok) return null;
+      return res.json() as Promise<{
+        pixelId: string | null;
+        metaEnabled: boolean;
+        trackTopFunnel: boolean;
+        trackCheckout: boolean;
+        trackPurchaseRefund: boolean;
+      }>;
+    },
+    staleTime: Infinity,
+  });
+
+  // Inject Meta Pixel script once pixelId is known
+  useEffect(() => {
+    const pixelId = trackingConfig?.pixelId;
+    const metaEnabled = trackingConfig?.metaEnabled;
+    if (!pixelId || !metaEnabled || pixelInitialized.current) return;
+    pixelInitialized.current = true;
+    injectMetaPixel(pixelId);
+    console.log("📘 [META PIXEL] Inicializado com pixelId:", pixelId);
+  }, [trackingConfig]);
+
+  // Fire PageView once checkout data is loaded and pixel is ready
+  useEffect(() => {
+    if (pageViewFired.current) return;
+    if (!checkoutData || !trackingConfig?.pixelId || !trackingConfig?.metaEnabled) return;
+    if (!trackingConfig?.trackTopFunnel) return;
+    pageViewFired.current = true;
+    // Small delay to ensure fbq is loaded
+    setTimeout(() => {
+      firePixelEvent("PageView");
+      firePixelEvent("ViewContent", {
+        content_name: product?.name || "Produto",
+        content_ids: [String(product?.id || "")],
+        content_type: "product",
+        currency: "USD",
+        value: (product?.price || 0) / 100,
+      });
+      console.log("📘 [META PIXEL] PageView + ViewContent disparados");
+    }, 500);
+  }, [checkoutData, trackingConfig, product]);
 
   // Capture UTM params from URL at page load
   const utmParams = useMemo(() => {
@@ -216,6 +311,18 @@ export default function PublicCheckout() {
     const totalUsdCents = calculateTotal();
     const totalMinor = convertUsdCentsToCurrencyMinor(totalUsdCents, currency, usdToCurrencyRate);
 
+    // Meta Pixel — InitiateCheckout (browser-side)
+    if (trackingConfig?.pixelId && trackingConfig?.metaEnabled && trackingConfig?.trackCheckout) {
+      firePixelEvent("InitiateCheckout", {
+        content_ids: [String(product?.id || "")],
+        content_type: "product",
+        currency: "USD",
+        num_items: 1 + orderBumpSelected.length,
+        value: totalUsdCents / 100,
+      });
+      console.log("📘 [META PIXEL] InitiateCheckout disparado");
+    }
+
     let res: Response;
     try {
       res = await fetch("/api/paypal/create-order", {
@@ -253,13 +360,50 @@ export default function PublicCheckout() {
   const handleApprove = async (orderId: string) => {
     setIsProcessing(true);
     try {
-      const res = await apiRequest("POST", `/api/paypal/capture-order/${orderId}`);
+      // Generate a shared eventId for browser Pixel + CAPI deduplication
+      const eventId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+      const fbc = getCookie("_fbc");
+      const fbp = getCookie("_fbp");
+
+      const captureHeaders: Record<string, string> = {};
+      if (eventId) captureHeaders["X-Meta-Event-Id"] = eventId;
+      if (fbc) captureHeaders["X-Meta-Fbc"] = fbc;
+      if (fbp) captureHeaders["X-Meta-Fbp"] = fbp;
+
+      let res: Response;
+      try {
+        res = await fetch(`/api/paypal/capture-order/${orderId}`, {
+          method: "POST",
+          headers: captureHeaders,
+        });
+      } catch (_networkErr) {
+        toast({ title: "Erro", description: "Sem ligação ao capturar pagamento. Tente novamente.", variant: "destructive" });
+        return;
+      }
+
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast({ title: "Erro", description: data?.message || "Falha ao capturar pagamento.", variant: "destructive" });
         return;
       }
+
       if (data.status === "COMPLETED" || data.status === "paid") {
+        // Meta Pixel — Purchase (browser-side, deduplicated with CAPI via eventId)
+        if (trackingConfig?.pixelId && trackingConfig?.metaEnabled && trackingConfig?.trackPurchaseRefund) {
+          const totalUsdCents = calculateTotal();
+          firePixelEvent(
+            "Purchase",
+            {
+              content_ids: [String(product?.id || "")],
+              content_type: "product",
+              currency: "USD",
+              value: totalUsdCents / 100,
+            },
+            eventId,
+          );
+          console.log("📘 [META PIXEL] Purchase disparado eventId:", eventId);
+        }
+
         setIsPaid(true);
         toast({ title: "Pagamento confirmado!", description: "O seu pagamento foi processado com sucesso." });
       } else {

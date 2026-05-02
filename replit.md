@@ -64,6 +64,16 @@ Preferred communication style: Simple, everyday language.
 
 4. **Environment Secrets**: All secrets are managed via Replit Secrets — no `.env` loading at runtime.
 
+5. **Tracking Architecture**:
+   - `server/tracking.ts` is the central hub for all outbound tracking calls.
+   - **Meta CAPI** (`sendMetaCapiEvent`): sends server-side events to Graph API v18.0 with `event_id` for browser+CAPI deduplication, real currency, IP/UA, `_fbc`/`_fbp` cookies forwarded via headers.
+   - **Webhook** (`sendWebhookNotification`): fires `sale.pending` on order creation and `sale.paid` on capture. Payload is HMAC-SHA256 signed (`X-Meteorfy-Signature: sha256=...`). Secret defaults to env `WEBHOOK_SECRET` or `"meteorfy-secret"`.
+   - **Meta Pixel browser-side** (in `PublicCheckout.tsx`): injects `fbevents.js` dynamically when `pixelId` is configured; fires `PageView` + `ViewContent` on load, `InitiateCheckout` on PayPal button click, `Purchase` on capture success (with shared `eventId` passed to CAPI for deduplication).
+   - **UTMify** (`sendUtmifyOrder`): fires `waiting_payment` on create-order and `paid` on capture-order.
+   - `GET /api/public/tracking-config/:slug` exposes only safe fields (pixelId, toggles) to the browser — access token never leaves the server.
+
+6. **PayPal Currency Fallback**: If checkout currency is not in PayPal's supported list (e.g. MZN), server auto-falls back to USD using `totalUsdCents` for the PayPal charge amount.
+
 ## External Dependencies & Required Secrets
 
 ### Secrets currently set in Replit Secrets
