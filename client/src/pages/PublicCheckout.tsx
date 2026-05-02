@@ -560,10 +560,10 @@ export default function PublicCheckout() {
               {/* Payment method selector */}
               {(() => {
                 const METHOD_META: Record<string, { label: string; badgeBg: string; letter: string; logoUrl?: string }> = {
-                  paypal:    { label: "PayPal",      badgeBg: "#003087", letter: "P" },
+                  paypal:    { label: "PayPal",      badgeBg: "#003087", letter: "P", logoUrl: "https://cdn.pixabay.com/photo/2018/05/08/21/29/paypal-3384015_640.png" },
                   mpesa:     { label: "M-Pesa",      badgeBg: "#e11d48", letter: "M", logoUrl: "https://yt3.googleusercontent.com/ytc/AIdro_k9S-mKWfmtSx85sbylUgINsr7-ErWacXBh0R39hZ_2rg=s900-c-k-c0x00ffffff-no-rj" },
                   emola:     { label: "e-Mola",      badgeBg: "#f97316", letter: "E", logoUrl: "https://play-lh.googleusercontent.com/2TGAhJ55tiyhCwW0ZM43deGv4lUTFTBMoq83mnAO6-bU5hi2NPyKX8BN8iKt13irK7Y" },
-                  googlepay: { label: "Google Pay",  badgeBg: "#4285F4", letter: "G" },
+                  googlepay: { label: "Google Pay",  badgeBg: "#4285F4", letter: "G", logoUrl: "https://www.mastercard.com.au/content/dam/public/mastercardcom/au/en/consumers/icons/google-pay-logo_1280x531.png" },
                 };
 
                 const allMethods: string[] = product?.paymentMethods || ["paypal"];
