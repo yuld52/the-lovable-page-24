@@ -1,11 +1,17 @@
 import * as React from "react";
-import { Bell, UserCircle, HelpCircle, LogOut } from "lucide-react";
+import { Bell, UserCircle, HelpCircle, LogOut, Mail, MessageCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useUser } from "@/hooks/use-user";
 import { useLocation } from "wouter";
 import { auth } from "@/lib/firebase";
@@ -18,6 +24,7 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isNotificationOpen, setIsNotificationOpen] = React.useState(false);
+  const [isSupportOpen, setIsSupportOpen] = React.useState(false);
 
   const handleLogout = async () => {
     try {
@@ -94,7 +101,7 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
 
                 <button
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-accent text-foreground"
-                  onClick={() => toast({ title: "Em breve", description: "Central de ajuda será implementada em breve." })}
+                  onClick={() => setIsSupportOpen(true)}
                 >
                   <HelpCircle className="w-4 h-4" />
                   Ajuda & Suporte
@@ -121,6 +128,55 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
         isOpen={isNotificationOpen} 
         onClose={() => setIsNotificationOpen(false)} 
       />
+
+      {/* Support Dialog */}
+      <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
+        <DialogContent className="w-[340px] rounded-2xl bg-card border-border p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/50">
+            <DialogTitle className="text-base font-bold text-white flex items-center gap-2">
+              <HelpCircle className="w-5 h-5 text-purple-400" />
+              Ajuda & Suporte
+            </DialogTitle>
+            <p className="text-xs text-zinc-500 mt-1">Entre em contato com nossa equipe</p>
+          </DialogHeader>
+
+          <div className="px-6 py-5 space-y-3">
+            {/* Email */}
+            <a
+              href="mailto:suporte@meteorfy.com"
+              className="flex items-center gap-4 p-4 rounded-xl bg-accent/50 hover:bg-accent transition-colors group"
+            >
+              <div className="w-10 h-10 rounded-full bg-purple-600/15 flex items-center justify-center border border-purple-500/20 shrink-0">
+                <Mail className="w-5 h-5 text-purple-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white group-hover:text-purple-300 transition-colors">E-mail</p>
+                <p className="text-xs text-zinc-500">suporte@meteorfy.com</p>
+              </div>
+            </a>
+
+            {/* WhatsApp */}
+            <a
+              href="https://wa.me/5511999999999"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-4 p-4 rounded-xl bg-accent/50 hover:bg-accent transition-colors group"
+            >
+              <div className="w-10 h-10 rounded-full bg-green-600/15 flex items-center justify-center border border-green-500/20 shrink-0">
+                <MessageCircle className="w-5 h-5 text-green-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white group-hover:text-green-300 transition-colors">WhatsApp</p>
+                <p className="text-xs text-zinc-500">+55 (11) 99999-9999</p>
+              </div>
+            </a>
+          </div>
+
+          <div className="px-6 pb-5">
+            <p className="text-center text-[11px] text-zinc-600">Horário de atendimento: Seg–Sex, 9h–18h</p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
