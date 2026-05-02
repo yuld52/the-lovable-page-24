@@ -63,10 +63,20 @@ export default function Financeiro() {
   const { data: sales, isLoading: salesLoading } = useSales();
   const { data: products } = useProducts();
 
+  const { data: userWithdrawals } = useQuery<any[]>({
+    queryKey: ["/api/withdrawals"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/withdrawals");
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
   // Calculate real financial data
   const totalEarnings = sales?.filter(s => s.status === 'paid').reduce((sum, s) => sum + (s.amount || 0), 0) || 0;
-  const availableBalance = totalEarnings; // In a real app, this would subtract fees/withdrawals
-  const pendingWithdrawals = 0; // Would come from a withdrawals table
+  const approvedWithdrawals = userWithdrawals?.filter(w => w.status === 'approved').reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
+  const pendingWithdrawalsAmount = userWithdrawals?.filter(w => w.status === 'pending').reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
+  const availableBalance = Math.max(0, totalEarnings - approvedWithdrawals - pendingWithdrawalsAmount);
 
   const handleWithdraw = async () => {
     if (!amount || !pixKey) {
@@ -96,9 +106,11 @@ export default function Financeiro() {
         pixKey,
         pixKeyType: withdrawMethod,
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/withdrawals"] });
       setWithdrawSuccess(true);
       setAmount("");
       setPixKey("");
+      setSelectedAccountId(null);
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -251,7 +263,7 @@ export default function Financeiro() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-white">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pendingWithdrawals / 100)}
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pendingWithdrawalsAmount / 100)}
                 </div>
                 <p className="text-xs text-zinc-500 mt-1">Aguardando processamento</p>
               </CardContent>

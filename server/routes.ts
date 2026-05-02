@@ -644,6 +644,17 @@ export async function registerRoutes(
   });
 
   // --- SAQUES (Withdrawals) ---
+  app.get("/api/withdrawals", requireAuth, async (req, res) => {
+    try {
+      const userId = String((req as any).user?.id || "");
+      const result = await storage.getWithdrawals(userId);
+      res.json(result);
+    } catch (err: any) {
+      console.error("Error getting withdrawals:", err);
+      res.status(500).json({ message: err.message || "Erro ao buscar saques" });
+    }
+  });
+
   app.post("/api/withdrawals", requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
