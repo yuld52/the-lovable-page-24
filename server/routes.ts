@@ -1,6 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { neonStorage as storage } from "./neon-storage";
+import { neonStorage as storage, getPool } from "./neon-storage";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -926,16 +926,7 @@ export async function registerRoutes(
       const user = (req as any).user;
       if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
 
-      const client = await (await import("./neon-storage")).neonStorage;
-      const pool = (client as any);
-
-      // Query: sum of paid/captured sales grouped by checkout owner
-      const { Pool: PgPool, neonConfig } = await import("@neondatabase/serverless");
-      const ws = (await import("ws")).default;
-      neonConfig.webSocketConstructor = ws;
-      const dbUrl = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || "";
-      const pg = new PgPool({ connectionString: dbUrl });
-      const conn = await pg.connect();
+      const conn = await getPool().connect();
 
       try {
         const result = await conn.query(`
@@ -983,7 +974,6 @@ export async function registerRoutes(
         res.json(ranking);
       } finally {
         conn.release();
-        await pg.end();
       }
     } catch (error: any) {
       console.error("Error getting revenue ranking:", error);

@@ -262,7 +262,7 @@ export default function Financeiro() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-white">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(availableBalance / 100)}
+                  {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(availableBalance / 100)}
                 </div>
                 <p className="text-xs text-zinc-500 mt-1">Disponível para saque</p>
               </CardContent>
@@ -275,7 +275,7 @@ export default function Financeiro() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-white">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalEarnings / 100)}
+                  {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(totalEarnings / 100)}
                 </div>
                 <p className="text-xs text-zinc-500 mt-1">Histórico de vendas</p>
               </CardContent>
@@ -288,7 +288,7 @@ export default function Financeiro() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-white">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pendingWithdrawalsAmount / 100)}
+                  {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(pendingWithdrawalsAmount / 100)}
                 </div>
                 <p className="text-xs text-zinc-500 mt-1">Aguardando processamento</p>
               </CardContent>
@@ -300,15 +300,73 @@ export default function Financeiro() {
               <CardTitle className="text-base font-bold text-white">Histórico de Saques</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
-                  <ArrowDownToLine className="w-8 h-8 text-zinc-500" />
+              {!userWithdrawals || userWithdrawals.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
+                    <ArrowDownToLine className="w-8 h-8 text-zinc-500" />
+                  </div>
+                  <h3 className="text-lg font-medium text-white mb-2">Nenhum saque realizado</h3>
+                  <p className="text-sm text-zinc-500 max-w-sm">
+                    Quando você realizar saques, eles aparecerão aqui. O processamento leva até 3 dias úteis.
+                  </p>
                 </div>
-                <h3 className="text-lg font-medium text-white mb-2">Nenhum saque realizado</h3>
-                <p className="text-sm text-zinc-500 max-w-sm">
-                  Quando você realizar saques, eles aparecerão aqui. O processamento leva até 3 dias úteis.
-                </p>
-              </div>
+              ) : (
+                <div className="rounded-xl border border-zinc-800/50 overflow-hidden">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-zinc-950/50 border-b border-zinc-800/50">
+                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Método</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Conta</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Valor</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Data</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-800/30">
+                      {userWithdrawals.map((w) => (
+                        <tr key={w.id} className="hover:bg-zinc-800/20 transition-colors">
+                          <td className="px-6 py-4">
+                            <span className={`text-xs font-bold ${w.pixKeyType === 'mpesa' ? 'text-red-400' : 'text-orange-400'}`}>
+                              {METHOD_LABELS[w.pixKeyType] || w.pixKeyType || '—'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm text-zinc-300">{w.pixKey || '—'}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm font-bold text-white">
+                              {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format((w.amount || 0) / 100)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            {w.status === 'approved' ? (
+                              <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-3 py-1 rounded-full w-fit">
+                                <Check className="w-3 h-3" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider">Aprovado</span>
+                              </div>
+                            ) : w.status === 'rejected' ? (
+                              <div className="flex items-center gap-1.5 bg-red-500/10 text-red-500 border border-red-500/20 px-3 py-1 rounded-full w-fit">
+                                <AlertCircle className="w-3 h-3" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider">Rejeitado</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 px-3 py-1 rounded-full w-fit">
+                                <Clock className="w-3 h-3" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider">Pendente</span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-xs font-medium text-zinc-400">
+                              {w.createdAt ? format(new Date(w.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "—"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </>
@@ -368,9 +426,9 @@ export default function Financeiro() {
                           </td>
                           <td className="px-6 py-4">
                             <span className="text-sm font-bold text-white">
-                              {new Intl.NumberFormat('pt-BR', { 
-                                style: 'currency', 
-                                currency: 'BRL' 
+                              {new Intl.NumberFormat('pt-MZ', {
+                                style: 'currency',
+                                currency: 'MZN'
                               }).format((sale.amount || 0) / 100)}
                             </span>
                           </td>
@@ -1038,7 +1096,7 @@ export default function Financeiro() {
                     value={newAccount.phone}
                     onChange={(e) => setNewAccount({ ...newAccount, phone: e.target.value })}
                     className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
-                    type={newAccount.type === "payoneer" ? "email" : "tel"}
+                    type="tel"
                   />
                 </div>
                 <Button

@@ -18,7 +18,7 @@ function getDatabaseUrl(): string {
 // Create a connection pool
 let pool: Pool | null = null;
 
-function getPool(): Pool {
+export function getPool(): Pool {
   if (!pool) {
     const url = getDatabaseUrl();
     pool = new Pool({ connectionString: url });
