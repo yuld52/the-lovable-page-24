@@ -316,7 +316,7 @@ export async function registerRoutes(
       const config = checkout.config || {};
       const orderBumpIds: number[] = (config.orderBumpProducts || []).map((id: any) => parseInt(id)).filter(Boolean);
       const upsellIds: number[] = (config.upsellProducts || []).map((id: any) => parseInt(id)).filter(Boolean);
-      const allExtraIds = [...new Set([...orderBumpIds, ...upsellIds])];
+      const allExtraIds = Array.from(new Set([...orderBumpIds, ...upsellIds]));
       const extraProducts: any[] = [];
       for (const pid of allExtraIds) {
         const p = await storage.getProduct(pid);

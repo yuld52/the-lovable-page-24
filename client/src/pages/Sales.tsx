@@ -36,9 +36,35 @@ export default function Sales() {
     }).format(cents / 100);
   };
 
-  const handleExportPDF = () => {
-    // Placeholder for PDF export logic
-    alert("Exportando relatório de vendas em PDF...");
+  const handleExportCSV = () => {
+    if (!filteredSales || filteredSales.length === 0) return;
+
+    const headers = ["ID", "Produto", "Cliente", "Email", "Valor (USD)", "Status", "Data"];
+    const rows = filteredSales.map((sale) => {
+      const product = products?.find((p) => p.id === sale.productId);
+      return [
+        sale.paypalOrderId ? sale.paypalOrderId.slice(-8) : String(sale.id).padStart(8, "0"),
+        product?.name || "Produto Removido",
+        sale.customerEmail?.split("@")[0] || "Cliente",
+        sale.customerEmail || "",
+        ((sale.amount || 0) / 100).toFixed(2),
+        sale.status,
+        sale.createdAt ? format(new Date(sale.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "",
+      ];
+    });
+
+    const csv = [headers, ...rows]
+      .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `vendas-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -67,12 +93,13 @@ export default function Sales() {
             </SelectContent>
           </Select>
         </div>
-        <Button 
-          onClick={handleExportPDF}
-          className="bg-[#18181b] hover:bg-zinc-800 text-white border border-zinc-800 h-11 px-6 rounded-xl flex items-center gap-3 font-bold"
+        <Button
+          onClick={handleExportCSV}
+          disabled={!filteredSales || filteredSales.length === 0}
+          className="bg-[#18181b] hover:bg-zinc-800 text-white border border-zinc-800 h-11 px-6 rounded-xl flex items-center gap-3 font-bold disabled:opacity-50"
         >
           <FileText className="w-4 h-4" />
-          Exportar PDF
+          Exportar CSV
         </Button>
       </div>
 
@@ -134,8 +161,8 @@ export default function Sales() {
 
                 {/* Gateway */}
                 <div className="w-24 shrink-0 text-center px-4">
-                  <span className="text-xs font-bold text-purple-500 uppercase tracking-wider">
-                    stripe
+                  <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+                    {sale.paypalOrderId ? "paypal" : "—"}
                   </span>
                 </div>
 

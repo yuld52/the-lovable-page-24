@@ -401,12 +401,7 @@ export class NeonStorage {
     try {
       const client = await getPool().connect();
       try {
-        let result = await client.query(`SELECT * FROM settings WHERE id = $1`, [userId]);
-        
-        if (result.rows.length === 0) {
-          result = await client.query(`SELECT * FROM settings WHERE user_id = $1 LIMIT 1`, [userId]);
-        }
-        
+        const result = await client.query(`SELECT * FROM settings WHERE user_id = $1 LIMIT 1`, [userId]);
         if (result.rows.length === 0) return undefined;
         return toCamelCase(result.rows[0]);
       } finally {
@@ -440,11 +435,10 @@ export class NeonStorage {
       try {
         const updateData = toSnakeCase(updates);
         
-        let result = await client.query(`SELECT * FROM settings WHERE id = $1`, [userId]);
+        let result = await client.query(`SELECT * FROM settings WHERE user_id = $1 LIMIT 1`, [userId]);
         
         if (result.rows.length === 0) {
           const settingsData = {
-            id: userId,
             user_id: userId,
             ...updateData,
             sales_notifications: updateData.sales_notifications ?? false,
@@ -457,11 +451,10 @@ export class NeonStorage {
           };
           
           const insertResult = await client.query(`
-            INSERT INTO settings (id, user_id, paypal_client_id, paypal_client_secret, paypal_webhook_id, facebook_pixel_id, facebook_access_token, utmfy_token, environment, meta_enabled, utmfy_enabled, track_top_funnel, track_checkout, track_purchase_refund, sales_notifications, webhook_url)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+            INSERT INTO settings (user_id, paypal_client_id, paypal_client_secret, paypal_webhook_id, facebook_pixel_id, facebook_access_token, utmfy_token, environment, meta_enabled, utmfy_enabled, track_top_funnel, track_checkout, track_purchase_refund, sales_notifications, webhook_url)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
             RETURNING *
           `, [
-            settingsData.id,
             settingsData.user_id,
             settingsData.paypal_client_id || null,
             settingsData.paypal_client_secret || null,
@@ -498,7 +491,7 @@ export class NeonStorage {
           const updateResult = await client.query(`
             UPDATE settings 
             SET ${setClauses.join(', ')}
-            WHERE id = $${paramCount}
+            WHERE user_id = $${paramCount}
             RETURNING *
           `, values);
           
@@ -684,6 +677,8 @@ export class NeonStorage {
       if (period === "custom" && startDateStr && endDateStr) {
         startDate = new Date(startDateStr);
         endDate = new Date(endDateStr);
+      } else if (period === "0") {
+        // Today only — keep startDate and endDate as current day
       } else if (period === "1") {
         startDate.setDate(startDate.getDate() - 1);
         endDate = new Date(startDate);
@@ -742,7 +737,7 @@ export class NeonStorage {
         d.setDate(endDate.getDate() - i);
         const key = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
         const daySales = sales.filter((s: any) => {
-          const saleDate = new Date(s.created_at);
+          const saleDate = new Date(s.createdAt || s.created_at);
           return saleDate.getDate() === d.getDate() && 
                  saleDate.getMonth() === d.getMonth() && 
                  saleDate.getFullYear() === d.getFullYear();
