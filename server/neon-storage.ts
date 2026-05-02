@@ -825,6 +825,22 @@ export class NeonStorage {
     }
   }
 
+  async migrateDefaultPaymentMethods(): Promise<void> {
+    const client = await getPool().connect();
+    try {
+      await client.query(`
+        UPDATE products
+        SET payment_methods = '["paypal","mpesa","emola","googlepay"]'::jsonb
+        WHERE payment_methods = '["paypal"]'::jsonb
+           OR payment_methods IS NULL
+      `);
+    } catch (err) {
+      console.error("migrateDefaultPaymentMethods error:", err);
+    } finally {
+      client.release();
+    }
+  }
+
   // Platform Config (Rules & Fees)
   async ensurePlatformConfigTable(): Promise<void> {
     const client = await getPool().connect();

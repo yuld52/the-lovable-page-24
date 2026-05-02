@@ -586,15 +586,17 @@ export default function PublicCheckout() {
               {/* Payment method selector */}
               {(() => {
                 const METHOD_META: Record<string, { label: string; badgeBg: string; letter: string }> = {
-                  paypal: { label: "PayPal",  badgeBg: "#003087", letter: "P" },
-                  mpesa:  { label: "M-Pesa",  badgeBg: "#e11d48", letter: "M" },
-                  emola:  { label: "e-Mola",  badgeBg: "#f97316", letter: "E" },
+                  paypal:    { label: "PayPal",      badgeBg: "#003087", letter: "P" },
+                  mpesa:     { label: "M-Pesa",      badgeBg: "#e11d48", letter: "M" },
+                  emola:     { label: "e-Mola",      badgeBg: "#f97316", letter: "E" },
+                  googlepay: { label: "Google Pay",  badgeBg: "#4285F4", letter: "G" },
                 };
 
                 const allMethods: string[] = product?.paymentMethods || ["paypal"];
                 // Only show methods we know how to render
                 const knownMethods = allMethods.filter(m => METHOD_META[m]);
                 const isMobile = (m: string) => m === "mpesa" || m === "emola";
+                const isGooglePay = (m: string) => m === "googlepay";
                 const showSelector = knownMethods.length > 1;
                 const activePrimary = config.primaryColor || "#22a559";
 
@@ -689,6 +691,15 @@ export default function PublicCheckout() {
                             `Pagar ${moneyFromUsdCents(calculateTotal())} via ${selectedPaymentMethod === "mpesa" ? "M-Pesa" : "e-Mola"}`
                           )}
                         </Button>
+                      </div>
+                    )}
+
+                    {/* Google Pay — show "coming soon" notice */}
+                    {isGooglePay(selectedPaymentMethod) && (
+                      <div className="rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-5 flex flex-col items-center gap-2 text-center">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg" style={{ backgroundColor: "#4285F4" }}>G</div>
+                        <p className="text-sm font-semibold text-gray-700">Google Pay</p>
+                        <p className="text-xs text-gray-400">Integração em breve. Por favor escolha outro método de pagamento.</p>
                       </div>
                     )}
 

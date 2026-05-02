@@ -33,7 +33,7 @@ export default function EditProduct() {
     imageUrl: "",
     deliveryFiles: [] as string[],
     noEmailDelivery: false,
-    paymentMethods: ["paypal"] as string[],
+    paymentMethods: ["paypal", "mpesa", "emola", "googlepay"] as string[],
   });
 
   useEffect(() => {

@@ -59,7 +59,7 @@ export default function CreateProduct() {
     imageUrl: "",
     deliveryFiles: [] as string[],
     noEmailDelivery: false,
-    paymentMethods: ["paypal"] as string[],
+    paymentMethods: ["paypal", "mpesa", "emola", "googlepay"] as string[],
   });
   const [showErrors, setShowErrors] = useState(false);
 
