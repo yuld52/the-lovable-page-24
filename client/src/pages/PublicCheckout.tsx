@@ -171,7 +171,7 @@ export default function PublicCheckout() {
   const moneyFromUsdCents = (usdCents: number) =>
     formatMoney({ currency, minor: convertUsdCentsToCurrencyMinor(usdCents, currency, usdToCurrencyRate) });
 
-  const [formData, setFormData] = useState({ email: "", confirmEmail: "", name: "", surname: "", cpf: "", phone: "" });
+  const [formData, setFormData] = useState({ email: "", confirmEmail: "", name: "", surname: "", cpf: "", phone: "", cnpj: "" });
   const [showErrors, setShowErrors] = useState(false);
 
   // Fixed: use String comparison to handle both number and string ids
@@ -194,6 +194,11 @@ export default function PublicCheckout() {
       setShowErrors(true);
       toast({ title: "Erro", description: "Preencha seu nome e e-mail para continuar.", variant: "destructive" });
       throw new Error("Validation failed");
+    }
+    if (formData.confirmEmail && formData.email !== formData.confirmEmail) {
+      setShowErrors(true);
+      toast({ title: "Erro", description: "Os e-mails não coincidem.", variant: "destructive" });
+      throw new Error("Email mismatch");
     }
 
     const totalUsdCents = calculateTotal();
@@ -308,6 +313,13 @@ export default function PublicCheckout() {
                 <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder={t.emailPlaceholder} className={`w-full h-11 px-3 rounded-md border text-sm focus:outline-none focus:ring-1 ${showErrors && !formData.email ? 'border-red-500' : 'border-gray-300'}`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
               </div>
               <div className="space-y-1">
+                <label className="block text-[11px]">{t.confirmEmailLabel}</label>
+                <input type="email" value={formData.confirmEmail} onChange={(e) => setFormData({ ...formData, confirmEmail: e.target.value })} placeholder={t.confirmEmailPlaceholder} className={`w-full h-11 px-3 rounded-md border text-sm focus:outline-none focus:ring-1 ${showErrors && formData.email && formData.confirmEmail && formData.email !== formData.confirmEmail ? 'border-red-500' : 'border-gray-300'}`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
+                {showErrors && formData.email && formData.confirmEmail && formData.email !== formData.confirmEmail && (
+                  <p className="text-red-500 text-[11px] mt-1">Os e-mails não coincidem</p>
+                )}
+              </div>
+              <div className="space-y-1">
                 <label className="block text-[11px]">{t.fullNameLabel}</label>
                 <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder={t.fullNamePlaceholder} className={`w-full h-11 px-3 rounded-md border text-sm focus:outline-none focus:ring-1 ${showErrors && !formData.name ? 'border-red-500' : 'border-gray-300'}`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
               </div>
@@ -356,6 +368,30 @@ export default function PublicCheckout() {
           </div>
         </div>
       </div>
+      {config.testimonials && config.testimonials.length > 0 && (
+        <div className="max-w-5xl mx-auto px-4 pb-6">
+          <div className="max-w-3xl mx-auto space-y-3">
+            {config.testimonials.map((tItem) => (
+              <div key={tItem.id} className="rounded-xl border border-gray-200 p-6 shadow-sm" style={{ backgroundColor: config.backgroundColor }}>
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-20 h-20 rounded-full overflow-hidden mb-3 border-2 border-white shadow-md bg-gray-100 flex items-center justify-center">
+                    {tItem.imageUrl
+                      ? <img src={tItem.imageUrl} alt={tItem.name} className="w-full h-full object-cover" />
+                      : <span className="font-bold text-xl" style={{ color: `${config.textColor}66` }}>{tItem.name.charAt(0)}</span>
+                    }
+                  </div>
+                  <h4 className="font-bold text-base mb-1" style={{ color: config.textColor }}>{tItem.name}</h4>
+                  <div className="flex gap-0.5 mb-3">
+                    {[...Array(tItem.rating)].map((_, i) => <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />)}
+                  </div>
+                  <p className="text-sm leading-relaxed italic" style={{ color: `${config.textColor}cc` }}>"{tItem.text}"</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <footer className="py-10 text-center space-y-4 px-4 opacity-70">
         <div className="flex justify-center gap-6 text-[12px]">
           <div className="flex items-center gap-1.5"><ShieldCheck size={16} /><span>{t.securePayment}</span></div>
