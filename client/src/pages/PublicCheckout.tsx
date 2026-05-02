@@ -630,6 +630,33 @@ export default function PublicCheckout() {
                       </div>
                     )}
 
+                    {/* Order bump — above the pay button */}
+                    {orderBumpProductsData.length > 0 && (
+                      <div className="space-y-3">
+                        {orderBumpProductsData.map(p => (
+                          <div key={p.id} className="rounded-lg border-2 border-dashed" style={{ borderColor: config.primaryColor }}>
+                            <div className="flex items-start gap-3 p-3">
+                              <div className="flex-1">
+                                <h4 className="text-[17px] font-medium">{p.name}</h4>
+                                <div className="mt-1 font-bold text-sm" style={{ color: config.primaryColor }}>+ {moneyFromUsdCents(p.price)}</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 p-3 cursor-pointer" style={{ backgroundColor: getSoftBackgroundColor(config.primaryColor) }} onClick={() => {
+                              const isSelected = orderBumpSelected.some(selectedId => String(selectedId) === String(p.id));
+                              if (isSelected) {
+                                setOrderBumpSelected(orderBumpSelected.filter(selectedId => String(selectedId) !== String(p.id)));
+                              } else {
+                                setOrderBumpSelected([...orderBumpSelected, Number(p.id)]);
+                              }
+                            }}>
+                              <Checkbox checked={orderBumpSelected.some(selectedId => String(selectedId) === String(p.id))} />
+                              <span className="text-sm font-medium" style={{ color: "#000000" }}>{t.addToOrder}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     {/* Phone input — M-Pesa or e-Mola */}
                     {isMobile(selectedPaymentMethod) && (
                       <div className="space-y-2">
@@ -707,31 +734,6 @@ export default function PublicCheckout() {
                 </div>
               </div>
             </div>
-            {orderBumpProductsData.length > 0 && (
-              <div className="p-4 space-y-4">
-                {orderBumpProductsData.map(p => (
-                  <div key={p.id} className="rounded-lg border-2 border-dashed" style={{ borderColor: config.primaryColor }}>
-                    <div className="flex items-start gap-3 p-3">
-                      <div className="flex-1">
-                        <h4 className="text-[17px] font-medium">{p.name}</h4>
-                        <div className="mt-1 font-bold text-sm" style={{ color: config.primaryColor }}>+ {moneyFromUsdCents(p.price)}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 p-3 cursor-pointer" style={{ backgroundColor: getSoftBackgroundColor(config.primaryColor) }} onClick={() => {
-                      const isSelected = orderBumpSelected.some(selectedId => String(selectedId) === String(p.id));
-                      if (isSelected) {
-                        setOrderBumpSelected(orderBumpSelected.filter(selectedId => String(selectedId) !== String(p.id)));
-                      } else {
-                        setOrderBumpSelected([...orderBumpSelected, Number(p.id)]);
-                      }
-                    }}>
-                      <Checkbox checked={orderBumpSelected.some(selectedId => String(selectedId) === String(p.id))} />
-                      <span className="text-sm font-medium" style={{ color: "#000000" }}>{t.addToOrder}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       </div>
