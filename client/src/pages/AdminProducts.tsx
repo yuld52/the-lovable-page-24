@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   paypal: "PayPal",
   credit_card: "Cartão de Crédito",
-  pix: "Pix",
+  stripe: "Stripe",
   boleto: "Boleto",
 };
 

@@ -1,6 +1,6 @@
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { DollarSign, ArrowDownToLine, History, Loader2, PieChart, CreditCard, Plus, Trash2, Check, Clock, AlertCircle, ArrowLeft } from "lucide-react";
+import { DollarSign, ArrowDownToLine, History, Loader2, PieChart, CreditCard, Plus, Trash2, Check, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -11,7 +11,7 @@ import { useProducts } from "@/hooks/use-products";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { apiRequest } from "@/lib/queryClient";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -20,58 +20,72 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const METHOD_LABELS: Record<string, string> = {
+  mpesa: "M-Pesa",
+  emola: "e-Mola",
+};
+const METHOD_COLORS: Record<string, string> = {
+  mpesa: "bg-red-600 hover:bg-red-500",
+  emola: "bg-orange-500 hover:bg-orange-400",
+};
+const METHOD_TEXT_COLORS: Record<string, string> = {
+  mpesa: "text-red-400",
+  emola: "text-orange-400",
+};
+const KEY_LABELS: Record<string, string> = {
+  mpesa: "Número M-Pesa",
+  emola: "Número e-Mola",
+};
+const KEY_PLACEHOLDERS: Record<string, string> = {
+  mpesa: "Ex: 84 XXX XXXX",
+  emola: "Ex: 86 XXX XXXX",
+};
 
 export default function Financeiro() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState("");
-  const [pixKey, setPixKey] = useState("");
-  const [withdrawMethod, setWithdrawMethod] = useState<"mpesa" | "emola" | "pix">("mpesa");
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"visao" | "historico" | "contas">("visao");
   const [showAddAccount, setShowAddAccount] = useState(false);
-  const [newAccount, setNewAccount] = useState<{ type: "mpesa" | "emola" | "pix"; phone: string }>({ type: "mpesa", phone: "" });
+  const [newAccount, setNewAccount] = useState<{ type: "mpesa" | "emola"; phone: string }>({ type: "mpesa", phone: "" });
 
-  // Withdrawal dialog state
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
   const [showWithdrawForm, setShowWithdrawForm] = useState(false);
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
-
-  const METHOD_LABELS: Record<string, string> = {
-    mpesa: "M-Pesa",
-    emola: "e-Mola",
-    pix: "PIX",
-  };
-  const METHOD_COLORS: Record<string, string> = {
-    mpesa: "bg-red-600 hover:bg-red-500",
-    emola: "bg-orange-500 hover:bg-orange-400",
-    pix: "bg-purple-600 hover:bg-purple-500",
-  };
-  const KEY_LABELS: Record<string, string> = {
-    mpesa: "Número M-Pesa",
-    emola: "Número e-Mola",
-    pix: "Chave PIX",
-  };
-  const KEY_PLACEHOLDERS: Record<string, string> = {
-    mpesa: "Ex: 84 XXX XXXX",
-    emola: "Ex: 86 XXX XXXX",
-    pix: "E-mail, CPF ou telefone",
-  };
 
   const { data: stats, isLoading: statsLoading } = useStats();
   const { data: sales, isLoading: salesLoading } = useSales();
   const { data: products } = useProducts();
 
-  // Calculate real financial data
+  const { data: bankAccounts = [], isLoading: accountsLoading } = useQuery<any[]>({
+    queryKey: ["bank-accounts"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/bank-accounts");
+      return res;
+    },
+  });
+
   const totalEarnings = sales?.filter(s => s.status === 'paid').reduce((sum, s) => sum + (s.amount || 0), 0) || 0;
-  const availableBalance = totalEarnings; // In a real app, this would subtract fees/withdrawals
-  const pendingWithdrawals = 0; // Would come from a withdrawals table
+  const availableBalance = totalEarnings;
+  const pendingWithdrawals = 0;
+
+  const selectedAccount = bankAccounts.find(a => String(a.id) === selectedAccountId);
 
   const handleWithdraw = async () => {
-    if (!amount || !pixKey) {
+    if (!amount || !selectedAccount) {
       toast({
         title: "Campos obrigatórios",
-        description: `Preencha o valor e o ${KEY_LABELS[withdrawMethod]}.`,
+        description: "Preencha o valor e selecione uma conta.",
         variant: "destructive",
       });
       return;
@@ -90,13 +104,13 @@ export default function Financeiro() {
     setIsLoading(true);
     try {
       await apiRequest("POST", "/api/withdrawals", {
-        amount: amountCents,
-        pixKey,
-        method: withdrawMethod,
+        amount,
+        method: selectedAccount.type,
+        account: selectedAccount.phone,
       });
       setWithdrawSuccess(true);
       setAmount("");
-      setPixKey("");
+      setSelectedAccountId("");
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -116,8 +130,24 @@ export default function Financeiro() {
       queryClient.invalidateQueries({ queryKey: ["bank-accounts"] });
       toast({ title: "Conta adicionada!" });
       setShowAddAccount(false);
-      setNewAccount({ bank: "", agency: "", account: "", type: "checking" });
-    }
+      setNewAccount({ type: "mpesa", phone: "" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest("DELETE", `/api/bank-accounts/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bank-accounts"] });
+      toast({ title: "Conta removida" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    },
   });
 
   if (statsLoading || salesLoading) {
@@ -134,10 +164,10 @@ export default function Financeiro() {
     <Layout title="Financeiro" subtitle="Gerencie seus saques e saldo">
       {/* Sub-navigation */}
       <div className="flex gap-1 p-1 rounded-xl bg-zinc-900/50 border border-zinc-800 mb-6 w-fit">
-        <button 
+        <button
           className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all font-medium flex-1 min-w-0 ${
-            activeTab === 'visao' 
-              ? 'bg-purple-600 text-white shadow-lg scale-105' 
+            activeTab === 'visao'
+              ? 'bg-purple-600 text-white shadow-lg scale-105'
               : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
           }`}
           onClick={() => setActiveTab('visao')}
@@ -146,10 +176,10 @@ export default function Financeiro() {
           <span className="text-xs sm:hidden truncate">Visão</span>
           <span className="text-sm hidden sm:inline">Visão Geral</span>
         </button>
-        <button 
+        <button
           className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all font-medium flex-1 min-w-0 ${
-            activeTab === 'historico' 
-              ? 'bg-purple-600 text-white shadow-lg scale-105' 
+            activeTab === 'historico'
+              ? 'bg-purple-600 text-white shadow-lg scale-105'
               : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
           }`}
           onClick={() => setActiveTab('historico')}
@@ -158,10 +188,10 @@ export default function Financeiro() {
           <span className="text-xs sm:hidden truncate">Histórico</span>
           <span className="text-sm hidden sm:inline">Histórico</span>
         </button>
-        <button 
+        <button
           className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all font-medium flex-1 min-w-0 ${
-            activeTab === 'contas' 
-              ? 'bg-purple-600 text-white shadow-lg scale-105' 
+            activeTab === 'contas'
+              ? 'bg-purple-600 text-white shadow-lg scale-105'
               : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
           }`}
           onClick={() => setActiveTab('contas')}
@@ -192,7 +222,7 @@ export default function Financeiro() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-white">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(availableBalance / 100)}
+                  {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(availableBalance / 100)}
                 </div>
                 <p className="text-xs text-zinc-500 mt-1">Disponível para saque</p>
               </CardContent>
@@ -205,7 +235,7 @@ export default function Financeiro() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-white">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalEarnings / 100)}
+                  {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(totalEarnings / 100)}
                 </div>
                 <p className="text-xs text-zinc-500 mt-1">Histórico de vendas</p>
               </CardContent>
@@ -218,7 +248,7 @@ export default function Financeiro() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-white">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pendingWithdrawals / 100)}
+                  {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(pendingWithdrawals / 100)}
                 </div>
                 <p className="text-xs text-zinc-500 mt-1">Aguardando processamento</p>
               </CardContent>
@@ -298,9 +328,9 @@ export default function Financeiro() {
                           </td>
                           <td className="px-6 py-4">
                             <span className="text-sm font-bold text-white">
-                              {new Intl.NumberFormat('pt-BR', { 
-                                style: 'currency', 
-                                currency: 'BRL' 
+                              {new Intl.NumberFormat('pt-MZ', {
+                                style: 'currency',
+                                currency: 'MZN'
                               }).format((sale.amount || 0) / 100)}
                             </span>
                           </td>
@@ -344,10 +374,10 @@ export default function Financeiro() {
             <div>
               <CardTitle className="text-base font-bold text-white">Contas de Pagamento</CardTitle>
               <CardDescription className="text-xs text-zinc-500">
-                Cadastre M-Pesa, e-Mola ou PIX para receber os seus saques.
+                Cadastre M-Pesa ou e-Mola para receber os seus saques.
               </CardDescription>
             </div>
-            <Button 
+            <Button
               onClick={() => setShowAddAccount(true)}
               className="bg-purple-600 hover:bg-purple-500 text-white"
               size="sm"
@@ -357,76 +387,111 @@ export default function Financeiro() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
-                <CreditCard className="w-8 h-8 text-zinc-500" />
+            {accountsLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
               </div>
-              <h3 className="text-lg font-medium text-white mb-2">Nenhuma conta cadastrada</h3>
-              <p className="text-sm text-zinc-500 max-w-sm">
-                Cadastre suas contas bancárias para receber pagamentos via PIX ou transferência.
-              </p>
-            </div>
+            ) : bankAccounts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
+                  <CreditCard className="w-8 h-8 text-zinc-500" />
+                </div>
+                <h3 className="text-lg font-medium text-white mb-2">Nenhuma conta cadastrada</h3>
+                <p className="text-sm text-zinc-500 max-w-sm">
+                  Cadastre suas contas de M-Pesa ou e-Mola para receber os seus saques.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {bankAccounts.map((account) => (
+                  <div key={account.id} className="flex items-center justify-between p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold ${account.type === 'mpesa' ? 'bg-red-600' : 'bg-orange-500'}`}>
+                        {account.type === 'mpesa' ? 'M' : 'E'}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white">{METHOD_LABELS[account.type] || account.type}</p>
+                        <p className="text-xs text-zinc-400">{account.phone}</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteAccountMutation.mutate(account.id)}
+                      disabled={deleteAccountMutation.isPending}
+                      className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
 
       {/* Withdraw Form Dialog */}
-      <Dialog open={showWithdrawForm} onOpenChange={(v) => { if (!v) { setShowWithdrawForm(false); setAmount(""); setPixKey(""); } }}>
+      <Dialog open={showWithdrawForm} onOpenChange={(v) => { if (!v) { setShowWithdrawForm(false); setAmount(""); setSelectedAccountId(""); } }}>
         <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-white">Solicitar Saque</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            {/* Method selector */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Método</label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["mpesa", "emola", "pix"] as const).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => { setWithdrawMethod(m); setPixKey(""); }}
-                    className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
-                      withdrawMethod === m
-                        ? m === "mpesa"
-                          ? "bg-red-600 border-red-500 text-white shadow"
-                          : m === "emola"
-                          ? "bg-orange-500 border-orange-400 text-white shadow"
-                          : "bg-purple-600 border-purple-500 text-white shadow"
-                        : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
-                    }`}
-                  >
-                    {METHOD_LABELS[m]}
-                  </button>
-                ))}
+            {bankAccounts.length === 0 ? (
+              <div className="text-center py-6 space-y-3">
+                <CreditCard className="w-10 h-10 text-zinc-500 mx-auto" />
+                <p className="text-sm text-zinc-400">Você ainda não tem nenhuma conta cadastrada.</p>
+                <Button
+                  onClick={() => { setShowWithdrawForm(false); setActiveTab('contas'); setShowAddAccount(true); }}
+                  className="bg-purple-600 hover:bg-purple-500 text-white w-full"
+                >
+                  <Plus className="w-4 h-4 mr-2" /> Adicionar Conta
+                </Button>
               </div>
-            </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Conta para Saque</label>
+                  <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+                    <SelectTrigger className="bg-zinc-900/50 border-zinc-800 h-11 text-white">
+                      <SelectValue placeholder="Selecione uma conta..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
+                      {bankAccounts.map((acc) => (
+                        <SelectItem key={acc.id} value={String(acc.id)}>
+                          <span className="flex items-center gap-2">
+                            <span className={`text-xs font-bold ${acc.type === 'mpesa' ? 'text-red-400' : 'text-orange-400'}`}>
+                              {METHOD_LABELS[acc.type]}
+                            </span>
+                            <span className="text-zinc-300">{acc.phone}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Valor (MZN)</label>
-              <Input
-                type="number"
-                placeholder="0,00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{KEY_LABELS[withdrawMethod]}</label>
-              <Input
-                placeholder={KEY_PLACEHOLDERS[withdrawMethod]}
-                value={pixKey}
-                onChange={(e) => setPixKey(e.target.value)}
-                className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
-              />
-            </div>
-            <Button
-              onClick={() => { setShowWithdrawForm(false); setShowWithdrawDialog(true); }}
-              disabled={!amount || !pixKey}
-              className={`w-full text-white h-11 mt-2 ${METHOD_COLORS[withdrawMethod]}`}
-            >
-              Continuar
-            </Button>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Valor (MZN)</label>
+                  <Input
+                    type="number"
+                    placeholder="0,00"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
+                  />
+                </div>
+
+                <Button
+                  onClick={() => { setShowWithdrawForm(false); setShowWithdrawDialog(true); }}
+                  disabled={!amount || !selectedAccountId}
+                  className={`w-full text-white h-11 mt-2 ${selectedAccount ? METHOD_COLORS[selectedAccount.type] : 'bg-purple-600 hover:bg-purple-500'}`}
+                >
+                  Continuar
+                </Button>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -451,16 +516,20 @@ export default function Financeiro() {
                   {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(parseFloat(amount) || 0)}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-zinc-400">{KEY_LABELS[withdrawMethod]}:</span>
-                <span className="text-sm font-medium text-white">{pixKey}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-zinc-400">Método:</span>
-                <span className={`text-sm font-bold ${withdrawMethod === 'mpesa' ? 'text-red-400' : withdrawMethod === 'emola' ? 'text-orange-400' : 'text-purple-400'}`}>
-                  {METHOD_LABELS[withdrawMethod]}
-                </span>
-              </div>
+              {selectedAccount && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-zinc-400">Conta:</span>
+                    <span className="text-sm font-medium text-white">{selectedAccount.phone}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-zinc-400">Método:</span>
+                    <span className={`text-sm font-bold ${METHOD_TEXT_COLORS[selectedAccount.type] || 'text-white'}`}>
+                      {METHOD_LABELS[selectedAccount.type] || selectedAccount.type}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
               <p className="text-xs text-amber-400">
@@ -479,7 +548,7 @@ export default function Financeiro() {
             <Button
               onClick={() => { setShowWithdrawDialog(false); handleWithdraw(); }}
               disabled={isLoading}
-              className={`text-white ${METHOD_COLORS[withdrawMethod]}`}
+              className={`text-white ${selectedAccount ? METHOD_COLORS[selectedAccount.type] : 'bg-purple-600 hover:bg-purple-500'}`}
             >
               {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Confirmar Saque"}
             </Button>
@@ -496,13 +565,15 @@ export default function Financeiro() {
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">Saque Solicitado!</h2>
             <p className="text-zinc-400 mb-6">
-              Seu saque via <span className="font-bold text-white">{METHOD_LABELS[withdrawMethod]}</span> foi solicitado com sucesso.
+              Seu saque via <span className="font-bold text-white">{selectedAccount ? METHOD_LABELS[selectedAccount.type] : ""}</span> foi solicitado com sucesso.
             </p>
             <div className="bg-zinc-900/50 rounded-lg p-4 w-full mb-6 space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm text-zinc-400">{KEY_LABELS[withdrawMethod]}:</span>
-                <span className="text-sm font-medium text-white">{pixKey}</span>
-              </div>
+              {selectedAccount && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-zinc-400">Conta:</span>
+                  <span className="text-sm font-medium text-white">{selectedAccount.phone}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-400">Status:</span>
                 <span className="text-sm font-medium text-amber-400">Pendente</span>
@@ -530,8 +601,8 @@ export default function Financeiro() {
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Tipo de Conta</label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["mpesa", "emola", "pix"] as const).map((t) => (
+              <div className="grid grid-cols-2 gap-2">
+                {(["mpesa", "emola"] as const).map((t) => (
                   <button
                     key={t}
                     onClick={() => setNewAccount({ ...newAccount, type: t, phone: "" })}
@@ -539,9 +610,7 @@ export default function Financeiro() {
                       newAccount.type === t
                         ? t === "mpesa"
                           ? "bg-red-600 border-red-500 text-white shadow"
-                          : t === "emola"
-                          ? "bg-orange-500 border-orange-400 text-white shadow"
-                          : "bg-purple-600 border-purple-500 text-white shadow"
+                          : "bg-orange-500 border-orange-400 text-white shadow"
                         : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
                     }`}
                   >

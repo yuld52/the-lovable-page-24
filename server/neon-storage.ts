@@ -600,6 +600,60 @@ export class NeonStorage {
     }
   }
 
+  // Bank Accounts
+  async getBankAccounts(userId: string): Promise<any[]> {
+    try {
+      const client = await getPool().connect();
+      try {
+        const result = await client.query(
+          `SELECT * FROM bank_accounts WHERE user_id = $1 ORDER BY created_at DESC`,
+          [userId]
+        );
+        return result.rows.map(row => toCamelCase(row));
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error("Error getting bank accounts:", error);
+      return [];
+    }
+  }
+
+  async createBankAccount(account: any): Promise<any> {
+    try {
+      const client = await getPool().connect();
+      try {
+        const result = await client.query(
+          `INSERT INTO bank_accounts (user_id, type, phone) VALUES ($1, $2, $3) RETURNING *`,
+          [account.userId, account.type, account.phone]
+        );
+        return toCamelCase(result.rows[0]);
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error("Error creating bank account:", error);
+      throw error;
+    }
+  }
+
+  async deleteBankAccount(id: number, userId: string): Promise<void> {
+    try {
+      const client = await getPool().connect();
+      try {
+        await client.query(
+          `DELETE FROM bank_accounts WHERE id = $1 AND user_id = $2`,
+          [id, userId]
+        );
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error("Error deleting bank account:", error);
+      throw error;
+    }
+  }
+
   // Withdrawals
   async getWithdrawals(userId?: string): Promise<any[]> {
     try {
