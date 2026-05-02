@@ -1,29 +1,5 @@
 import webpush from "web-push";
 import { adminDb } from "../firebase-admin";
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from "url";
-
-// Load .env if not already loaded (fixes timing issues with process.env)
-try {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  const envPath = path.resolve(__dirname, "..", "..", ".env");
-  if (fs.existsSync(envPath)) {
-    const envConfig = fs.readFileSync(envPath, "utf8");
-    envConfig.split("\n").forEach((line) => {
-      const [key, ...valueParts] = line.split("=");
-      if (key && valueParts.length > 0) {
-        const value = valueParts.join("=").trim().replace(/^["']|["']$/g, "");
-        if (key.trim() && !process.env[key.trim()]) {
-          process.env[key.trim()] = value;
-        }
-      }
-    });
-  }
-} catch (err) {
-  console.error("Error loading .env in notification service:", err);
-}
 
 // Memory fallback to prevent 500 errors when DB is unreachable
 const memorySubscriptions: any[] = [];
