@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "OCnOPCSnmLDfikGiMlI10"
+uri = "file://client/public/logo-nobg.png"
+type = "image"
+title = "Logo sem fundo"
