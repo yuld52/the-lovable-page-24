@@ -12,7 +12,8 @@ export const products = pgTable("products", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
-  price: integer("price").notNull(), // in cents (USD)
+  price: integer("price").notNull(), // in cents
+  currency: text("currency").notNull().default("USD"),
   imageUrl: text("image_url"),
   deliveryUrl: text("delivery_url"),
   whatsappUrl: text("whatsapp_url"),

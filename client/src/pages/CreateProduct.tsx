@@ -52,6 +52,7 @@ export default function CreateProduct() {
   const [newProduct, setNewProduct] = useState({
     name: "",
     price: "",
+    currency: "USD",
     description: "",
     deliveryUrl: "",
     whatsappUrl: "",
@@ -176,6 +177,7 @@ export default function CreateProduct() {
       await createProduct.mutateAsync({
         name: newProduct.name,
         price: Math.round(parseFloat(newProduct.price) * 100),
+        currency: newProduct.currency,
         description: newProduct.description,
         deliveryUrl: newProduct.deliveryUrl,
         whatsappUrl: newProduct.whatsappUrl,
@@ -401,18 +403,41 @@ export default function CreateProduct() {
 
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-zinc-500">Moeda do produto</label>
-                    <Select defaultValue="USD" disabled>
-                      <SelectTrigger className="bg-black/40 border-zinc-800 h-11 opacity-50 cursor-not-allowed">
-                        <SelectValue placeholder="USD ($) - Dólar Americano" />
+                    <Select value={newProduct.currency} onValueChange={(val) => setNewProduct({ ...newProduct, currency: val })}>
+                      <SelectTrigger className="bg-black/40 border-zinc-800 h-11">
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
-                        <SelectItem value="USD">USD ($) - Dólar Americano</SelectItem>
+                        <SelectItem value="AUD">AUD - Dólar Australiano</SelectItem>
+                        <SelectItem value="BRL">BRL - Real Brasileiro</SelectItem>
+                        <SelectItem value="CAD">CAD - Dólar Canadense</SelectItem>
+                        <SelectItem value="CNY">CNY - Yuan Chinês</SelectItem>
+                        <SelectItem value="CZK">CZK - Coroa Tcheca</SelectItem>
+                        <SelectItem value="DKK">DKK - Coroa Dinamarquesa</SelectItem>
+                        <SelectItem value="EUR">EUR - Euro</SelectItem>
+                        <SelectItem value="GBP">GBP - Libra Esterlina</SelectItem>
+                        <SelectItem value="HKD">HKD - Dólar de Hong Kong</SelectItem>
+                        <SelectItem value="HUF">HUF - Florim Húngaro</SelectItem>
+                        <SelectItem value="ILS">ILS - Shekel Israelense</SelectItem>
+                        <SelectItem value="JPY">JPY - Iene Japonês</SelectItem>
+                        <SelectItem value="MXN">MXN - Peso Mexicano</SelectItem>
+                        <SelectItem value="MYR">MYR - Ringgit Malaio</SelectItem>
+                        <SelectItem value="MZN">MZN - Metical Moçambicano</SelectItem>
+                        <SelectItem value="NOK">NOK - Coroa Norueguesa</SelectItem>
+                        <SelectItem value="NZD">NZD - Dólar Neozelandês</SelectItem>
+                        <SelectItem value="PHP">PHP - Peso Filipino</SelectItem>
+                        <SelectItem value="PLN">PLN - Zloty Polonês</SelectItem>
+                        <SelectItem value="SEK">SEK - Coroa Sueca</SelectItem>
+                        <SelectItem value="SGD">SGD - Dólar de Singapura</SelectItem>
+                        <SelectItem value="THB">THB - Baht Tailandês</SelectItem>
+                        <SelectItem value="TWD">TWD - Dólar de Taiwan</SelectItem>
+                        <SelectItem value="USD">USD - Dólar Americano</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-zinc-500">Valor (USD)</label>
+                    <label className="text-xs font-medium text-zinc-500">Valor ({newProduct.currency})</label>
                     <Input
                       type="number"
                       min="0"

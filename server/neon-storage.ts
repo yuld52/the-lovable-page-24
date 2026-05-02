@@ -120,13 +120,14 @@ export class NeonStorage {
         const productData = toSnakeCase(product);
         
         const result = await client.query(`
-          INSERT INTO products (name, description, price, image_url, delivery_url, whatsapp_url, delivery_files, no_email_delivery, payment_methods, status, owner_id)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          INSERT INTO products (name, description, price, currency, image_url, delivery_url, whatsapp_url, delivery_files, no_email_delivery, payment_methods, status, owner_id)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
           RETURNING *
         `, [
           productData.name,
           productData.description || null,
           productData.price,
+          productData.currency || 'USD',
           productData.image_url || null,
           productData.delivery_url || null,
           productData.whatsapp_url || null,
