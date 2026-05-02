@@ -26,15 +26,37 @@ export default function Financeiro() {
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState("");
   const [pixKey, setPixKey] = useState("");
+  const [withdrawMethod, setWithdrawMethod] = useState<"mpesa" | "emola" | "pix">("mpesa");
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"visao" | "historico" | "contas">("visao");
   const [showAddAccount, setShowAddAccount] = useState(false);
-  const [newAccount, setNewAccount] = useState<{ bank: string; agency: string; account: string; type: "checking" | "savings" }>({ bank: "", agency: "", account: "", type: "checking" });
-  
+  const [newAccount, setNewAccount] = useState<{ type: "mpesa" | "emola" | "pix"; phone: string }>({ type: "mpesa", phone: "" });
+
   // Withdrawal dialog state
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
   const [showWithdrawForm, setShowWithdrawForm] = useState(false);
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
+
+  const METHOD_LABELS: Record<string, string> = {
+    mpesa: "M-Pesa",
+    emola: "e-Mola",
+    pix: "PIX",
+  };
+  const METHOD_COLORS: Record<string, string> = {
+    mpesa: "bg-red-600 hover:bg-red-500",
+    emola: "bg-orange-500 hover:bg-orange-400",
+    pix: "bg-purple-600 hover:bg-purple-500",
+  };
+  const KEY_LABELS: Record<string, string> = {
+    mpesa: "Número M-Pesa",
+    emola: "Número e-Mola",
+    pix: "Chave PIX",
+  };
+  const KEY_PLACEHOLDERS: Record<string, string> = {
+    mpesa: "Ex: 84 XXX XXXX",
+    emola: "Ex: 86 XXX XXXX",
+    pix: "E-mail, CPF ou telefone",
+  };
 
   const { data: stats, isLoading: statsLoading } = useStats();
   const { data: sales, isLoading: salesLoading } = useSales();
@@ -49,7 +71,7 @@ export default function Financeiro() {
     if (!amount || !pixKey) {
       toast({
         title: "Campos obrigatórios",
-        description: "Preencha o valor e a chave PIX.",
+        description: `Preencha o valor e o ${KEY_LABELS[withdrawMethod]}.`,
         variant: "destructive",
       });
       return;
@@ -67,13 +89,11 @@ export default function Financeiro() {
 
     setIsLoading(true);
     try {
-      // In production, this would call a real withdrawal API
       await apiRequest("POST", "/api/withdrawals", {
         amount: amountCents,
         pixKey,
-        method: "pix"
+        method: withdrawMethod,
       });
-      
       setWithdrawSuccess(true);
       setAmount("");
       setPixKey("");
@@ -322,9 +342,9 @@ export default function Financeiro() {
         <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-base font-bold text-white">Contas Bancárias</CardTitle>
+              <CardTitle className="text-base font-bold text-white">Contas de Pagamento</CardTitle>
               <CardDescription className="text-xs text-zinc-500">
-                Cadastre suas contas para receber pagamentos.
+                Cadastre M-Pesa, e-Mola ou PIX para receber os seus saques.
               </CardDescription>
             </div>
             <Button 
@@ -357,8 +377,32 @@ export default function Financeiro() {
             <DialogTitle className="text-lg font-bold text-white">Solicitar Saque</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
+            {/* Method selector */}
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Valor (R$)</label>
+              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Método</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(["mpesa", "emola", "pix"] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => { setWithdrawMethod(m); setPixKey(""); }}
+                    className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                      withdrawMethod === m
+                        ? m === "mpesa"
+                          ? "bg-red-600 border-red-500 text-white shadow"
+                          : m === "emola"
+                          ? "bg-orange-500 border-orange-400 text-white shadow"
+                          : "bg-purple-600 border-purple-500 text-white shadow"
+                        : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
+                    }`}
+                  >
+                    {METHOD_LABELS[m]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Valor (MZN)</label>
               <Input
                 type="number"
                 placeholder="0,00"
@@ -368,9 +412,9 @@ export default function Financeiro() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Chave PIX</label>
+              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{KEY_LABELS[withdrawMethod]}</label>
               <Input
-                placeholder="E-mail, CPF ou telefone"
+                placeholder={KEY_PLACEHOLDERS[withdrawMethod]}
                 value={pixKey}
                 onChange={(e) => setPixKey(e.target.value)}
                 className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
@@ -379,9 +423,9 @@ export default function Financeiro() {
             <Button
               onClick={() => { setShowWithdrawForm(false); setShowWithdrawDialog(true); }}
               disabled={!amount || !pixKey}
-              className="w-full bg-purple-600 hover:bg-purple-500 text-white h-11 mt-2"
+              className={`w-full text-white h-11 mt-2 ${METHOD_COLORS[withdrawMethod]}`}
             >
-              Solicitar Saque
+              Continuar
             </Button>
           </div>
         </DialogContent>
@@ -396,7 +440,7 @@ export default function Financeiro() {
               Confirmar Saque
             </DialogTitle>
             <DialogDescription className="text-zinc-400">
-              Revise os dados antes de confirmar o saque via PIX.
+              Revise os dados antes de confirmar.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -404,39 +448,38 @@ export default function Financeiro() {
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-400">Valor:</span>
                 <span className="text-lg font-bold text-white">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(amount) || 0)}
+                  {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(parseFloat(amount) || 0)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-zinc-400">Chave PIX:</span>
+                <span className="text-sm text-zinc-400">{KEY_LABELS[withdrawMethod]}:</span>
                 <span className="text-sm font-medium text-white">{pixKey}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-400">Método:</span>
-                <span className="text-sm font-medium text-purple-400">PIX Instantâneo</span>
+                <span className={`text-sm font-bold ${withdrawMethod === 'mpesa' ? 'text-red-400' : withdrawMethod === 'emola' ? 'text-orange-400' : 'text-purple-400'}`}>
+                  {METHOD_LABELS[withdrawMethod]}
+                </span>
               </div>
             </div>
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
               <p className="text-xs text-amber-400">
-                ⚠️ O processamento leva até 3 dias úteis. Certifique-se que a chave PIX está correta.
+                ⚠️ Certifique-se que o número está correto. O processamento leva até 3 dias úteis.
               </p>
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowWithdrawDialog(false)}
+            <Button
+              variant="outline"
+              onClick={() => { setShowWithdrawDialog(false); setShowWithdrawForm(true); }}
               className="border-zinc-700 text-zinc-300"
             >
-              Cancelar
+              Voltar
             </Button>
-            <Button 
-              onClick={() => {
-                setShowWithdrawDialog(false);
-                handleWithdraw();
-              }}
+            <Button
+              onClick={() => { setShowWithdrawDialog(false); handleWithdraw(); }}
               disabled={isLoading}
-              className="bg-purple-600 hover:bg-purple-500 text-white"
+              className={`text-white ${METHOD_COLORS[withdrawMethod]}`}
             >
               {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Confirmar Saque"}
             </Button>
@@ -451,17 +494,13 @@ export default function Financeiro() {
             <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6">
               <Check className="w-10 h-10 text-emerald-500" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Saquue Solicitado!</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">Saque Solicitado!</h2>
             <p className="text-zinc-400 mb-6">
-              Seu saque de{' '}
-              <span className="text-white font-bold">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(amount) || 0)}
-              </span>
-              {' '}foi solicitado com sucesso via PIX.
+              Seu saque via <span className="font-bold text-white">{METHOD_LABELS[withdrawMethod]}</span> foi solicitado com sucesso.
             </p>
-            <div className="bg-zinc-900/50 rounded-lg p-4 w-full mb-6">
-              <div className="flex justify-between mb-2">
-                <span className="text-sm text-zinc-400">Chave PIX:</span>
+            <div className="bg-zinc-900/50 rounded-lg p-4 w-full mb-6 space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-zinc-400">{KEY_LABELS[withdrawMethod]}:</span>
                 <span className="text-sm font-medium text-white">{pixKey}</span>
               </div>
               <div className="flex justify-between">
@@ -472,7 +511,7 @@ export default function Financeiro() {
             <p className="text-xs text-zinc-500 mb-6">
               O processamento leva até 3 dias úteis. Você receberá uma notificação quando o valor for enviado.
             </p>
-            <Button 
+            <Button
               onClick={() => setWithdrawSuccess(false)}
               className="w-full bg-purple-600 hover:bg-purple-500 text-white"
             >
@@ -483,85 +522,62 @@ export default function Financeiro() {
       </Dialog>
 
       {/* Add Account Dialog */}
-      {showAddAccount && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[#18181b] border border-zinc-800 rounded-2xl p-6 max-w-sm w-full mx-4">
-            <h3 className="text-lg font-bold text-white mb-4">Nova Conta Bancária</h3>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-400 uppercase">Banco</label>
-                <Input 
-                  placeholder="Ex: Nubank, Itaú..." 
-                  value={newAccount.bank}
-                  onChange={(e) => setNewAccount({ ...newAccount, bank: e.target.value })}
-                  className="bg-zinc-900 border-zinc-800" 
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase">Agência</label>
-                  <Input 
-                    placeholder="0000" 
-                    value={newAccount.agency}
-                    onChange={(e) => setNewAccount({ ...newAccount, agency: e.target.value })}
-                    className="bg-zinc-900 border-zinc-800" 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase">Conta</label>
-                  <Input 
-                    placeholder="00000-0" 
-                    value={newAccount.account}
-                    onChange={(e) => setNewAccount({ ...newAccount, account: e.target.value })}
-                    className="bg-zinc-900 border-zinc-800" 
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-400 uppercase">Tipo</label>
-                <div className="flex gap-2">
+      <Dialog open={showAddAccount} onOpenChange={(v) => { if (!v) { setShowAddAccount(false); setNewAccount({ type: "mpesa", phone: "" }); } }}>
+        <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-white">Adicionar Conta</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Tipo de Conta</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(["mpesa", "emola", "pix"] as const).map((t) => (
                   <button
-                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-                        newAccount.type === 'checking' 
-                          ? 'bg-purple-600 text-white' 
-                          : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800'
+                    key={t}
+                    onClick={() => setNewAccount({ ...newAccount, type: t, phone: "" })}
+                    className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                      newAccount.type === t
+                        ? t === "mpesa"
+                          ? "bg-red-600 border-red-500 text-white shadow"
+                          : t === "emola"
+                          ? "bg-orange-500 border-orange-400 text-white shadow"
+                          : "bg-purple-600 border-purple-500 text-white shadow"
+                        : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
                     }`}
-                    onClick={() => setNewAccount({ ...newAccount, type: 'checking' })}
                   >
-                    Conta Corrente
+                    {METHOD_LABELS[t]}
                   </button>
-                  <button
-                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-                        newAccount.type === 'savings' 
-                          ? 'bg-purple-600 text-white' 
-                          : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800'
-                    }`}
-                    onClick={() => setNewAccount({ ...newAccount, type: 'savings' })}
-                  >
-                    Poupança
-                  </button>
-                </div>
+                ))}
               </div>
             </div>
-            <div className="flex gap-3 mt-6">
-              <Button 
-                variant="ghost" 
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{KEY_LABELS[newAccount.type]}</label>
+              <Input
+                placeholder={KEY_PLACEHOLDERS[newAccount.type]}
+                value={newAccount.phone}
+                onChange={(e) => setNewAccount({ ...newAccount, phone: e.target.value })}
+                className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
                 onClick={() => setShowAddAccount(false)}
-                className="flex-1"
+                className="flex-1 border-zinc-700 text-zinc-300"
               >
                 Cancelar
               </Button>
-              <Button 
+              <Button
                 onClick={() => addAccountMutation.mutate(newAccount)}
-                disabled={addAccountMutation.isPending}
+                disabled={addAccountMutation.isPending || !newAccount.phone}
                 className="flex-1 bg-purple-600 hover:bg-purple-500 text-white"
               >
                 {addAccountMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Adicionar"}
               </Button>
             </div>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
