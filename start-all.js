@@ -2,11 +2,11 @@ import { spawn } from 'child_process';
 
 let serverReady = false;
 
-// Start the server using tsx (handles both backend + Vite via server/vite.ts middleware)
+// Start the server using the local tsx binary (already installed in node_modules)
 console.log('Starting Meteorfy server...');
-const server = spawn('npx', ['tsx', '--watch', 'server/index.ts'], {
+const server = spawn('./node_modules/.bin/tsx', ['--watch', 'server/index.ts'], {
     stdio: 'pipe',
-    shell: true,
+    shell: false,
     env: { ...process.env, PORT: '5000' }
 });
 
