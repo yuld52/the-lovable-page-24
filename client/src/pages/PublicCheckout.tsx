@@ -585,10 +585,10 @@ export default function PublicCheckout() {
             <div className="p-4 space-y-4">
               {/* Payment method selector */}
               {(() => {
-                const METHOD_META: Record<string, { label: string; badgeBg: string; letter: string }> = {
+                const METHOD_META: Record<string, { label: string; badgeBg: string; letter: string; logoUrl?: string }> = {
                   paypal:    { label: "PayPal",      badgeBg: "#003087", letter: "P" },
-                  mpesa:     { label: "M-Pesa",      badgeBg: "#e11d48", letter: "M" },
-                  emola:     { label: "e-Mola",      badgeBg: "#f97316", letter: "E" },
+                  mpesa:     { label: "M-Pesa",      badgeBg: "#e11d48", letter: "M", logoUrl: "https://yt3.googleusercontent.com/ytc/AIdro_k9S-mKWfmtSx85sbylUgINsr7-ErWacXBh0R39hZ_2rg=s900-c-k-c0x00ffffff-no-rj" },
+                  emola:     { label: "e-Mola",      badgeBg: "#f97316", letter: "E", logoUrl: "https://play-lh.googleusercontent.com/2TGAhJ55tiyhCwW0ZM43deGv4lUTFTBMoq83mnAO6-bU5hi2NPyKX8BN8iKt13irK7Y" },
                   googlepay: { label: "Google Pay",  badgeBg: "#4285F4", letter: "G" },
                 };
 
@@ -633,12 +633,18 @@ export default function PublicCheckout() {
                                   )}
                                 </div>
                                 {/* Logo badge */}
-                                <div
-                                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
-                                  style={{ backgroundColor: meta.badgeBg }}
-                                >
-                                  {meta.letter}
-                                </div>
+                                {meta.logoUrl ? (
+                                  <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 bg-white flex items-center justify-center">
+                                    <img src={meta.logoUrl} alt={meta.label} className="w-full h-full object-contain" />
+                                  </div>
+                                ) : (
+                                  <div
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
+                                    style={{ backgroundColor: meta.badgeBg }}
+                                  >
+                                    {meta.letter}
+                                  </div>
+                                )}
                                 {/* Label */}
                                 <span className="text-sm font-semibold leading-tight" style={{ color: config.textColor }}>
                                   {meta.label}
