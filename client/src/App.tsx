@@ -1,4 +1,4 @@
-import { Switch, Route, useRoute } from "wouter";
+import { Switch, Route, useRoute, useLocation } from "wouter";
 import { useEffect } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
@@ -95,9 +95,14 @@ function Router() {
   );
 }
 
+const PUBLIC_ROUTES = ["/checkout/", "/faq", "/help", "/admin"];
+
 function App() {
   const { user, loading } = useUser();
-  
+  const [location] = useLocation();
+
+  const isPublicPage = PUBLIC_ROUTES.some(route => location.startsWith(route));
+
   if (loading) {
     return <LoadingScreen />;
   }
@@ -108,8 +113,7 @@ function App() {
         <TooltipProvider>
           <Router />
           <Toaster />
-          {/* Chat AI só aparece após login */}
-          {user && <ChatSupport />}
+          {user && !isPublicPage && <ChatSupport />}
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>
