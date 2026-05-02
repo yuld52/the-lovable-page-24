@@ -396,6 +396,7 @@ export default function CheckoutEditor() {
                         <SelectItem value="JPY">JPY</SelectItem>
                         <SelectItem value="MYR">MYR</SelectItem>
                         <SelectItem value="MXN">MXN</SelectItem>
+                        <SelectItem value="MZN">MZN - Metical</SelectItem>
                         <SelectItem value="TWD">TWD</SelectItem>
                         <SelectItem value="NZD">NZD</SelectItem>
                         <SelectItem value="NOK">NOK</SelectItem>

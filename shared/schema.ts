@@ -154,6 +154,7 @@ export type CheckoutCurrency =
   | "JPY"
   | "MYR"
   | "MXN"
+  | "MZN"
   | "TWD"
   | "NZD"
   | "NOK"
