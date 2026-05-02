@@ -41,7 +41,7 @@ const integrations: Integration[] = [
     id: "webhook",
     name: "Integração Webhook",
     description: "Notificações de vendas via URL",
-    icon: "/integrations/webhook.svg",
+    icon: "https://cdn.worldvectorlogo.com/logos/webhooks.svg",
     configured: (s) => !!s.webhookUrl,
     fields: [
       {
