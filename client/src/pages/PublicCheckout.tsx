@@ -218,24 +218,28 @@ export default function PublicCheckout() {
 
     let res: Response;
     try {
-      res = await apiRequest("POST", "/api/paypal/create-order", {
-        checkoutId: Number(checkoutData?.id),
-        productId: Number(product?.id),
-        currency,
-        totalUsdCents,
-        totalMinor,
-        orderBumpProductIds: orderBumpSelected,
-        customerData: { email: formData.email, name: formData.name },
-        ...utmParams,
+      res = await fetch("/api/paypal/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          checkoutId: Number(checkoutData?.id),
+          productId: Number(product?.id),
+          currency,
+          totalUsdCents,
+          totalMinor,
+          orderBumpProductIds: orderBumpSelected,
+          customerData: { email: formData.email, name: formData.name },
+          ...utmParams,
+        }),
       });
-    } catch (err: any) {
-      toast({ title: "Erro", description: "Falha de rede ao criar pedido PayPal.", variant: "destructive" });
-      throw err;
+    } catch (_networkErr) {
+      toast({ title: "Erro", description: "Sem ligação. Verifique a sua internet e tente novamente.", variant: "destructive" });
+      throw new Error("network");
     }
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const msg = data?.message || "Erro ao criar pedido PayPal";
+      const msg = data?.message || "Erro ao criar pedido. Tente novamente.";
       toast({ title: "Erro", description: msg, variant: "destructive" });
       throw new Error(msg);
     }

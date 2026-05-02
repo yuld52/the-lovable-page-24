@@ -388,9 +388,20 @@ export async function registerRoutes(
         return res.status(500).json({ message: "PayPal não configurado" });
       }
 
+      // PayPal only supports a subset of currencies — fall back to USD if unsupported
+      const PAYPAL_SUPPORTED_CURRENCIES = new Set([
+        "AUD","BRL","CAD","CNY","CZK","DKK","EUR","HKD","HUF","ILS","JPY",
+        "MYR","MXN","TWD","NZD","NOK","PHP","PLN","GBP","RUB","SGD","SEK",
+        "CHF","THB","USD",
+      ]);
+      const paypalCurrency = PAYPAL_SUPPORTED_CURRENCIES.has(body.currency.toUpperCase())
+        ? body.currency
+        : "USD";
+      const paypalAmountMinor = paypalCurrency === body.currency ? body.totalMinor : body.totalUsdCents;
+
       const order = await createOrder(
         { clientId: settings.paypalClientId, clientSecret: settings.paypalClientSecret, environment: (settings.environment || "production") as any },
-        { currency: body.currency, amountMinor: body.totalMinor, description: product.name }
+        { currency: paypalCurrency, amountMinor: paypalAmountMinor, description: product.name }
       );
 
       const sale = await storage.createSale({
@@ -401,8 +412,8 @@ export async function registerRoutes(
         status: "pending",
         customerEmail: body.customerData?.email || null,
         paypalOrderId: order.id,
-        paypalCurrency: body.currency,
-        paypalAmountMinor: body.totalMinor,
+        paypalCurrency: paypalCurrency,
+        paypalAmountMinor: paypalAmountMinor,
         utmSource: body.utmSource || null,
         utmMedium: body.utmMedium || null,
         utmCampaign: body.utmCampaign || null,
