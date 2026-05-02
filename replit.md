@@ -66,19 +66,24 @@ Preferred communication style: Simple, everyday language.
 
 ## External Dependencies & Required Secrets
 
-### Secrets (set in Replit Secrets panel)
-- `FIREBASE_PRIVATE_KEY`: Firebase service account private key ✅
-- `SESSION_SECRET`: Express session secret ✅
-
-### Environment Variables (set in Replit env)
-- `PORT`: 5000 ✅
-- `NODE_ENV`: development ✅
+### Secrets currently set in Replit Secrets
 - `FIREBASE_PROJECT_ID`: meteorfy1 ✅
 - `FIREBASE_CLIENT_EMAIL`: Firebase service account email ✅
 - `NEON_DATABASE_URL`: Neon PostgreSQL connection string ✅
 - `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`: Web push notification keys ✅
+- `DATABASE_URL`: Replit-managed Postgres (not used — app uses NEON_DATABASE_URL) ✅
 
-### Optional Secrets (configure when ready)
-- `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` / `PAYPAL_WEBHOOK_ID`: PayPal payments
+### Secrets that still need to be added
+- `FIREBASE_PRIVATE_KEY`: Firebase service account private key (needed for server-side auth token verification)
+- `OPENROUTER_API_KEY`: OpenRouter API key (needed for the AI chat assistant feature)
+
+### Optional secrets (configure when ready)
+- `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` / `PAYPAL_WEBHOOK_ID`: PayPal (configured per-user via the app's Settings UI)
 - `FACEBOOK_PIXEL_ID` / `FACEBOOK_ACCESS_TOKEN`: Meta/Facebook pixel tracking
 - `UTMIFY_TOKEN`: UTMify analytics token
+
+## Dev Startup
+- Workflow: `Start application` runs `npm run dev`
+- `npm run dev` → `node start-all.js` → spawns `tsx --watch server/index.ts` on port 5000
+- Express on port 5000 serves both the API and the Vite frontend (via Vite middleware in dev mode)
+- `start-all.js` uses an absolute path to resolve the tsx binary reliably
