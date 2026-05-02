@@ -31,7 +31,7 @@ export default function Financeiro() {
   const [activeTab, setActiveTab] = useState<"visao" | "historico" | "contas" | "regras">("visao");
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [addAccountStep, setAddAccountStep] = useState<1 | 2 | 3>(1);
-  const [newAccount, setNewAccount] = useState<{ type: "mpesa" | "emola" | "payoneer"; phone: string; name: string }>({ type: "mpesa", phone: "", name: "" });
+  const [newAccount, setNewAccount] = useState<{ type: "mpesa" | "emola"; phone: string; name: string }>({ type: "mpesa", phone: "", name: "" });
   const [withdrawCurrency, setWithdrawCurrency] = useState<"MZN" | "USD" | "BRL">("MZN");
 
   // Withdrawal dialog state
@@ -43,22 +43,18 @@ export default function Financeiro() {
   const METHOD_LABELS: Record<string, string> = {
     mpesa: "M-Pesa",
     emola: "e-Mola",
-    payoneer: "Payoneer",
   };
   const METHOD_COLORS: Record<string, string> = {
     mpesa: "bg-red-600 hover:bg-red-500",
     emola: "bg-orange-500 hover:bg-orange-400",
-    payoneer: "bg-blue-600 hover:bg-blue-500",
   };
   const KEY_LABELS: Record<string, string> = {
     mpesa: "Número M-Pesa",
     emola: "Número e-Mola",
-    payoneer: "Email Payoneer",
   };
   const KEY_PLACEHOLDERS: Record<string, string> = {
     mpesa: "Ex: 84 XXX XXXX",
     emola: "Ex: 86 XXX XXXX",
-    payoneer: "Ex: email@exemplo.com",
   };
   const CURRENCY_FLAGS: Record<string, string> = { MZN: "🇲🇿", USD: "🇺🇸", BRL: "🇧🇷" };
   const CURRENCY_MIN: Record<string, number> = { MZN: 600, USD: 50, BRL: 250 };
@@ -509,8 +505,7 @@ export default function Financeiro() {
             <CardContent className="space-y-3">
               {[
                 { label: "M-Pesa", rate: "10%", color: "bg-red-600", letter: "M" },
-                { label: "e-Mola",  rate: "10%", color: "bg-orange-500", letter: "E" },
-                { label: "Payoneer", rate: "2%",  color: "bg-blue-600", letter: "P" },
+                { label: "e-Mola", rate: "10%", color: "bg-orange-500", letter: "E" },
               ].map((m) => (
                 <div key={m.label} className="flex items-center justify-between bg-zinc-900/50 border border-zinc-800/50 rounded-xl px-4 py-3">
                   <div className="flex items-center gap-3">
@@ -615,18 +610,16 @@ export default function Financeiro() {
             {/* Method selector */}
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Método</label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["mpesa", "emola", "payoneer"] as const).map((m) => (
+              <div className="grid grid-cols-2 gap-2">
+                {(["mpesa", "emola"] as const).map((m) => (
                   <button
                     key={m}
-                    onClick={() => { setWithdrawMethod(m as any); setPixKey(""); setSelectedAccountId(null); }}
+                    onClick={() => { setWithdrawMethod(m); setPixKey(""); setSelectedAccountId(null); }}
                     className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
                       withdrawMethod === m
                         ? m === "mpesa"
                           ? "bg-red-600 border-red-500 text-white shadow"
-                          : m === "emola"
-                          ? "bg-orange-500 border-orange-400 text-white shadow"
-                          : "bg-blue-600 border-blue-500 text-white shadow"
+                          : "bg-orange-500 border-orange-400 text-white shadow"
                         : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
                     }`}
                   >
@@ -863,8 +856,7 @@ export default function Financeiro() {
                 <p className="text-sm text-zinc-400">Selecione o tipo de conta que deseja adicionar:</p>
                 {([
                   { type: "mpesa" as const, label: "M-Pesa", sub: "Carteira móvel Moçambique", color: "bg-red-600", letter: "M", border: "hover:border-red-500/50" },
-                  { type: "emola" as const, label: "e-Mola",  sub: "Carteira móvel Moçambique", color: "bg-orange-500", letter: "E", border: "hover:border-orange-500/50" },
-                  { type: "payoneer" as const, label: "Payoneer", sub: "Pagamentos internacionais", color: "bg-blue-600", letter: "P", border: "hover:border-blue-500/50" },
+                  { type: "emola" as const, label: "e-Mola", sub: "Carteira móvel Moçambique", color: "bg-orange-500", letter: "E", border: "hover:border-orange-500/50" },
                 ]).map((m) => (
                   <button
                     key={m.type}

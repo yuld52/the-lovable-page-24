@@ -796,7 +796,7 @@ export async function registerRoutes(
     try {
       const userId = String((req as any).user?.id || "");
       const { type, phone, name } = req.body;
-      const validTypes = ["mpesa", "emola", "payoneer"];
+      const validTypes = ["mpesa", "emola"];
       if (!type || !validTypes.includes(type)) return res.status(400).json({ message: "Tipo inválido" });
       if (!phone) return res.status(400).json({ message: "Número/email é obrigatório" });
       const result = await storage.createBankAccount(userId, type, phone, name);
