@@ -30,7 +30,9 @@ export default function Financeiro() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"visao" | "historico" | "contas" | "regras">("visao");
   const [showAddAccount, setShowAddAccount] = useState(false);
-  const [newAccount, setNewAccount] = useState<{ type: "mpesa" | "emola"; phone: string }>({ type: "mpesa", phone: "" });
+  const [addAccountStep, setAddAccountStep] = useState<1 | 2 | 3>(1);
+  const [newAccount, setNewAccount] = useState<{ type: "mpesa" | "emola" | "payoneer"; phone: string; name: string }>({ type: "mpesa", phone: "", name: "" });
+  const [withdrawCurrency, setWithdrawCurrency] = useState<"MZN" | "USD" | "BRL">("MZN");
 
   // Withdrawal dialog state
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
@@ -41,19 +43,25 @@ export default function Financeiro() {
   const METHOD_LABELS: Record<string, string> = {
     mpesa: "M-Pesa",
     emola: "e-Mola",
+    payoneer: "Payoneer",
   };
   const METHOD_COLORS: Record<string, string> = {
     mpesa: "bg-red-600 hover:bg-red-500",
     emola: "bg-orange-500 hover:bg-orange-400",
+    payoneer: "bg-blue-600 hover:bg-blue-500",
   };
   const KEY_LABELS: Record<string, string> = {
     mpesa: "Número M-Pesa",
     emola: "Número e-Mola",
+    payoneer: "Email Payoneer",
   };
   const KEY_PLACEHOLDERS: Record<string, string> = {
     mpesa: "Ex: 84 XXX XXXX",
     emola: "Ex: 86 XXX XXXX",
+    payoneer: "Ex: email@exemplo.com",
   };
+  const CURRENCY_FLAGS: Record<string, string> = { MZN: "🇲🇿", USD: "🇺🇸", BRL: "🇧🇷" };
+  const CURRENCY_MIN: Record<string, number> = { MZN: 600, USD: 50, BRL: 250 };
 
   const { data: stats, isLoading: statsLoading } = useStats();
   const { data: sales, isLoading: salesLoading } = useSales();
@@ -140,7 +148,8 @@ export default function Financeiro() {
       queryClient.invalidateQueries({ queryKey: ["/api/bank-accounts"] });
       toast({ title: "Conta salva!", description: "Sua conta de pagamento foi cadastrada." });
       setShowAddAccount(false);
-      setNewAccount({ type: "mpesa", phone: "" });
+      setAddAccountStep(1);
+      setNewAccount({ type: "mpesa", phone: "", name: "" });
     },
     onError: (err: any) => {
       toast({ title: "Erro", description: err.message || "Não foi possível salvar a conta.", variant: "destructive" });
@@ -436,6 +445,7 @@ export default function Financeiro() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-white">{METHOD_LABELS[acc.type]}</p>
+                        {acc.name && <p className="text-[11px] text-zinc-300 font-medium">{acc.name}</p>}
                         <p className="text-xs text-zinc-400">{acc.phone}</p>
                       </div>
                     </div>
@@ -575,19 +585,48 @@ export default function Financeiro() {
             <DialogTitle className="text-lg font-bold text-white">Solicitar Saque</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
+            {/* Currency selector */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Carteira</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(["MZN", "USD", "BRL"] as const).map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => { setWithdrawCurrency(c); setAmount(""); }}
+                    className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                      withdrawCurrency === c
+                        ? "bg-purple-600/20 border-purple-500 text-purple-300"
+                        : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
+                    }`}
+                  >
+                    <span>{CURRENCY_FLAGS[c]}</span>
+                    <span>{c}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-gradient-to-r from-emerald-600/20 to-emerald-500/10 border border-emerald-500/20">
+                <span className="text-xs text-zinc-400">Elegível para Saque em {withdrawCurrency}:</span>
+                <span className="text-sm font-bold text-emerald-400">
+                  {new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(availableBalance / 100)} {withdrawCurrency}
+                </span>
+              </div>
+            </div>
+
             {/* Method selector */}
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Método</label>
-              <div className="grid grid-cols-2 gap-2">
-                {(["mpesa", "emola"] as const).map((m) => (
+              <div className="grid grid-cols-3 gap-2">
+                {(["mpesa", "emola", "payoneer"] as const).map((m) => (
                   <button
                     key={m}
-                    onClick={() => { setWithdrawMethod(m); setPixKey(""); setSelectedAccountId(null); }}
+                    onClick={() => { setWithdrawMethod(m as any); setPixKey(""); setSelectedAccountId(null); }}
                     className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
                       withdrawMethod === m
                         ? m === "mpesa"
                           ? "bg-red-600 border-red-500 text-white shadow"
-                          : "bg-orange-500 border-orange-400 text-white shadow"
+                          : m === "emola"
+                          ? "bg-orange-500 border-orange-400 text-white shadow"
+                          : "bg-blue-600 border-blue-500 text-white shadow"
                         : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
                     }`}
                   >
@@ -598,14 +637,20 @@ export default function Financeiro() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Valor (MZN)</label>
-              <Input
-                type="number"
-                placeholder="0,00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
-              />
+              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                Valor ({withdrawCurrency})
+                <span className="ml-1 text-zinc-500 normal-case font-normal">mín. {CURRENCY_MIN[withdrawCurrency]}</span>
+              </label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  placeholder="0,00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="bg-zinc-900/50 border-zinc-800 h-11 text-white pr-14"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm font-semibold">{withdrawCurrency}</span>
+              </div>
             </div>
 
             {/* Account selector — registered accounts for the chosen method */}
@@ -778,58 +823,137 @@ export default function Financeiro() {
         </DialogContent>
       </Dialog>
 
-      {/* Add Account Dialog */}
-      <Dialog open={showAddAccount} onOpenChange={(v) => { if (!v) { setShowAddAccount(false); setNewAccount({ type: "mpesa", phone: "" }); } }}>
-        <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-white">Adicionar Conta</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Tipo de Conta</label>
-              <div className="grid grid-cols-2 gap-2">
-                {(["mpesa", "emola"] as const).map((t) => (
+      {/* Add Account Dialog — 3-step flow */}
+      <Dialog open={showAddAccount} onOpenChange={(v) => { if (!v) { setShowAddAccount(false); setAddAccountStep(1); setNewAccount({ type: "mpesa", phone: "", name: "" }); } }}>
+        <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm p-0 overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 pt-6 pb-4">
+            <div className="flex items-center gap-2">
+              {addAccountStep > 1 && (
+                <button
+                  onClick={() => setAddAccountStep((s) => Math.max(1, s - 1) as 1 | 2 | 3)}
+                  className="p-1 hover:bg-zinc-800 rounded-lg transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4 text-zinc-400" />
+                </button>
+              )}
+              <h3 className="text-lg font-bold text-white">
+                {addAccountStep === 1 ? "Escolher Método" : addAccountStep === 2 ? "Dados da Conta" : "Verificação"}
+              </h3>
+            </div>
+          </div>
+
+          {/* Step indicator */}
+          <div className="flex items-center justify-center gap-2 pb-5">
+            {[1, 2, 3].map((s, i) => (
+              <div key={s} className="flex items-center gap-2">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                  addAccountStep > s ? "bg-purple-500/20 text-purple-400" :
+                  addAccountStep === s ? "bg-purple-600 text-white" : "bg-zinc-800 text-zinc-500"
+                }`}>{s}</div>
+                {i < 2 && <div className={`w-8 h-0.5 transition-all ${addAccountStep > s ? "bg-purple-500" : "bg-zinc-800"}`} />}
+              </div>
+            ))}
+          </div>
+
+          <div className="px-6 pb-6 space-y-4">
+            {/* Step 1 — Choose method */}
+            {addAccountStep === 1 && (
+              <div className="space-y-3">
+                <p className="text-sm text-zinc-400">Selecione o tipo de conta que deseja adicionar:</p>
+                {([
+                  { type: "mpesa" as const, label: "M-Pesa", sub: "Carteira móvel Moçambique", color: "bg-red-600", letter: "M", border: "hover:border-red-500/50" },
+                  { type: "emola" as const, label: "e-Mola",  sub: "Carteira móvel Moçambique", color: "bg-orange-500", letter: "E", border: "hover:border-orange-500/50" },
+                  { type: "payoneer" as const, label: "Payoneer", sub: "Pagamentos internacionais", color: "bg-blue-600", letter: "P", border: "hover:border-blue-500/50" },
+                ]).map((m) => (
                   <button
-                    key={t}
-                    onClick={() => setNewAccount({ ...newAccount, type: t, phone: "" })}
-                    className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
-                      newAccount.type === t
-                        ? t === "mpesa"
-                          ? "bg-red-600 border-red-500 text-white shadow"
-                          : "bg-orange-500 border-orange-400 text-white shadow"
-                        : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
-                    }`}
+                    key={m.type}
+                    onClick={() => { setNewAccount({ type: m.type, phone: "", name: "" }); setAddAccountStep(2); }}
+                    className={`w-full flex items-center gap-4 p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl transition-all ${m.border} hover:bg-zinc-900 text-left`}
                   >
-                    {METHOD_LABELS[t]}
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shrink-0 ${m.color}`}>
+                      {m.letter}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{m.label}</p>
+                      <p className="text-xs text-zinc-500">{m.sub}</p>
+                    </div>
+                    <ArrowLeft className="w-4 h-4 text-zinc-600 rotate-180 ml-auto" />
                   </button>
                 ))}
               </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{KEY_LABELS[newAccount.type]}</label>
-              <Input
-                placeholder={KEY_PLACEHOLDERS[newAccount.type]}
-                value={newAccount.phone}
-                onChange={(e) => setNewAccount({ ...newAccount, phone: e.target.value })}
-                className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
-              />
-            </div>
-            <div className="flex gap-3 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowAddAccount(false)}
-                className="flex-1 border-zinc-700 text-zinc-300"
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={() => addAccountMutation.mutate(newAccount)}
-                disabled={addAccountMutation.isPending || !newAccount.phone}
-                className="flex-1 bg-purple-600 hover:bg-purple-500 text-white"
-              >
-                {addAccountMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Adicionar"}
-              </Button>
-            </div>
+            )}
+
+            {/* Step 2 — Account details */}
+            {addAccountStep === 2 && (
+              <div className="space-y-4">
+                <p className="text-sm text-zinc-400">Preencha os dados para sua conta {METHOD_LABELS[newAccount.type]}:</p>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-zinc-300">Nome do Titular</label>
+                  <Input
+                    placeholder="Ex: João Silva"
+                    value={newAccount.name}
+                    onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
+                    className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-zinc-300">{KEY_LABELS[newAccount.type]}</label>
+                  <Input
+                    placeholder={KEY_PLACEHOLDERS[newAccount.type]}
+                    value={newAccount.phone}
+                    onChange={(e) => setNewAccount({ ...newAccount, phone: e.target.value })}
+                    className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
+                    type={newAccount.type === "payoneer" ? "email" : "tel"}
+                  />
+                </div>
+                <Button
+                  onClick={() => { if (newAccount.name.trim() && newAccount.phone.trim()) setAddAccountStep(3); }}
+                  disabled={!newAccount.name.trim() || !newAccount.phone.trim()}
+                  className="w-full bg-purple-600 hover:bg-purple-500 text-white h-11 mt-2"
+                >
+                  Continuar
+                </Button>
+              </div>
+            )}
+
+            {/* Step 3 — Review & confirm */}
+            {addAccountStep === 3 && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <div className="w-14 h-14 bg-purple-600/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <ShieldCheck className="w-7 h-7 text-purple-400" />
+                  </div>
+                  <p className="text-sm text-zinc-400">Revise os dados antes de confirmar</p>
+                </div>
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-zinc-500">Método</span>
+                    <span className="text-sm font-semibold text-white">{METHOD_LABELS[newAccount.type]}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-zinc-500">Titular</span>
+                    <span className="text-sm font-medium text-white">{newAccount.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-zinc-500">{KEY_LABELS[newAccount.type]}</span>
+                    <span className="text-sm font-medium text-white">{newAccount.phone}</span>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setAddAccountStep(2)} className="flex-1 border-zinc-700 text-zinc-300">
+                    Voltar
+                  </Button>
+                  <Button
+                    onClick={() => addAccountMutation.mutate(newAccount)}
+                    disabled={addAccountMutation.isPending}
+                    className="flex-1 bg-purple-600 hover:bg-purple-500 text-white"
+                  >
+                    {addAccountMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar"}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

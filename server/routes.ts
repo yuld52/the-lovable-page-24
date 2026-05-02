@@ -795,9 +795,11 @@ export async function registerRoutes(
   app.post("/api/bank-accounts", requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
-      const { type, phone } = req.body;
-      if (!type || !phone) return res.status(400).json({ message: "Tipo e número são obrigatórios" });
-      const result = await storage.createBankAccount(userId, type, phone);
+      const { type, phone, name } = req.body;
+      const validTypes = ["mpesa", "emola", "payoneer"];
+      if (!type || !validTypes.includes(type)) return res.status(400).json({ message: "Tipo inválido" });
+      if (!phone) return res.status(400).json({ message: "Número/email é obrigatório" });
+      const result = await storage.createBankAccount(userId, type, phone, name);
       res.status(201).json(result);
     } catch (err: any) {
       res.status(500).json({ message: err.message });

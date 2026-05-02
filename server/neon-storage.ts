@@ -790,12 +790,22 @@ export class NeonStorage {
     }
   }
 
-  async createBankAccount(userId: string, type: string, phone: string): Promise<any> {
+  async ensureBankAccountNameColumn(): Promise<void> {
+    const client = await getPool().connect();
+    try {
+      await client.query(`ALTER TABLE bank_accounts ADD COLUMN IF NOT EXISTS name VARCHAR(255)`);
+    } finally {
+      client.release();
+    }
+  }
+
+  async createBankAccount(userId: string, type: string, phone: string, name?: string): Promise<any> {
+    await this.ensureBankAccountNameColumn();
     const client = await getPool().connect();
     try {
       const result = await client.query(
-        `INSERT INTO bank_accounts (user_id, type, phone) VALUES ($1, $2, $3) RETURNING *`,
-        [userId, type, phone]
+        `INSERT INTO bank_accounts (user_id, type, phone, name) VALUES ($1, $2, $3, $4) RETURNING *`,
+        [userId, type, phone, name || null]
       );
       return toCamelCase(result.rows[0]);
     } finally {
