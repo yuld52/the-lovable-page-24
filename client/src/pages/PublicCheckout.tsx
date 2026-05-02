@@ -794,13 +794,58 @@ export default function PublicCheckout() {
         </div>
       )}
 
-      <footer className="py-10 text-center space-y-4 px-4 opacity-70">
-        <div className="flex justify-center gap-6 text-[12px]">
-          <div className="flex items-center gap-1.5"><ShieldCheck size={16} /><span>{t.securePayment}</span></div>
-          <div className="flex items-center gap-1.5"><Lock size={16} /><span>{t.safeSite}</span></div>
-          <div className="flex items-center gap-1.5"><CreditCard size={16} /><span>{t.variousPaymentMethods}</span></div>
+      <footer className="py-8 text-center px-4" style={{ color: config.textColor }}>
+        <div className="max-w-md mx-auto space-y-3">
+          {/* Platform processing notice */}
+          <p className="text-[12px] opacity-60 leading-snug">
+            <span className="font-semibold">Meteorfy</span> está processando este pagamento para o vendedor{" "}
+            <span className="font-semibold">Vendedor Autorizado</span>
+          </p>
+
+          {/* Secure purchase row */}
+          <div className="flex items-center justify-center gap-1.5 text-[12px] opacity-70">
+            <ShieldCheck size={14} />
+            <span className="font-medium">Compra 100% segura</span>
+          </div>
+
+          {/* reCAPTCHA notice */}
+          <p className="text-[11px] opacity-50 leading-snug">
+            Este site é protegido pelo reCAPTCHA do Google —{" "}
+            <a
+              href="https://policies.google.com/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:opacity-80"
+            >
+              Política de Privacidade
+            </a>
+            {" "}e{" "}
+            <a
+              href="https://policies.google.com/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:opacity-80"
+            >
+              Termos de Uso
+            </a>
+          </p>
+
+          {/* Terms of purchase */}
+          <p className="text-[11px] opacity-45">
+            Ao continuar, você concorda com os{" "}
+            <a
+              href="https://meteorfy.com/termos"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:opacity-80"
+            >
+              Termos de Compra
+            </a>
+          </p>
+
+          {/* Footer copyright */}
+          <p className="text-[11px] opacity-35 pt-1">{config.footerText}</p>
         </div>
-        <p className="text-[13px]">{t.allRightsReserved}</p>
       </footer>
 
       {/* Mobile payment processing modal */}
