@@ -512,15 +512,17 @@ export class NeonStorage {
     try {
       const client = await getPool().connect();
       try {
-        let query = `SELECT * FROM sales WHERE 1=1`;
+        let query: string;
         const params: any[] = [];
-        
+
         if (userId) {
-          query += ` AND user_id = $1`;
+          // Scoped to a specific seller — always required for non-admin callers
+          query = `SELECT * FROM sales WHERE user_id = $1 ORDER BY created_at DESC`;
           params.push(userId);
+        } else {
+          // Admin-only: no filter — returns every sale in the platform
+          query = `SELECT * FROM sales ORDER BY created_at DESC`;
         }
-        
-        query += ` ORDER BY created_at DESC`;
         
         const result = await client.query(query, params);
         return result.rows.map(row => toCamelCase(row));
@@ -668,6 +670,11 @@ export class NeonStorage {
 
   // Dashboard stats
   async getDashboardStats(userId: string, period?: string, productId?: string, startDateStr?: string, endDateStr?: string): Promise<any> {
+    // Guard: never return cross-user data
+    if (!userId) {
+      return { salesToday: 0, revenuePaid: 0, salesApproved: 0, conversionRate: 0, revenueTarget: 10000, revenueCurrent: 0, chartData: [] };
+    }
+
     const client = await getPool().connect();
     try {
       let startDate = new Date();
@@ -692,28 +699,31 @@ export class NeonStorage {
         startDate.setDate(startDate.getDate() - 30);
       }
 
-      let query = `
+      // All sales (for count & chart) — scoped strictly to this seller
+      let allQuery = `
         SELECT * FROM sales 
         WHERE user_id = $1 
         AND created_at >= $2 
         AND created_at <= $3
       `;
-      
-      const params: any[] = [userId, startDate, endDate];
-      
+      const allParams: any[] = [userId, startDate, endDate];
       if (productId && productId !== "all") {
-        query += ` AND product_id = $4`;
-        params.push(productId);
+        allQuery += ` AND product_id = $4`;
+        allParams.push(productId);
       }
 
-      const result = await client.query(query, params);
-      const sales = result.rows.map(row => toCamelCase(row));
-      
-      const checkoutsResult = await client.query(
-        `SELECT * FROM checkouts WHERE owner_id = $1`,
-        [userId]
-      );
-      
+      // Paid/captured sales only — for revenue figures
+      let paidQuery = allQuery + ` AND status IN ('paid', 'captured')`;
+
+      const [allResult, paidResult, checkoutsResult] = await Promise.all([
+        client.query(allQuery, allParams),
+        client.query(paidQuery, allParams),
+        client.query(`SELECT * FROM checkouts WHERE owner_id = $1`, [userId]),
+      ]);
+
+      const sales = allResult.rows.map(row => toCamelCase(row));
+      const paidSales = paidResult.rows.map(row => toCamelCase(row));
+
       let totalViews = 0;
       checkoutsResult.rows.forEach((row: any) => {
         if (productId && productId !== "all") {
@@ -724,8 +734,9 @@ export class NeonStorage {
           totalViews += (row.views || 0);
         }
       });
-      
-      const totalRevenue = sales.reduce((sum: number, s: any) => sum + (Number(s.amount) || 0), 0);
+
+      // Revenue = only confirmed payments
+      const totalRevenue = paidSales.reduce((sum: number, s: any) => sum + (Number(s.amount) || 0), 0);
       const conversionRate = totalViews > 0 ? (sales.length / totalViews) * 100 : 0;
       
       const chartData: { name: string; sales: number }[] = [];
@@ -736,7 +747,8 @@ export class NeonStorage {
         const d = new Date(endDate);
         d.setDate(endDate.getDate() - i);
         const key = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
-        const daySales = sales.filter((s: any) => {
+        // Chart shows paid revenue per day
+        const daySales = paidSales.filter((s: any) => {
           const saleDate = new Date(s.createdAt || s.created_at);
           return saleDate.getDate() === d.getDate() && 
                  saleDate.getMonth() === d.getMonth() && 
@@ -749,7 +761,7 @@ export class NeonStorage {
       return {
         salesToday: totalRevenue,
         revenuePaid: totalRevenue,
-        salesApproved: sales.length,
+        salesApproved: sales.length,    // total orders (all statuses)
         conversionRate,
         revenueTarget: 10000,
         revenueCurrent: totalRevenue,

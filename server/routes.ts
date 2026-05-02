@@ -293,6 +293,7 @@ export async function registerRoutes(
   app.get("/api/sales", requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
+      if (!userId) return res.status(401).json({ message: "Utilizador não identificado" });
       const result = await storage.getSales(userId);
       res.json(result);
     } catch (error: any) {
@@ -348,6 +349,7 @@ export async function registerRoutes(
   app.get("/api/stats", requireAuth, async (req, res) => {
     try {
       const userId = String((req as any).user?.id || "");
+      if (!userId) return res.status(401).json({ message: "Utilizador não identificado" });
       const result = await storage.getDashboardStats(
         userId,
         req.query.period as string,
