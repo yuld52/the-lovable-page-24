@@ -112,7 +112,7 @@ export default function Profile() {
                   <h2 className="text-3xl font-bold text-white mb-1">
                     {user.displayName || user.email?.split("@")[0] || "Usuário"}
                   </h2>
-                  <div className="flex items-center justify-center sm:justify-start gap-2 mb-3">
+                  <div className="flex items-center justify-center sm:justify-start gap-2">
                     <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                       E-mail verificado
@@ -124,6 +124,8 @@ export default function Profile() {
                       </Badge>
                     )}
                   </div>
+                </div>
+                <div className="hidden sm:flex items-center self-end pb-1">
                   <SalesBadges />
                 </div>
               </div>
