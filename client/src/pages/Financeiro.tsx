@@ -600,20 +600,14 @@ export default function Financeiro() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                Valor ({withdrawCurrency})
-                <span className="ml-1 text-zinc-500 normal-case font-normal">mín. {CURRENCY_MIN[withdrawCurrency]}</span>
-              </label>
-              <div className="relative">
-                <Input
-                  type="number"
-                  placeholder="0,00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="bg-zinc-900/50 border-zinc-800 h-11 text-white pr-14"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm font-semibold">{withdrawCurrency}</span>
-              </div>
+              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Valor (MZN)</label>
+              <Input
+                type="number"
+                placeholder="0,00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
+              />
             </div>
 
             {/* Account selector — registered accounts for the chosen method */}
