@@ -184,13 +184,18 @@ export async function registerRoutes(
         return res.status(400).json({ message: `A descrição do produto deve ter no mínimo 200 caracteres (atual: ${desc.length}).` });
       }
 
-      // Minimum price validation (price stored in cents)
+      // Price validation (stored in cents)
       const priceCents = Number(req.body.price);
       const currency = String(req.body.currency || "USD").toUpperCase();
-      const minCents = currency === "MZN" ? 5000 : 390; // 50 MZN or 3.90 others
+      const minCents = currency === "MZN" ? 5000 : 390;
+      const maxCents = currency === "MZN" ? 99999900 : 9999900;
       if (isNaN(priceCents) || priceCents < minCents) {
         const minDisplay = currency === "MZN" ? "50 MT" : `3.90 ${currency}`;
         return res.status(400).json({ message: `O preço mínimo do produto é ${minDisplay}.` });
+      }
+      if (priceCents > maxCents) {
+        const maxDisplay = currency === "MZN" ? "999.999 MT" : `99.999 ${currency}`;
+        return res.status(400).json({ message: `O preço máximo do produto é ${maxDisplay}.` });
       }
 
       const productData = {
@@ -237,14 +242,19 @@ export async function registerRoutes(
         }
       }
 
-      // Minimum price validation if price is being updated
+      // Price validation if price is being updated
       if (req.body.price !== undefined) {
         const priceCents = Number(req.body.price);
         const currency = String(req.body.currency || "USD").toUpperCase();
         const minCents = currency === "MZN" ? 5000 : 390;
+        const maxCents = currency === "MZN" ? 99999900 : 9999900;
         if (isNaN(priceCents) || priceCents < minCents) {
           const minDisplay = currency === "MZN" ? "50 MT" : `3.90 ${currency}`;
           return res.status(400).json({ message: `O preço mínimo do produto é ${minDisplay}.` });
+        }
+        if (priceCents > maxCents) {
+          const maxDisplay = currency === "MZN" ? "999.999 MT" : `99.999 ${currency}`;
+          return res.status(400).json({ message: `O preço máximo do produto é ${maxDisplay}.` });
         }
       }
 

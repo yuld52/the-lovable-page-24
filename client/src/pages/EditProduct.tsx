@@ -70,6 +70,7 @@ export default function EditProduct() {
   };
 
   const getMinPrice = (currency: string) => currency === "MZN" ? 50 : 3.90;
+  const getMaxPrice = (currency: string) => currency === "MZN" ? 999999 : 99999;
 
   const handleUpdate = async () => {
     if (!formData.name || !formData.price) {
@@ -96,12 +97,24 @@ export default function EditProduct() {
 
     const priceValue = parseFloat(formData.price);
     const minPrice = getMinPrice(formData.currency);
+    const maxPrice = getMaxPrice(formData.currency);
     if (isNaN(priceValue) || priceValue < minPrice) {
       toast({
         title: "Preço abaixo do mínimo",
         description: formData.currency === "MZN"
           ? `O preço mínimo para MZN é de 50 MT.`
           : `O preço mínimo é de ${minPrice.toFixed(2)} ${formData.currency}.`,
+        variant: "destructive",
+      });
+      setStep(1);
+      return;
+    }
+    if (priceValue > maxPrice) {
+      toast({
+        title: "Preço acima do máximo",
+        description: formData.currency === "MZN"
+          ? `O preço máximo para MZN é de 999.999 MT.`
+          : `O preço máximo é de 99.999 ${formData.currency}.`,
         variant: "destructive",
       });
       setStep(1);

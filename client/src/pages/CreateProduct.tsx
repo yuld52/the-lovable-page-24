@@ -195,6 +195,7 @@ export default function CreateProduct() {
   };
 
   const getMinPrice = (currency: string) => currency === "MZN" ? 50 : 3.90;
+  const getMaxPrice = (currency: string) => currency === "MZN" ? 999999 : 99999;
 
   const isPriceBelowMin = () => {
     const price = parseFloat(newProduct.price);
@@ -202,10 +203,16 @@ export default function CreateProduct() {
     return price < getMinPrice(newProduct.currency);
   };
 
+  const isPriceAboveMax = () => {
+    const price = parseFloat(newProduct.price);
+    if (isNaN(price)) return false;
+    return price > getMaxPrice(newProduct.currency);
+  };
+
   const isStepValid = () => {
     if (step === 1) {
       if (newProduct.name.trim().length < 3 || !newProduct.price.trim()) return false;
-      if (isPriceBelowMin()) return false;
+      if (isPriceBelowMin() || isPriceAboveMax()) return false;
       if (newProduct.description.trim().length < 200) return false;
       return true;
     }
@@ -474,7 +481,7 @@ export default function CreateProduct() {
                       className={`bg-black/40 h-11 focus-visible:ring-purple-500 ${
                         !newProduct.price
                           ? 'border-zinc-800'
-                          : isPriceBelowMin()
+                          : (isPriceBelowMin() || isPriceAboveMax())
                             ? 'border-red-500 focus-visible:ring-red-500'
                             : 'border-zinc-800'
                       }`}
@@ -487,7 +494,11 @@ export default function CreateProduct() {
                       }}
                       placeholder="Ex: 19.90"
                     />
-                    {newProduct.price && isPriceBelowMin() ? (
+                    {newProduct.price && isPriceAboveMax() ? (
+                      <p className="text-[10px] text-red-500 font-medium ml-1">
+                        Preço máximo: {newProduct.currency === "MZN" ? "999.999 MT" : `99.999 ${newProduct.currency}`}
+                      </p>
+                    ) : newProduct.price && isPriceBelowMin() ? (
                       <p className="text-[10px] text-red-500 font-medium ml-1">
                         Preço mínimo: {newProduct.currency === "MZN" ? "50 MT" : `3,90 ${newProduct.currency}`}
                       </p>
