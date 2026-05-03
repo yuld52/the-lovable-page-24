@@ -840,15 +840,29 @@ export async function registerRoutes(
       const emailConn = await getPool().connect();
       let emailMap: Record<string, string> = {};
       try {
+        // Ensure the column exists before querying it
+        await emailConn.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS email TEXT`);
         const emailResult = await emailConn.query(
-          `SELECT user_id::text AS uid, email FROM settings WHERE user_id = ANY($1) AND email IS NOT NULL`,
+          `SELECT user_id::text AS uid, email FROM settings WHERE user_id = ANY($1::text[]) AND email IS NOT NULL`,
           [uids]
         );
         emailResult.rows.forEach((r: any) => {
           if (r.email) emailMap[r.uid] = r.email;
         });
-      } catch {
-        // email column may not exist yet — ignore
+        // Also backfill from sales.customer_email if still missing
+        if (uids.some(u => !emailMap[u])) {
+          const missingUids = uids.filter(u => !emailMap[u]);
+          const salesEmails = await emailConn.query(
+            `SELECT DISTINCT user_id::text AS uid, customer_email AS email FROM sales
+             WHERE user_id = ANY($1::text[]) AND customer_email IS NOT NULL LIMIT 200`,
+            [missingUids]
+          );
+          salesEmails.rows.forEach((r: any) => {
+            if (r.email && !emailMap[r.uid]) emailMap[r.uid] = r.email;
+          });
+        }
+      } catch (e) {
+        console.warn("[users-v2] email lookup failed:", (e as any)?.message);
       } finally {
         emailConn.release();
       }
@@ -1325,18 +1339,42 @@ export async function registerRoutes(
 
         const rows = result.rows;
 
-        // Enrich with Firebase user emails
+        // Enrich with emails — DB first, Firebase fallback
         let userMap: Record<string, string> = {};
-        try {
-          const ownerIds = rows.map((r: any) => r.owner_id).filter(Boolean);
-          if (ownerIds.length > 0) {
-            const firebaseUsers = await adminAuth.getUsers(ownerIds.map((uid: string) => ({ uid })));
-            firebaseUsers.users.forEach(u => {
-              userMap[u.uid] = u.email || u.displayName || u.uid;
-            });
+        const ownerIds = rows.map((r: any) => r.owner_id).filter(Boolean);
+        if (ownerIds.length > 0) {
+          const emailConn2 = await getPool().connect();
+          try {
+            await emailConn2.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS email TEXT`);
+            const dbEmails = await emailConn2.query(
+              `SELECT user_id::text AS uid, email FROM settings WHERE user_id = ANY($1::text[]) AND email IS NOT NULL`,
+              [ownerIds]
+            );
+            dbEmails.rows.forEach((r: any) => { if (r.email) userMap[r.uid] = r.email; });
+            // Sales customer_email fallback for any still-missing
+            const missing = ownerIds.filter((u: string) => !userMap[u]);
+            if (missing.length > 0) {
+              const saleEmails = await emailConn2.query(
+                `SELECT DISTINCT user_id::text AS uid, customer_email AS email FROM sales WHERE user_id = ANY($1::text[]) AND customer_email IS NOT NULL`,
+                [missing]
+              );
+              saleEmails.rows.forEach((r: any) => { if (r.email && !userMap[r.uid]) userMap[r.uid] = r.email; });
+            }
+          } catch (e) {
+            console.warn("[revenue-ranking] DB email lookup failed:", (e as any)?.message);
+          } finally {
+            emailConn2.release();
           }
-        } catch (e) {
-          console.warn("[revenue-ranking] Could not enrich with Firebase emails:", e);
+          // Firebase fallback for any still-missing
+          const stillMissing = ownerIds.filter((u: string) => !userMap[u]);
+          if (stillMissing.length > 0) {
+            try {
+              const firebaseUsers = await adminAuth.getUsers(stillMissing.map((uid: string) => ({ uid })));
+              firebaseUsers.users.forEach(u => { userMap[u.uid] = u.email || u.displayName || u.uid; });
+            } catch {
+              // Firebase credentials not available — use UID as fallback
+            }
+          }
         }
 
         const ranking = rows.map((row: any, idx: number) => ({
