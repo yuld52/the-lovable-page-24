@@ -467,6 +467,22 @@ export async function registerRoutes(
 
       console.log(`[MOBILE PAYMENT] ${paymentMethod.toUpperCase()} sale created — id=${sale.id}, phone=${mobilePhone}, amount=${totalMinor} ${currency}`);
 
+      // ── Push notification to seller (fire-and-forget) ──
+      if (checkout.ownerId) {
+        import("./services/notification").then(({ sendNotification }) => {
+          sendNotification({
+            userId: String(checkout.ownerId),
+            type: "sale_captured",
+            metadata: {
+              amount: ((totalUsdCents || 0) / 100).toFixed(2),
+              currency: currency || "USD",
+              productName: product?.name || "",
+            },
+          }).catch((e: any) => console.error("[PUSH] Mobile payment notify error:", e?.message));
+        }).catch(() => {});
+      }
+      // ────────────────────────────────────────────────────
+
       return res.json({ id: sale.id, status: "paid", paymentMethod, message: "Pagamento registado com sucesso." });
     } catch (err: any) {
       console.error("Error creating mobile sale:", err);
@@ -715,6 +731,22 @@ export async function registerRoutes(
           { currency: saleCurrency, clientIp, clientUserAgent, fbc, fbp, eventId: eventId || undefined },
         ).catch((e) => console.error("[META CAPI] Purchase error:", e));
       }
+
+      // ── Push notification to seller (fire-and-forget) ──
+      if (sale.userId) {
+        import("./services/notification").then(({ sendNotification }) => {
+          sendNotification({
+            userId: String(sale.userId),
+            type: "sale_captured",
+            metadata: {
+              amount: ((sale.paypalAmountMinor || sale.amount || 0) / 100).toFixed(2),
+              currency: sale.paypalCurrency || "USD",
+              productName: product?.name || "",
+            },
+          }).catch((e: any) => console.error("[PUSH] PayPal capture notify error:", e?.message));
+        }).catch(() => {});
+      }
+      // ────────────────────────────────────────────────────
 
       res.json({ status: captured.status || "COMPLETED" });
     } catch (err: any) {
