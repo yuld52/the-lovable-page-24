@@ -480,6 +480,9 @@ export async function registerRoutes(
 
   // Poll sale status (used by frontend after mobile payment)
   app.get("/api/sales/:id/status", async (req, res) => {
+    // Never cache — status can change at any time (pending → paid)
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.set("Pragma", "no-cache");
     try {
       const id = Number(req.params.id);
       if (!id) return res.status(400).json({ message: "ID inválido" });
@@ -617,7 +620,16 @@ export async function registerRoutes(
               reference,
               callbackUrl,
             });
-            console.log(`[E2PAY] ${paymentMethod.toUpperCase()} STK push sent — saleId=${sale.id}, ref=${reference}, phone=${phoneLocal}, amount=${amountMajor} MZN`, JSON.stringify(e2res));
+            console.log(`[E2PAY] ${paymentMethod.toUpperCase()} response — saleId=${sale.id}, ref=${reference}, amount=${amountMajor} MZN`, JSON.stringify(e2res));
+            // e2payments waits for the user's PIN before returning — a success response
+            // means the payment is already confirmed. Mark the sale as paid immediately.
+            const isConfirmed = e2res?.success || e2res?.status === "success" || e2res?.status === "COMPLETED"
+              || String(e2res?.message || "").toLowerCase().includes("sucesso")
+              || String(e2res?.success || "").toLowerCase().includes("sucesso");
+            if (isConfirmed) {
+              await storage.updateSaleStatus(sale.id, "paid").catch(() => {});
+              console.log(`[E2PAY] sale ${sale.id} marked PAID (sync confirmation)`);
+            }
           } catch (e2err: any) {
             const status = e2err?.response?.status;
             const errMsg = e2err?.response?.data?.message || e2err?.message || "unknown";
