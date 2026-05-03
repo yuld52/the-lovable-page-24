@@ -95,7 +95,7 @@ export default function Financeiro() {
   // Sale amounts are in USD cents (product.price, currency="USD").
   // Withdrawal amounts are in MZN minor units (user enters MTn, server × 100).
   // Convert sales to MZN minor units using live exchange rate, then subtract withdrawals.
-  const totalEarningsUsdCents = sales?.reduce((sum, s) => sum + (s.amount || 0), 0) || 0;
+  const totalEarningsUsdCents = sales?.filter(s => s.status === 'paid' || s.status === 'captured').reduce((sum, s) => sum + (s.amount || 0), 0) || 0;
   const totalEarningsMznMinor = mznRate > 0
     ? convertUsdCentsToCurrencyMinor(totalEarningsUsdCents, "MZN", mznRate)
     : 0;
