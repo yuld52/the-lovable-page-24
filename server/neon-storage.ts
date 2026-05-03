@@ -593,9 +593,12 @@ export class NeonStorage {
       try {
         const saleData = toSnakeCase(sale);
         
+        // Ensure payment_method column exists
+        await client.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS payment_method TEXT`).catch(() => {});
+
         const result = await client.query(`
-          INSERT INTO sales (checkout_id, product_id, user_id, amount, status, customer_email, paypal_order_id, paypal_currency, paypal_amount_minor, created_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+          INSERT INTO sales (checkout_id, product_id, user_id, amount, status, customer_email, paypal_order_id, paypal_currency, paypal_amount_minor, payment_method, created_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
           RETURNING *
         `, [
           saleData.checkout_id || null,
@@ -606,7 +609,8 @@ export class NeonStorage {
           saleData.customer_email || null,
           saleData.paypal_order_id || null,
           saleData.paypal_currency || null,
-          saleData.paypal_amount_minor || null
+          saleData.paypal_amount_minor || null,
+          saleData.payment_method || null,
         ]);
         
         return toCamelCase(result.rows[0]);
@@ -760,7 +764,7 @@ export class NeonStorage {
 
       // Revenue = only confirmed payments
       const totalRevenue = paidSales.reduce((sum: number, s: any) => sum + (Number(s.amount) || 0), 0);
-      const conversionRate = totalViews > 0 ? (sales.length / totalViews) * 100 : 0;
+      const conversionRate = totalViews > 0 ? (paidSales.length / totalViews) * 100 : 0;
       
       const chartData: { name: string; sales: number }[] = [];
       const diffTime = Math.abs(endDate.getTime() - startDate.getTime());

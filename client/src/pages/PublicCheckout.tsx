@@ -346,12 +346,14 @@ export default function PublicCheckout() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        setShowMobileModal(false);
         toast({ title: "Erro", description: data?.message || "Erro ao registar pedido.", variant: "destructive" });
         return;
       }
       setIsPaid(true);
-      toast({ title: "Pedido registado!", description: "O seu pedido foi recebido. Aguarde confirmação de pagamento." });
+      toast({ title: "Pagamento confirmado!", description: "O seu pagamento foi registado com sucesso." });
     } catch {
+      setShowMobileModal(false);
       toast({ title: "Erro", description: "Sem ligação. Tente novamente.", variant: "destructive" });
     } finally {
       setMobileSubmitting(false);

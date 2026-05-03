@@ -462,6 +462,7 @@ export async function registerRoutes(
         amount: totalUsdCents || 0,
         status: "paid",
         customerEmail: customerData?.email || null,
+        paymentMethod,
       });
 
       console.log(`[MOBILE PAYMENT] ${paymentMethod.toUpperCase()} sale created — id=${sale.id}, phone=${mobilePhone}, amount=${totalMinor} ${currency}`);

@@ -53,6 +53,12 @@ function StatusBadge({ status }: { status: string }) {
       <span className="text-[10px] font-bold uppercase tracking-wider">Reembolso</span>
     </div>
   );
+  if (status === "cancelled") return (
+    <div className="inline-flex items-center gap-1.5 bg-red-500/10 text-red-400 border border-red-500/20 px-2.5 py-1 rounded-full">
+      <XCircle className="w-3 h-3" />
+      <span className="text-[10px] font-bold uppercase tracking-wider">Cancelada</span>
+    </div>
+  );
   return (
     <div className="inline-flex items-center gap-1.5 bg-zinc-500/10 text-zinc-400 border border-zinc-500/20 px-2.5 py-1 rounded-full">
       <AlertCircle className="w-3 h-3" />
@@ -133,7 +139,7 @@ export default function Sales() {
     // ── Table ──
     const statusLabel: Record<string, string> = {
       paid: "Aprovada", captured: "Aprovada", pending: "Pendente",
-      failed: "Falhada", refunded: "Reembolso",
+      failed: "Falhada", refunded: "Reembolso", cancelled: "Cancelada",
     };
 
     const methodLabel: Record<string, string> = {

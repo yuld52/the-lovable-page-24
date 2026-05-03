@@ -377,7 +377,7 @@ export default function Financeiro() {
                           </td>
                           <td className="px-6 py-4">
                             <span className="text-xs font-medium text-zinc-400">
-                              {w.createdAt ? format(new Date(w.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "—"}
+                              {(w.requestedAt || w.createdAt) ? format(new Date(w.requestedAt || w.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "—"}
                             </span>
                           </td>
                         </tr>
@@ -458,7 +458,7 @@ export default function Financeiro() {
                         </td>
                         <td className="px-6 py-4">
                           <span className="text-xs font-medium text-zinc-400">
-                            {w.createdAt ? format(new Date(w.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "-"}
+                            {(w.requestedAt || w.createdAt) ? format(new Date(w.requestedAt || w.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "—"}
                           </span>
                         </td>
                       </tr>
