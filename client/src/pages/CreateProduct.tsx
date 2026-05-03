@@ -206,6 +206,7 @@ export default function CreateProduct() {
     if (step === 1) {
       if (!newProduct.name.trim() || !newProduct.price.trim()) return false;
       if (isPriceBelowMin()) return false;
+      if (newProduct.description.trim().length < 200) return false;
       return true;
     }
     if (step === 2) {
@@ -391,18 +392,28 @@ export default function CreateProduct() {
                   </div>
 
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="p-1.5 bg-zinc-800 rounded-lg">
-                        <FileText className="w-3.5 h-3.5 text-zinc-400" />
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-zinc-800 rounded-lg">
+                          <FileText className="w-3.5 h-3.5 text-zinc-400" />
+                        </div>
+                        <label className="text-sm font-bold text-zinc-200">Descrição <span className="text-red-400">*</span></label>
                       </div>
-                      <label className="text-sm font-bold text-zinc-200">Descrição (opcional)</label>
+                      <span className={`text-[11px] font-medium ${newProduct.description.length >= 200 ? "text-emerald-400" : "text-zinc-500"}`}>
+                        {newProduct.description.length}/200
+                      </span>
                     </div>
                     <textarea
-                      className="w-full bg-black/40 border border-zinc-800 rounded-md min-h-[150px] p-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-zinc-600 resize-none"
+                      className={`w-full bg-black/40 border rounded-md min-h-[150px] p-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-zinc-600 resize-none ${
+                        showErrors && newProduct.description.trim().length < 200 ? "border-red-500" : "border-zinc-800"
+                      }`}
                       value={newProduct.description}
                       onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
                       placeholder="Descreva detalhadamente o que seu cliente receberá ao comprar este produto..."
                     />
+                    {showErrors && newProduct.description.trim().length < 200 && (
+                      <p className="text-[11px] text-red-400">A descrição deve ter no mínimo 200 caracteres.</p>
+                    )}
                   </div>
                 </div>
 

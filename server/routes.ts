@@ -172,6 +172,12 @@ export async function registerRoutes(
     try {
       const userId = String((req as any).user?.id || "");
 
+      // Description minimum length validation
+      const desc = String(req.body.description || "").trim();
+      if (desc.length < 200) {
+        return res.status(400).json({ message: `A descrição do produto deve ter no mínimo 200 caracteres (atual: ${desc.length}).` });
+      }
+
       // Minimum price validation (price stored in cents)
       const priceCents = Number(req.body.price);
       const currency = String(req.body.currency || "USD").toUpperCase();
@@ -208,6 +214,14 @@ export async function registerRoutes(
   app.patch("/api/products/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id as string);
+
+      // Description minimum length validation if description is being updated
+      if (req.body.description !== undefined) {
+        const desc = String(req.body.description || "").trim();
+        if (desc.length < 200) {
+          return res.status(400).json({ message: `A descrição do produto deve ter no mínimo 200 caracteres (atual: ${desc.length}).` });
+        }
+      }
 
       // Minimum price validation if price is being updated
       if (req.body.price !== undefined) {

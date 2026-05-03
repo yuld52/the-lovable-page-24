@@ -78,6 +78,16 @@ export default function EditProduct() {
       return;
     }
 
+    if (!formData.description || formData.description.trim().length < 200) {
+      toast({
+        title: "Descrição muito curta",
+        description: `A descrição deve ter no mínimo 200 caracteres (atual: ${formData.description.trim().length}).`,
+        variant: "destructive",
+      });
+      setStep(1);
+      return;
+    }
+
     const priceValue = parseFloat(formData.price);
     const minPrice = getMinPrice(formData.currency);
     if (isNaN(priceValue) || priceValue < minPrice) {
@@ -233,11 +243,16 @@ export default function EditProduct() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="p-1.5 bg-zinc-800 rounded-lg">
-                        <FileText className="w-3.5 h-3.5 text-zinc-400" />
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-zinc-800 rounded-lg">
+                          <FileText className="w-3.5 h-3.5 text-zinc-400" />
+                        </div>
+                        <label className="text-sm font-bold text-zinc-200">Descrição <span className="text-red-400">*</span></label>
                       </div>
-                      <label className="text-sm font-bold text-zinc-200">Descrição</label>
+                      <span className={`text-[11px] font-medium ${(formData.description?.length ?? 0) >= 200 ? "text-emerald-400" : "text-zinc-500"}`}>
+                        {formData.description?.length ?? 0}/200
+                      </span>
                     </div>
                     <textarea
                       className="w-full bg-black/40 border border-zinc-800 rounded-md p-3 min-h-[120px] text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-zinc-600 resize-none"
@@ -245,6 +260,9 @@ export default function EditProduct() {
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       placeholder="Descreva detalhadamente o que seu cliente receberá ao comprar este produto..."
                     />
+                    {(formData.description?.trim().length ?? 0) < 200 && (
+                      <p className="text-[11px] text-zinc-500">{200 - (formData.description?.trim().length ?? 0)} caracteres restantes para o mínimo.</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 mb-1">
