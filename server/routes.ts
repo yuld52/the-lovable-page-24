@@ -184,11 +184,13 @@ export async function registerRoutes(
       if (entry.code !== String(code).trim()) {
         return res.status(400).json({ message: "Código incorrecto. Verifique e tente novamente." });
       }
-      // Mark email as verified in Firebase
-      await adminAuth.updateUser(entry.uid, { emailVerified: true });
       verifCodes.delete(key);
-      console.log(`[VERIF] email verified for uid=${entry.uid}`);
-      // Send welcome email
+      console.log(`[VERIF] code correct for uid=${entry.uid}`);
+      // Try to mark email as verified in Firebase (best-effort — may fail without admin credentials)
+      adminAuth.updateUser(entry.uid, { emailVerified: true })
+        .then(() => console.log(`[VERIF] firebase emailVerified=true uid=${entry.uid}`))
+        .catch((e: any) => console.warn(`[VERIF] could not update firebase emailVerified: ${e?.message}`));
+      // Send welcome email (fire-and-forget)
       sendWelcomeEmail({ to: key }).catch(() => {});
       res.json({ ok: true });
     } catch (err: any) {

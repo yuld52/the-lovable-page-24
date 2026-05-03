@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
-import { createUserWithEmailAndPassword, reload } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 
 type Step = "form" | "code";
 
@@ -44,17 +44,21 @@ export default function Register() {
       }
 
       const credential = await createUserWithEmailAndPassword(auth, email, password);
-      setUid(credential.user.uid);
+      const newUid = credential.user.uid;
+      setUid(newUid);
+
+      // Sign out immediately — user must verify code before accessing the app
+      await signOut(auth);
 
       // Send our custom 6-digit code
       const r = await fetch("/api/auth/send-verification-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, uid: credential.user.uid }),
+        body: JSON.stringify({ email, uid: newUid }),
       });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
-        throw new Error(d.message || "Erro ao enviar código");
+        throw new Error(d.message || "Erro ao enviar código. Verifique o email e tente novamente.");
       }
 
       setCountdown(60);
@@ -116,8 +120,8 @@ export default function Register() {
       const data = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(data.message || "Código incorrecto");
 
-      // Refresh Firebase token so emailVerified = true
-      if (auth.currentUser) await reload(auth.currentUser);
+      // Sign in now that the code is verified
+      await signInWithEmailAndPassword(auth, email, password);
 
       toast({ title: "Conta verificada!", description: "Bem-vindo à Meteorfy." });
       setLocation("/dashboard");

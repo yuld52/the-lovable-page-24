@@ -12,7 +12,8 @@ function getResend(): Resend {
   }
   return _resend;
 }
-const resend = { emails: { send: async (opts: any) => { try { return await getResend().emails.send(opts); } catch (err) { console.warn("[email] send failed:", err instanceof Error ? err.message : err); return null; } } } };
+const resend = { emails: { send: async (opts: any, throws = false) => { try { return await getResend().emails.send(opts); } catch (err) { console.warn("[email] send failed:", err instanceof Error ? err.message : err); if (throws) throw err; return null; } } } };
+const resendStrict = { emails: { send: async (opts: any) => resend.emails.send(opts, true) } };
 
 const FROM = process.env.EMAIL_FROM || "Meteorfy <onboarding@resend.dev>";
 
@@ -508,7 +509,7 @@ export async function sendVerificationCode(opts: {
       </tr>
     </table>`;
 
-  return resend.emails.send({
+  return resendStrict.emails.send({
     from: FROM,
     to,
     subject: `${code} — Código de verificação Meteorfy`,
