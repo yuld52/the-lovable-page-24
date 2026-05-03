@@ -116,11 +116,14 @@ export async function sendNotification({ userId, type, title, body, metadata }: 
         if (type === "sale_captured" || type === "PURCHASE_APPROVED") {
             const amount = metadata?.amount || "0.00";
             const currency = metadata?.currency || "USD";
-            const productName = metadata?.productName || "";
-            finalTitle = "Venda aprovada";
-            finalBody = productName
-                ? `${productName} — ${currency} ${amount}`
-                : `Valor: ${currency} ${amount}`;
+            // Generate Meteorfy sale code — MF + DDMM + 6 random digits (e.g. MF2801507622)
+            const now = new Date();
+            const dd = String(now.getDate()).padStart(2, "0");
+            const mm = String(now.getMonth() + 1).padStart(2, "0");
+            const rand = String(Math.floor(Math.random() * 1_000_000)).padStart(6, "0");
+            const saleCode = `MF${dd}${mm}${rand}`;
+            finalTitle = "Venda realizada! 🔥";
+            finalBody = `Valor: ${currency} ${amount} · ${saleCode}`;
         }
 
         // 3. Save to History (Optional)
