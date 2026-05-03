@@ -8,11 +8,11 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 function formatCurrency(cents: number) {
-  return new Intl.NumberFormat("pt-MZ", {
-    style: "currency",
-    currency: "MZN",
+  const value = new Intl.NumberFormat("pt-BR", {
     minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(cents / 100);
+  return `${value} MT`;
 }
 
 function RankBadge({ rank }: { rank: number }) {
