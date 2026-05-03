@@ -16,8 +16,28 @@ function BadgeSVG({ badge, unlocked, size = 44 }: { badge: typeof BADGES[0]; unl
   const color = unlocked ? badge.color : "#4b5563";
   const ring = unlocked ? badge.ring : "#374151";
   const bg = unlocked ? badge.bg : "#1f2937";
-  const textColor = unlocked ? "#fff" : "#6b7280";
   const s = size;
+
+  // First sale badge uses the custom image
+  if (badge.id === 1) {
+    return (
+      <div style={{ width: s, height: s, position: "relative" }}>
+        <img
+          src="/badges/first-sale-badge.png"
+          alt="1ª Venda"
+          style={{
+            width: s,
+            height: s,
+            objectFit: "contain",
+            filter: unlocked
+              ? "none"
+              : "grayscale(100%) brightness(0.4)",
+            transition: "filter 0.3s",
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <svg width={s} height={s} viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -39,7 +59,6 @@ function BadgeSVG({ badge, unlocked, size = 44 }: { badge: typeof BADGES[0]; unl
       )}
 
       <circle cx="22" cy="22" r="19" fill={`url(#bg-${badge.id})`} stroke={ring} strokeWidth="1.8" />
-
       <circle cx="22" cy="22" r="15" fill="none" stroke={color} strokeWidth="0.8" strokeOpacity="0.4" strokeDasharray="2 2" />
 
       <g transform="translate(11, 14)">
@@ -55,7 +74,7 @@ function BadgeSVG({ badge, unlocked, size = 44 }: { badge: typeof BADGES[0]; unl
         <circle cx="13" cy="11" r="1" fill={color} />
         {unlocked && (
           <>
-            <circle cx="15.5" cy="3" r="4" fill={unlocked ? badge.color : "#4b5563"} />
+            <circle cx="15.5" cy="3" r="4" fill={badge.color} />
             <text x="15.5" y="3" textAnchor="middle" dominantBaseline="central" fontSize={badge.num.length > 1 ? "3.2" : "4"} fontWeight="800" fill="#000" fontFamily="system-ui,sans-serif">
               {badge.num}
             </text>
