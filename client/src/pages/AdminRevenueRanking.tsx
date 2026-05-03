@@ -8,9 +8,9 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 function formatCurrency(cents: number) {
-  return new Intl.NumberFormat("pt-BR", {
+  return new Intl.NumberFormat("pt-MZ", {
     style: "currency",
-    currency: "USD",
+    currency: "MZN",
     minimumFractionDigits: 2,
   }).format(cents / 100);
 }
