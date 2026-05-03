@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Users, UserPlus, Trash2, Search, Mail, RefreshCw } from "lucide-react";
+import { Loader2, Users, UserPlus, Trash2, Search, Mail, RefreshCw, Package, ShoppingCart, ArrowDownToLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default function AdminUsers() {
   const { toast } = useToast();
@@ -57,8 +59,11 @@ export default function AdminUsers() {
   };
 
   const filteredUsers = (users || []).filter((u) =>
-    (u.username || u.email || "").toLowerCase().includes(searchTerm.toLowerCase())
+    (u.email || u.username || u.uid || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalProducts = filteredUsers.reduce((s: number, u: any) => s + (u.products || 0), 0);
+  const totalSales = filteredUsers.reduce((s: number, u: any) => s + (u.sales || 0), 0);
 
   if (isLoading) {
     return (
@@ -80,7 +85,7 @@ export default function AdminUsers() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold text-white">Gerenciar Usuários</h1>
-              <p className="text-sm text-muted-foreground">Visualize e gerencie todos os usuários da plataforma</p>
+              <p className="text-sm text-muted-foreground">Todos os utilizadores registados na plataforma</p>
             </div>
             <div className="flex items-center gap-3">
               <Button
@@ -101,8 +106,39 @@ export default function AdminUsers() {
             </div>
           </div>
 
+          {/* Stats row */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="bg-[#18181b] border border-zinc-800/60 rounded-xl px-5 py-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                <Users className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{(users || []).length}</p>
+                <p className="text-xs text-zinc-500">Total de Utilizadores</p>
+              </div>
+            </div>
+            <div className="bg-[#18181b] border border-zinc-800/60 rounded-xl px-5 py-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+                <Package className="w-5 h-5 text-purple-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{totalProducts}</p>
+                <p className="text-xs text-zinc-500">Total de Produtos</p>
+              </div>
+            </div>
+            <div className="bg-[#18181b] border border-zinc-800/60 rounded-xl px-5 py-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                <ShoppingCart className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{totalSales}</p>
+                <p className="text-xs text-zinc-500">Total de Vendas</p>
+              </div>
+            </div>
+          </div>
+
           {/* Search */}
-          <div className="mb-6">
+          <div className="mb-5">
             <div className="relative max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
               <Input
@@ -119,7 +155,7 @@ export default function AdminUsers() {
             <CardHeader className="pb-0">
               <CardTitle className="text-base text-white flex items-center gap-2">
                 <Users className="w-4 h-4 text-blue-400" />
-                Usuários ({filteredUsers.length})
+                Utilizadores ({filteredUsers.length}{searchTerm ? ` de ${(users || []).length}` : ""})
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0 mt-4">
@@ -127,34 +163,62 @@ export default function AdminUsers() {
                 <div className="text-center py-16">
                   <Users className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
                   <p className="text-zinc-500">
-                    {searchTerm ? "Nenhum usuário encontrado." : "Nenhum usuário cadastrado."}
+                    {searchTerm ? "Nenhum utilizador encontrado." : "Nenhum utilizador cadastrado."}
                   </p>
                 </div>
               ) : (
-                <div className="rounded-b-xl overflow-hidden">
-                  <table className="w-full text-left border-collapse">
+                <div className="rounded-b-xl overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[700px]">
                     <thead>
                       <tr className="bg-zinc-950/50 border-y border-zinc-800/50">
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Usuário</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">ID</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-right">Ações</th>
+                        <th className="px-5 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Utilizador</th>
+                        <th className="px-5 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-center">Produtos</th>
+                        <th className="px-5 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-center">Vendas</th>
+                        <th className="px-5 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-center">Saques</th>
+                        <th className="px-5 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Registado em</th>
+                        <th className="px-5 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-right">Ações</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800/30">
                       {filteredUsers.map((u) => (
                         <tr key={u.id || u.uid} className="hover:bg-zinc-800/20 transition-colors">
-                          <td className="px-6 py-4">
+                          <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center flex-shrink-0">
-                                <Mail className="w-4 h-4 text-zinc-500" />
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600/20 to-blue-600/20 border border-zinc-700 flex items-center justify-center shrink-0 text-sm font-bold text-purple-300">
+                                {(u.email || u.username || "?")[0].toUpperCase()}
                               </div>
-                              <span className="text-sm text-zinc-200">{u.username || u.email}</span>
+                              <div className="min-w-0">
+                                <p className="text-sm text-zinc-200 truncate max-w-[200px]">{u.email || u.username || u.uid}</p>
+                                <p className="text-[10px] text-zinc-600 font-mono truncate max-w-[200px]">{u.uid || u.id}</p>
+                              </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <span className="text-xs text-zinc-600 font-mono">{u.uid || u.id || "—"}</span>
+                          <td className="px-5 py-4 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <Package className="w-3 h-3 text-purple-400 shrink-0" />
+                              <span className="text-sm font-semibold text-zinc-300">{u.products || 0}</span>
+                            </div>
                           </td>
-                          <td className="px-6 py-4 text-right">
+                          <td className="px-5 py-4 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <ShoppingCart className="w-3 h-3 text-emerald-400 shrink-0" />
+                              <span className="text-sm font-semibold text-zinc-300">{u.sales || 0}</span>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <ArrowDownToLine className="w-3 h-3 text-amber-400 shrink-0" />
+                              <span className="text-sm font-semibold text-zinc-300">{u.withdrawals || 0}</span>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4">
+                            <span className="text-xs text-zinc-500">
+                              {u.createdAt
+                                ? format(new Date(u.createdAt), "dd/MM/yyyy", { locale: ptBR })
+                                : "—"}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4 text-right">
                             <Button
                               variant="ghost"
                               size="icon"
@@ -190,7 +254,7 @@ export default function AdminUsers() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-red-400" />
-              Novo Usuário
+              Novo Utilizador
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
@@ -227,7 +291,7 @@ export default function AdminUsers() {
                 disabled={isCreatingUser}
                 className="flex-1 bg-red-600 hover:bg-red-500 text-white"
               >
-                {isCreatingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : "Criar Usuário"}
+                {isCreatingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : "Criar Utilizador"}
               </Button>
             </div>
           </div>

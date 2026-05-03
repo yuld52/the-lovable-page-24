@@ -1033,77 +1033,74 @@ export async function registerRoutes(
   app.get("/api/users-v2", requireAuth, async (req, res) => {
     if ((req as any).user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado." });
     try {
-      // Collect unique user IDs from the DB (Firebase listUsers() requires service account credentials)
-      const conn = await getPool().connect();
-      let uidSet: Set<string>;
-      try {
-        const [s, c, sa, b] = await Promise.all([
-          conn.query(`SELECT DISTINCT user_id::text AS uid FROM settings  WHERE user_id IS NOT NULL`),
-          conn.query(`SELECT DISTINCT owner_id::text AS uid FROM checkouts WHERE owner_id IS NOT NULL`),
-          conn.query(`SELECT DISTINCT user_id::text AS uid FROM sales      WHERE user_id IS NOT NULL`),
-          conn.query(`SELECT DISTINCT user_id::text AS uid FROM bank_accounts WHERE user_id IS NOT NULL`),
-        ]);
-        uidSet = new Set<string>([
-          ...s.rows.map((r: any) => r.uid),
-          ...c.rows.map((r: any) => r.uid),
-          ...sa.rows.map((r: any) => r.uid),
-          ...b.rows.map((r: any) => r.uid),
-        ]);
-      } finally {
-        conn.release();
-      }
-
-      const uids = Array.from(uidSet);
-
-      // Ensure the requesting admin's own email is always persisted first
       const reqUser = (req as any).user;
       if (reqUser?.id && reqUser?.email) {
-        await storage.saveUserEmail(String(reqUser.id), String(reqUser.email));
+        await storage.saveUserEmail(String(reqUser.id), String(reqUser.email)).catch(() => {});
       }
 
-      // Fetch emails saved in settings (populated on each user login via /api/user)
-      const emailConn = await getPool().connect();
-      let emailMap: Record<string, string> = {};
+      // ── 1. Try Firebase listUsers() (works only with service account creds) ──
+      let firebaseUsers: Array<{ uid: string; email?: string; createdAt?: string; disabled?: boolean }> = [];
       try {
-        // Ensure the column exists before querying it
-        await emailConn.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS email TEXT`);
-        const emailResult = await emailConn.query(
-          `SELECT user_id::text AS uid, email FROM settings WHERE user_id = ANY($1::text[]) AND email IS NOT NULL`,
-          [uids]
-        );
-        emailResult.rows.forEach((r: any) => {
-          if (r.email) emailMap[r.uid] = r.email;
-        });
-        // Always inject the requesting user's email in case DB write above lost the race
-        if (reqUser?.id && reqUser?.email) emailMap[String(reqUser.id)] = String(reqUser.email);
-      } catch (e) {
-        console.warn("[users-v2] email lookup failed:", (e as any)?.message);
-        if (reqUser?.id && reqUser?.email) emailMap[String(reqUser.id)] = String(reqUser.email);
-      } finally {
-        emailConn.release();
+        let pageToken: string | undefined;
+        do {
+          const result: any = await adminAuth.listUsers(1000, pageToken);
+          for (const u of result.users) {
+            firebaseUsers.push({ uid: u.uid, email: u.email, createdAt: u.metadata?.creationTime, disabled: u.disabled });
+          }
+          pageToken = result.pageToken;
+        } while (pageToken);
+      } catch { /* no service account — fall through to DB */ }
+
+      // ── 2. DB: all users who have ever made an authenticated request ──
+      const conn = await getPool().connect();
+      let dbEmailMap: Record<string, string> = {};
+      const dbUids = new Set<string>();
+      try {
+        await conn.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS email TEXT`);
+        const [settRows, coRows, saRows, baRows, wdRows] = await Promise.all([
+          conn.query(`SELECT user_id::text AS uid, email FROM settings WHERE user_id IS NOT NULL`),
+          conn.query(`SELECT DISTINCT owner_id::text AS uid FROM checkouts WHERE owner_id IS NOT NULL`),
+          conn.query(`SELECT DISTINCT user_id::text AS uid FROM sales WHERE user_id IS NOT NULL`),
+          conn.query(`SELECT DISTINCT user_id::text AS uid FROM bank_accounts WHERE user_id IS NOT NULL`),
+          conn.query(`SELECT DISTINCT user_id::text AS uid FROM withdrawals WHERE user_id IS NOT NULL`).catch(() => ({ rows: [] as any[] })),
+        ]);
+        for (const r of settRows.rows) { dbUids.add(r.uid); if (r.email) dbEmailMap[r.uid] = r.email; }
+        for (const r of [...coRows.rows, ...saRows.rows, ...baRows.rows, ...wdRows.rows]) dbUids.add(r.uid);
+        if (reqUser?.id && reqUser?.email) { dbUids.add(String(reqUser.id)); dbEmailMap[String(reqUser.id)] = String(reqUser.email); }
+      } finally { conn.release(); }
+
+      // ── 3. Per-user stats ──
+      const sc = await getPool().connect();
+      let pCnt: Record<string, number> = {}, sCnt: Record<string, number> = {}, wCnt: Record<string, number> = {};
+      try {
+        const [pr, sr, wr] = await Promise.all([
+          sc.query(`SELECT user_id::text AS uid, COUNT(*)::int AS n FROM products GROUP BY user_id`),
+          sc.query(`SELECT user_id::text AS uid, COUNT(*)::int AS n FROM sales GROUP BY user_id`),
+          sc.query(`SELECT user_id::text AS uid, COUNT(*)::int AS n FROM withdrawals GROUP BY user_id`).catch(() => ({ rows: [] as any[] })),
+        ]);
+        pr.rows.forEach((r: any) => { pCnt[r.uid] = r.n; });
+        sr.rows.forEach((r: any) => { sCnt[r.uid] = r.n; });
+        wr.rows.forEach((r: any) => { wCnt[r.uid] = r.n; });
+      } finally { sc.release(); }
+
+      // ── 4. Merge: Firebase (primary) + DB (fill gaps) ──
+      const merged = new Map<string, any>();
+      for (const fu of firebaseUsers) {
+        const email = fu.email || dbEmailMap[fu.uid] || fu.uid;
+        merged.set(fu.uid, { id: fu.uid, uid: fu.uid, email, username: email, createdAt: fu.createdAt || null, disabled: fu.disabled || false, products: pCnt[fu.uid] || 0, sales: sCnt[fu.uid] || 0, withdrawals: wCnt[fu.uid] || 0 });
+      }
+      for (const uid of dbUids) {
+        const email = dbEmailMap[uid] || uid;
+        if (!merged.has(uid)) {
+          merged.set(uid, { id: uid, uid, email, username: email, createdAt: null, disabled: false, products: pCnt[uid] || 0, sales: sCnt[uid] || 0, withdrawals: wCnt[uid] || 0 });
+        } else {
+          const ex = merged.get(uid)!;
+          ex.products = pCnt[uid] || 0; ex.sales = sCnt[uid] || 0; ex.withdrawals = wCnt[uid] || 0;
+          if (!ex.email || ex.email === uid) { ex.email = email; ex.username = email; }
+        }
       }
 
-      // Try Firebase as secondary enrichment (may fail without service account)
-      const users = await Promise.all(
-        uids.map(async (uid) => {
-          const dbEmail = emailMap[uid];
-          if (dbEmail) {
-            return { id: uid, uid, email: dbEmail, username: dbEmail, createdAt: null };
-          }
-          try {
-            const u = await adminAuth.getUser(uid);
-            return {
-              id: uid, uid,
-              email: u.email || uid,
-              username: u.displayName || u.email || uid,
-              createdAt: u.metadata.creationTime,
-            };
-          } catch {
-            return { id: uid, uid, email: uid, username: uid, createdAt: null };
-          }
-        })
-      );
-
+      const users = Array.from(merged.values()).sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
       res.json(users);
     } catch (err: any) {
       console.error("Error listing users:", err);
