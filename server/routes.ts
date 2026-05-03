@@ -982,6 +982,12 @@ export async function registerRoutes(
 
       const uids = Array.from(uidSet);
 
+      // Ensure the requesting admin's own email is always persisted first
+      const reqUser = (req as any).user;
+      if (reqUser?.id && reqUser?.email) {
+        await storage.saveUserEmail(String(reqUser.id), String(reqUser.email));
+      }
+
       // Fetch emails saved in settings (populated on each user login via /api/user)
       const emailConn = await getPool().connect();
       let emailMap: Record<string, string> = {};
@@ -995,8 +1001,11 @@ export async function registerRoutes(
         emailResult.rows.forEach((r: any) => {
           if (r.email) emailMap[r.uid] = r.email;
         });
+        // Always inject the requesting user's email in case DB write above lost the race
+        if (reqUser?.id && reqUser?.email) emailMap[String(reqUser.id)] = String(reqUser.email);
       } catch (e) {
         console.warn("[users-v2] email lookup failed:", (e as any)?.message);
+        if (reqUser?.id && reqUser?.email) emailMap[String(reqUser.id)] = String(reqUser.email);
       } finally {
         emailConn.release();
       }
@@ -1474,7 +1483,11 @@ export async function registerRoutes(
         const rows = result.rows;
 
         // Enrich with emails — DB first, Firebase fallback
+        const rankReqUser = (req as any).user;
         let userMap: Record<string, string> = {};
+        if (rankReqUser?.id && rankReqUser?.email) {
+          await storage.saveUserEmail(String(rankReqUser.id), String(rankReqUser.email));
+        }
         const ownerIds = rows.map((r: any) => r.owner_id).filter(Boolean);
         if (ownerIds.length > 0) {
           const emailConn2 = await getPool().connect();
@@ -1485,8 +1498,10 @@ export async function registerRoutes(
               [ownerIds]
             );
             dbEmails.rows.forEach((r: any) => { if (r.email) userMap[r.uid] = r.email; });
+            if (rankReqUser?.id && rankReqUser?.email) userMap[String(rankReqUser.id)] = String(rankReqUser.email);
           } catch (e) {
             console.warn("[revenue-ranking] DB email lookup failed:", (e as any)?.message);
+            if (rankReqUser?.id && rankReqUser?.email) userMap[String(rankReqUser.id)] = String(rankReqUser.email);
           } finally {
             emailConn2.release();
           }
