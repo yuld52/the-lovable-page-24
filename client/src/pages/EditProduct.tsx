@@ -78,6 +78,12 @@ export default function EditProduct() {
       return;
     }
 
+    if (formData.name.trim().length < 3) {
+      toast({ title: "Nome muito curto", description: "O nome do produto deve ter no mínimo 3 caracteres.", variant: "destructive" });
+      setStep(1);
+      return;
+    }
+
     if (!formData.description || formData.description.trim().length < 200) {
       toast({
         title: "Descrição muito curta",

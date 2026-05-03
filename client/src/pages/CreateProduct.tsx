@@ -204,7 +204,7 @@ export default function CreateProduct() {
 
   const isStepValid = () => {
     if (step === 1) {
-      if (!newProduct.name.trim() || !newProduct.price.trim()) return false;
+      if (newProduct.name.trim().length < 3 || !newProduct.price.trim()) return false;
       if (isPriceBelowMin()) return false;
       if (newProduct.description.trim().length < 200) return false;
       return true;
@@ -380,15 +380,20 @@ export default function CreateProduct() {
                       <label className="text-sm font-bold text-zinc-200">Nome do produto</label>
                     </div>
                     <Input
-                      className={`bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500 ${showErrors && !newProduct.name ? 'border-red-500/50 focus-visible:ring-red-500' : ''}`}
+                      className={`bg-black/40 h-11 focus-visible:ring-purple-500 ${
+                        newProduct.name.length > 0 && newProduct.name.trim().length < 3
+                          ? 'border-red-500 focus-visible:ring-red-500'
+                          : 'border-zinc-800'
+                      }`}
                       value={newProduct.name}
                       onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
                       placeholder="Ex: Curso completo de Marketing Digital"
                     />
-                    {showErrors && !newProduct.name && (
-                      <p className="text-[10px] text-red-500 font-medium ml-1">Campo obrigatório</p>
+                    {newProduct.name.length > 0 && newProduct.name.trim().length < 3 ? (
+                      <p className="text-[10px] text-red-500 font-medium ml-1">Nome deve ter no mínimo 3 caracteres</p>
+                    ) : (
+                      <p className="text-[11px] text-zinc-500 ml-1">Este é o nome que aparecerá na página de checkout e no email</p>
                     )}
-                    <p className="text-[11px] text-zinc-500 ml-1">Este é o nome que aparecerá na página de checkout e no email</p>
                   </div>
 
                   <div className="space-y-2">

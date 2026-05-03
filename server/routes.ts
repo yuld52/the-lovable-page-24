@@ -172,6 +172,12 @@ export async function registerRoutes(
     try {
       const userId = String((req as any).user?.id || "");
 
+      // Name minimum length validation
+      const nameVal = String(req.body.name || "").trim();
+      if (nameVal.length < 3) {
+        return res.status(400).json({ message: `O nome do produto deve ter no mínimo 3 caracteres (atual: ${nameVal.length}).` });
+      }
+
       // Description minimum length validation
       const desc = String(req.body.description || "").trim();
       if (desc.length < 200) {
@@ -214,6 +220,14 @@ export async function registerRoutes(
   app.patch("/api/products/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id as string);
+
+      // Name minimum length validation if name is being updated
+      if (req.body.name !== undefined) {
+        const nameVal = String(req.body.name || "").trim();
+        if (nameVal.length < 3) {
+          return res.status(400).json({ message: `O nome do produto deve ter no mínimo 3 caracteres (atual: ${nameVal.length}).` });
+        }
+      }
 
       // Description minimum length validation if description is being updated
       if (req.body.description !== undefined) {
