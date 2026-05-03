@@ -149,11 +149,14 @@ export default function Sales() {
     const rows = filteredSales.map((sale) => {
       const product = products?.find((p) => p.id === sale.productId);
       const method = (sale as any).paymentMethod || (sale.paypalOrderId ? "paypal" : "—");
+      const pdfCurrency = (sale as any).paypalCurrency || product?.currency || "USD";
+      const pdfLocale = pdfCurrency === "MZN" ? "pt-MZ" : pdfCurrency === "BRL" ? "pt-BR" : "en-US";
+      const pdfAmount = new Intl.NumberFormat(pdfLocale, { style: "currency", currency: pdfCurrency }).format((sale.amount || 0) / 100);
       return [
         sale.paypalOrderId ? `#${sale.paypalOrderId.slice(-8)}` : `#${String(sale.id).padStart(8, "0")}`,
         product?.name || "Produto Removido",
         sale.customerEmail || "—",
-        `$${((sale.amount || 0) / 100).toFixed(2)}`,
+        pdfAmount,
         methodLabel[method] || method,
         statusLabel[sale.status] || sale.status,
         sale.createdAt ? format(new Date(sale.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "—",
@@ -294,7 +297,9 @@ export default function Sales() {
                   const saleId = sale.paypalOrderId
                     ? `#${sale.paypalOrderId.slice(-8)}`
                     : `#${String(sale.id).padStart(8, "0")}`;
-                  const amountUsd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format((sale.amount || 0) / 100);
+                  const saleCurrency = (sale as any).paypalCurrency || product?.currency || "USD";
+                  const saleLocale = saleCurrency === "MZN" ? "pt-MZ" : saleCurrency === "BRL" ? "pt-BR" : "en-US";
+                  const amountUsd = new Intl.NumberFormat(saleLocale, { style: "currency", currency: saleCurrency }).format((sale.amount || 0) / 100);
 
                   return (
                     <tr key={sale.id} className="hover:bg-zinc-800/20 transition-colors group">
