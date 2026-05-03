@@ -12,7 +12,7 @@ import { getVapidPublicKey, saveSubscription } from "./services/notification";
 import { registerTrackingRoutes } from "./trackingRoutes";
 import { registerChatRoutes } from "./chat";
 import { initiateE2Payment, makeReference, normalizeMzPhone } from "./services/e2payments";
-import { sendBuyerConfirmation, sendSellerNewSale, sendWithdrawalUpdate, sendWithdrawalReceived, sendProductApproved, sendProductRejected, sendNewBankAccount, sendWelcomeEmail } from "./email";
+import { sendBuyerConfirmation, sendSellerNewSale, sendWithdrawalUpdate, sendWithdrawalReceived, sendProductApproved, sendProductRejected, sendNewBankAccount, sendWelcomeEmail, sendSupportTicketReceived, sendSupportTicketReply, sendAdminNewTicket } from "./email";
 
 function fmtUsd(cents: number) { return `$${(cents / 100).toFixed(2)} USD`; }
 function fmtMzn(minor: number) { return `MZN ${(minor / 100).toFixed(2)}`; }
@@ -1547,6 +1547,74 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("Error getting revenue ranking:", error);
       res.status(500).json({ message: error.message || "Erro ao buscar ranking" });
+    }
+  });
+
+  // ─── Support Tickets ───────────────────────────────────────
+  app.post("/api/support/tickets", requireAuth, async (req: any, res) => {
+    try {
+      const { subject, message, category } = req.body;
+      if (!subject?.trim() || !message?.trim()) return res.status(400).json({ message: "Assunto e mensagem são obrigatórios" });
+      const ticket = await storage.createSupportTicket(req.user.uid, { subject, message, category: category || "outro" });
+      const userEmail = req.user.email || null;
+      if (userEmail) {
+        sendSupportTicketReceived({ to: userEmail, subject, category: category || "outro", ticketId: ticket.id }).catch(() => {});
+      }
+      sendAdminNewTicket({ subject, category: category || "outro", message, userEmail: userEmail || req.user.uid, ticketId: ticket.id }).catch(() => {});
+      res.json(ticket);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Erro ao criar ticket" });
+    }
+  });
+
+  app.get("/api/support/tickets", requireAuth, async (req: any, res) => {
+    try {
+      const tickets = await storage.getSupportTicketsByUser(req.user.uid);
+      res.json(tickets);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Erro ao buscar tickets" });
+    }
+  });
+
+  // Admin support routes
+  app.get("/api/admin/support", requireAuth, async (req: any, res) => {
+    try {
+      if (req.user.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
+      const tickets = await storage.getAllSupportTickets();
+      res.json(tickets);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Erro ao buscar tickets" });
+    }
+  });
+
+  app.patch("/api/admin/support/:id/reply", requireAuth, async (req: any, res) => {
+    try {
+      if (req.user.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
+      const { reply, status } = req.body;
+      if (!reply?.trim()) return res.status(400).json({ message: "Resposta é obrigatória" });
+      const ticket = await storage.replySupportTicket(Number(req.params.id), reply, status || "in_progress");
+      // Notify user by email — look up their email from settings
+      try {
+        const userSettings = await storage.getSettings(ticket.userId);
+        const userEmail = userSettings?.email;
+        if (userEmail) {
+          sendSupportTicketReply({ to: userEmail, subject: ticket.subject, reply, ticketId: ticket.id }).catch(() => {});
+        }
+      } catch (_) {}
+      res.json(ticket);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Erro ao responder ticket" });
+    }
+  });
+
+  app.patch("/api/admin/support/:id/status", requireAuth, async (req: any, res) => {
+    try {
+      if (req.user.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
+      const { status } = req.body;
+      const ticket = await storage.updateSupportTicketStatus(Number(req.params.id), status);
+      res.json(ticket);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Erro ao actualizar status" });
     }
   });
 

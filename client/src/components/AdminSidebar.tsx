@@ -8,6 +8,7 @@ import {
   ArrowDownToLine,
   Trophy,
   Mail,
+  LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/admin/products", label: "Aprovação de Produtos", icon: Package },
   { href: "/admin/users", label: "Gerenciar Usuários", icon: Users },
   { href: "/admin/withdrawals", label: "Aprovação de Saques", icon: ArrowDownToLine },
+  { href: "/admin/support", label: "Suporte", icon: LifeBuoy },
   { href: "/admin/email", label: "Enviar Email", icon: Mail },
   { href: "/admin/revenue-ranking", label: "Ranking de Faturamento", icon: Trophy },
 ];

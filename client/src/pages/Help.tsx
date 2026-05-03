@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
 
 const helpTopics = [
   {
@@ -66,14 +67,20 @@ export default function Help() {
 
   const handleSendMessage = async () => {
     if (!message.trim()) return;
-    
     setIsSending(true);
-    // Simulate sending - in production, this would send to support
-    setTimeout(() => {
-      alert("Mensagem enviada! Nossa equipe responderá em breve.");
+    try {
+      await apiRequest("POST", "/api/support/tickets", {
+        subject: "Contacto via Central de Ajuda",
+        message,
+        category: "outro",
+      });
       setMessage("");
+      setLocation("/support");
+    } catch {
+      alert("Erro ao enviar mensagem. Tente novamente.");
+    } finally {
       setIsSending(false);
-    }, 1000);
+    }
   };
 
   return (

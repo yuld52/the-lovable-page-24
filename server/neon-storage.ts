@@ -1040,6 +1040,100 @@ export class NeonStorage {
       client.release();
     }
   }
+
+  // ─── Support Tickets ────────────────────────────────────────
+  async ensureSupportTicketsTable(): Promise<void> {
+    const client = await getPool().connect();
+    try {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS support_tickets (
+          id          SERIAL PRIMARY KEY,
+          user_id     TEXT        NOT NULL,
+          subject     VARCHAR(500) NOT NULL,
+          message     TEXT        NOT NULL,
+          category    VARCHAR(100) NOT NULL DEFAULT 'outro',
+          status      VARCHAR(50)  NOT NULL DEFAULT 'open',
+          admin_reply TEXT,
+          replied_at  TIMESTAMPTZ,
+          created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+    } finally {
+      client.release();
+    }
+  }
+
+  async createSupportTicket(userId: string, data: { subject: string; message: string; category: string }): Promise<any> {
+    await this.ensureSupportTicketsTable();
+    const client = await getPool().connect();
+    try {
+      const result = await client.query(`
+        INSERT INTO support_tickets (user_id, subject, message, category)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *
+      `, [userId, data.subject, data.message, data.category]);
+      return toCamelCase(result.rows[0]);
+    } finally {
+      client.release();
+    }
+  }
+
+  async getSupportTicketsByUser(userId: string): Promise<any[]> {
+    await this.ensureSupportTicketsTable();
+    const client = await getPool().connect();
+    try {
+      const result = await client.query(
+        `SELECT * FROM support_tickets WHERE user_id = $1 ORDER BY created_at DESC`,
+        [userId]
+      );
+      return result.rows.map(toCamelCase);
+    } finally {
+      client.release();
+    }
+  }
+
+  async getAllSupportTickets(): Promise<any[]> {
+    await this.ensureSupportTicketsTable();
+    const client = await getPool().connect();
+    try {
+      const result = await client.query(
+        `SELECT * FROM support_tickets ORDER BY created_at DESC`
+      );
+      return result.rows.map(toCamelCase);
+    } finally {
+      client.release();
+    }
+  }
+
+  async replySupportTicket(id: number, reply: string, status: string): Promise<any> {
+    await this.ensureSupportTicketsTable();
+    const client = await getPool().connect();
+    try {
+      const result = await client.query(`
+        UPDATE support_tickets
+        SET admin_reply = $1, status = $2, replied_at = NOW(), updated_at = NOW()
+        WHERE id = $3
+        RETURNING *
+      `, [reply, status, id]);
+      return toCamelCase(result.rows[0]);
+    } finally {
+      client.release();
+    }
+  }
+
+  async updateSupportTicketStatus(id: number, status: string): Promise<any> {
+    await this.ensureSupportTicketsTable();
+    const client = await getPool().connect();
+    try {
+      const result = await client.query(`
+        UPDATE support_tickets SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *
+      `, [status, id]);
+      return toCamelCase(result.rows[0]);
+    } finally {
+      client.release();
+    }
+  }
 }
 
 export const neonStorage = new NeonStorage();
