@@ -25,7 +25,7 @@ export function getPool(): Pool {
     
     pool.on('error', (err: Error) => {
       console.error('Unexpected error on idle client', err);
-      process.exit(-1);
+      pool = null; // reset so next call recreates the pool
     });
   }
   return pool;
