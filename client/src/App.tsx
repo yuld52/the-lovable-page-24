@@ -25,6 +25,7 @@ import AdminProducts from "@/pages/AdminProducts";
 import AdminUsers from "@/pages/AdminUsers";
 import AdminSettings from "@/pages/AdminSettings";
 import AdminWithdrawals from "@/pages/AdminWithdrawals";
+import AdminSales from "@/pages/AdminSales";
 import AdminRevenueRanking from "@/pages/AdminRevenueRanking";
 import AdminRulesFees from "@/pages/AdminRulesFees";
 import Profile from "@/pages/Profile";
@@ -88,6 +89,7 @@ function Router() {
       <Route path="/admin" component={Admin} />
       <Route path="/admin/products" component={AdminProducts} />
       <Route path="/admin/users" component={AdminUsers} />
+      <Route path="/admin/sales" component={AdminSales} />
       <Route path="/admin/withdrawals" component={AdminWithdrawals} />
       <Route path="/admin/revenue-ranking" component={AdminRevenueRanking} />
       <Route path="/admin/rules-fees" component={AdminRulesFees} />

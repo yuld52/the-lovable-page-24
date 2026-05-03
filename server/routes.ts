@@ -960,6 +960,33 @@ export async function registerRoutes(
     }
   });
 
+  // Admin: approve / reject individual mobile sales
+  app.post("/api/admin/sales/:id/approve", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
+      const id = parseInt(req.params.id as string);
+      await storage.updateSaleStatus(id, "paid");
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error("Error approving sale:", err);
+      res.status(500).json({ message: err.message || "Erro ao aprovar venda" });
+    }
+  });
+
+  app.post("/api/admin/sales/:id/reject", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
+      const id = parseInt(req.params.id as string);
+      await storage.updateSaleStatus(id, "cancelled");
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error("Error rejecting sale:", err);
+      res.status(500).json({ message: err.message || "Erro ao rejeitar venda" });
+    }
+  });
+
   // --- PRODUTOS (Admin) ---
   app.get("/api/admin/products", requireAuth, async (req, res) => {
     try {

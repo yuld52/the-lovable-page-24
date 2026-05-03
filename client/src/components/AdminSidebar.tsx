@@ -9,6 +9,7 @@ import {
   ArrowDownToLine,
   Trophy,
   Percent,
+  Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/admin", label: "Visão Geral", icon: LayoutDashboard, exact: true },
   { href: "/admin/products", label: "Aprovação de Produtos", icon: Package },
   { href: "/admin/users", label: "Gerenciar Usuários", icon: Users },
+  { href: "/admin/sales", label: "Aprovação de Vendas", icon: Receipt },
   { href: "/admin/withdrawals", label: "Aprovação de Saques", icon: ArrowDownToLine },
   { href: "/admin/revenue-ranking", label: "Ranking de Faturamento", icon: Trophy },
   { href: "/admin/rules-fees", label: "Regras e Taxas", icon: Percent },
