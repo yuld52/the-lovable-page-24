@@ -278,7 +278,7 @@ export default function PublicCheckout() {
   const moneyFromUsdCents = (usdCents: number) =>
     formatMoney({ currency, minor: convertUsdCentsToCurrencyMinor(usdCents, currency, usdToCurrencyRate) });
 
-  const [formData, setFormData] = useState({ email: "", confirmEmail: "", name: "", surname: "", cpf: "", phone: "", cnpj: "" });
+  const [formData, setFormData] = useState({ email: "", confirmEmail: "", name: "", surname: "", cpf: "", phone: "", cnpj: "", zip: "", street: "", streetNumber: "" });
   const [showErrors, setShowErrors] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("");
   const [mobilePhone, setMobilePhone] = useState("");
@@ -578,9 +578,51 @@ export default function PublicCheckout() {
                 )}
               </div>
               <div className="space-y-1">
-                <label className="block text-[11px]">{t.fullNameLabel}</label>
-                <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder={t.fullNamePlaceholder} className={`w-full h-11 px-3 rounded-md border text-sm focus:outline-none focus:ring-1 ${showErrors && !formData.name ? 'border-red-500' : 'border-gray-300'}`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
+                <label className="block text-[11px]">{config.showSurname ? t.nameLabel : t.fullNameLabel}</label>
+                <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder={config.showSurname ? t.namePlaceholder : t.fullNamePlaceholder} className={`w-full h-11 px-3 rounded-md border text-sm focus:outline-none focus:ring-1 ${showErrors && !formData.name ? 'border-red-500' : 'border-gray-300'}`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
               </div>
+              {config.showSurname && (
+                <div className="space-y-1">
+                  <label className="block text-[11px]">{t.surnameLabel}</label>
+                  <input type="text" value={formData.surname} onChange={(e) => setFormData({ ...formData, surname: e.target.value })} placeholder={t.surnamePlaceholder} className="w-full h-11 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-1" style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
+                </div>
+              )}
+              {config.showCpf && (
+                <div className="space-y-1">
+                  <label className="block text-[11px]">{t.cpfLabel}</label>
+                  <input type="text" value={formData.cpf} onChange={(e) => setFormData({ ...formData, cpf: e.target.value })} placeholder={t.cpfPlaceholder} className="w-full h-11 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-1" style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
+                </div>
+              )}
+              {config.showCnpj && (
+                <div className="space-y-1">
+                  <label className="block text-[11px]">{t.cnpjLabel}</label>
+                  <input type="text" value={formData.cnpj} onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })} placeholder={t.cnpjPlaceholder} className="w-full h-11 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-1" style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
+                </div>
+              )}
+              {config.showPhone && (
+                <div className="space-y-1">
+                  <label className="block text-[11px]">{t.phoneLabel}</label>
+                  <input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+258 84 000 0000" className="w-full h-11 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-1" style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
+                </div>
+              )}
+              {config.showAddress && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="block text-[11px]">{t.zipLabel}</label>
+                    <input type="text" value={formData.zip} onChange={(e) => setFormData({ ...formData, zip: e.target.value })} placeholder={t.zipPlaceholder} className="w-full h-11 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-1" style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2 space-y-1">
+                      <label className="block text-[11px]">{t.streetLabel}</label>
+                      <input type="text" value={formData.street} onChange={(e) => setFormData({ ...formData, street: e.target.value })} placeholder={t.streetPlaceholder} className="w-full h-11 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-1" style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[11px]">{t.numberLabel}</label>
+                      <input type="text" value={formData.streetNumber} onChange={(e) => setFormData({ ...formData, streetNumber: e.target.value })} placeholder={t.numberPlaceholder} className="w-full h-11 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-1" style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="p-4 space-y-4">
               {/* Payment method selector */}
