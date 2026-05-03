@@ -1152,6 +1152,7 @@ export async function registerRoutes(
             MAX(s.created_at) AS last_sale_at
           FROM checkouts c
           LEFT JOIN sales s ON s.checkout_id = c.id
+            AND s.status IN ('paid', 'captured')
           WHERE c.owner_id IS NOT NULL
           GROUP BY c.owner_id
           HAVING COUNT(s.id) > 0
