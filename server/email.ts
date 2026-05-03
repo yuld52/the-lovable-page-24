@@ -1,6 +1,18 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  if (!_resend) {
+    const key = process.env.RESEND_API_KEY;
+    if (!key) {
+      console.warn("[email] RESEND_API_KEY not set — emails will not be sent");
+      throw new Error("RESEND_API_KEY is not configured");
+    }
+    _resend = new Resend(key);
+  }
+  return _resend;
+}
+const resend = { emails: { send: async (opts: any) => { try { return await getResend().emails.send(opts); } catch (err) { console.warn("[email] send failed:", err instanceof Error ? err.message : err); return null; } } } };
 
 const FROM = process.env.EMAIL_FROM || "Meteorfy <onboarding@resend.dev>";
 
