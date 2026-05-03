@@ -630,7 +630,7 @@ export default function PublicCheckout() {
               {config.showPhone && (
                 <div className="space-y-1">
                   <label className="block text-[11px]">{t.phoneLabel}</label>
-                  <input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+258 84 000 0000" className="w-full h-11 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-1" style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
+                  <input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "") })} placeholder="258840000000" inputMode="numeric" className="w-full h-11 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-1" style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
                 </div>
               )}
               {config.showAddress && (
