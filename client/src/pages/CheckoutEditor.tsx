@@ -513,7 +513,7 @@ export default function CheckoutEditor() {
                   <SelectValue placeholder="Selecione um produto" />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-800">
-                  {products?.map((p) => (
+                  {products?.filter(p => p.status === 'approved').map((p) => (
                     <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -605,7 +605,7 @@ export default function CheckoutEditor() {
             <div className="space-y-2">
               <Label className="text-xs text-zinc-400 font-bold uppercase">Selecione Order Bump</Label>
               <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
-                {products?.filter(p => p.id.toString() !== productId).map(p => (
+                {products?.filter(p => p.status === 'approved' && p.id.toString() !== productId).map(p => (
                   <div key={p.id} className="flex items-center gap-3 p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
                     <Checkbox checked={config.orderBumpProducts.includes(p.id)} onCheckedChange={() => toggleOrderBump(p.id)} />
                     <div className="flex-1">
