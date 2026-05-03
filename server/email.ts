@@ -612,3 +612,66 @@ export async function sendWelcomeEmail(opts: {
     html: baseLayout("Bem-vindo", body),
   });
 }
+
+// ─────────────────────────────────────────────────────────────
+// 11. SELLER — First Sale 🏆
+// ─────────────────────────────────────────────────────────────
+export async function sendFirstSale(opts: {
+  to: string;
+  productName: string;
+  amount: string;
+  buyerEmail: string;
+  orderId: string;
+  paymentMethod: string;
+}) {
+  const { to, productName, amount, buyerEmail, orderId, paymentMethod } = opts;
+  const dashUrl = `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "meteorfy.com"}/sales`;
+
+  const body = `
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding-bottom:24px;text-align:center;">
+          <!-- Trophy badge -->
+          <div style="display:inline-block;background:linear-gradient(135deg,#f59e0b,#fbbf24,#f59e0b);border-radius:50%;width:72px;height:72px;line-height:72px;text-align:center;margin-bottom:16px;box-shadow:0 0 32px #f59e0b55;">
+            <span style="font-size:38px;">🏆</span>
+          </div>
+          <!-- Gold seal -->
+          <div style="display:inline-block;background:linear-gradient(135deg,#92400e,#f59e0b,#92400e);padding:6px 20px;border-radius:100px;margin-bottom:16px;">
+            <span style="font-size:11px;font-weight:900;color:#fff;letter-spacing:2px;text-transform:uppercase;">✨ PRIMEIRA VENDA</span>
+          </div>
+          <h1 style="margin:0 0 8px;font-size:22px;font-weight:900;color:${BRAND.text};">Parabéns! Você fez a sua primeira venda!</h1>
+          <p style="margin:0;font-size:14px;color:${BRAND.muted};line-height:1.6;">Este é um momento histórico na sua jornada de vendas.<br/>A primeira de muitas que estão por vir! 🚀</p>
+        </td>
+      </tr>
+      ${divider()}
+      <tr><td style="padding:16px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          ${row("Produto", productName)}
+          ${row("Valor recebido", amount, "#f59e0b")}
+          ${row("Comprador", buyerEmail)}
+          ${row("Método", paymentMethod)}
+          ${row("ID do pedido", `#${orderId}`, BRAND.muted)}
+        </table>
+      </td></tr>
+      ${divider()}
+      <tr>
+        <td style="padding:20px 0;text-align:center;">
+          <div style="background:#1c1917;border:1px solid #f59e0b44;border-radius:12px;padding:18px 20px;margin-bottom:20px;">
+            <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:1px;">💡 Dica de vendedor</p>
+            <p style="margin:0;font-size:13px;color:${BRAND.muted};line-height:1.6;">Partilhe o seu checkout nas redes sociais e continue a crescer. O sucesso começa com a primeira venda!</p>
+          </div>
+          <a href="${dashUrl}"
+             style="display:inline-block;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;text-decoration:none;font-weight:800;font-size:14px;padding:14px 32px;border-radius:12px;letter-spacing:0.5px;">
+            Ver as minhas vendas →
+          </a>
+        </td>
+      </tr>
+    </table>`;
+
+  return resend.emails.send({
+    from: FROM,
+    to,
+    subject: `🏆 PRIMEIRA VENDA! ${productName} — ${amount}`,
+    html: baseLayout("Primeira Venda", body),
+  });
+}

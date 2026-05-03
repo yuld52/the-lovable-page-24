@@ -12,7 +12,7 @@ import { getVapidPublicKey, saveSubscription } from "./services/notification";
 import { registerTrackingRoutes } from "./trackingRoutes";
 import { registerChatRoutes } from "./chat";
 import { initiateE2Payment, makeReference, normalizeMzPhone } from "./services/e2payments";
-import { sendBuyerConfirmation, sendSellerNewSale, sendWithdrawalUpdate, sendWithdrawalReceived, sendProductApproved, sendProductRejected, sendNewBankAccount, sendWelcomeEmail, sendVerificationCode, sendWithdrawalConfirmCode } from "./email";
+import { sendBuyerConfirmation, sendSellerNewSale, sendFirstSale, sendWithdrawalUpdate, sendWithdrawalReceived, sendProductApproved, sendProductRejected, sendNewBankAccount, sendWelcomeEmail, sendVerificationCode, sendWithdrawalConfirmCode } from "./email";
 
 // ── In-memory verification code store ──
 interface VerifEntry { code: string; uid: string; expiresAt: number; }
@@ -919,8 +919,22 @@ export async function registerRoutes(
       }
       if (sale.userId) {
         adminAuth.getUser(String(sale.userId))
-          .then((u) => {
-            if (u.email) {
+          .then(async (u) => {
+            if (!u.email) return;
+            // Check if this is the seller's first ever paid sale
+            const allSales = await storage.getSales(String(sale.userId)).catch(() => []);
+            const paidSales = allSales.filter((s: any) => s.status === "paid" || s.status === "captured");
+            const isFirstSale = paidSales.length === 1;
+            if (isFirstSale) {
+              sendFirstSale({
+                to: u.email,
+                productName: emailProduct,
+                amount: emailAmount,
+                buyerEmail: sale.customerEmail || "—",
+                orderId: emailOrderId,
+                paymentMethod: "PayPal",
+              }).catch((e: any) => console.error("[EMAIL] first sale:", e?.message));
+            } else {
               sendSellerNewSale({
                 to: u.email,
                 productName: emailProduct,
