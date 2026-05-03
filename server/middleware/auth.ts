@@ -1,4 +1,3 @@
-import type { NextFunction } from "express";
 import { adminAuth } from "../firebase-admin";
 import { neonStorage } from "../neon-storage";
 
@@ -16,7 +15,7 @@ function serializeError(err: any) {
   };
 }
 
-export async function requireAuth(req: any, res: any, next: NextFunction) {
+export async function requireAuth(req: any, res: any, next: any) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !String(authHeader).startsWith("Bearer ")) {

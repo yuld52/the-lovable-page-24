@@ -1,4 +1,3 @@
-import type { Request, Response } from "express";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
@@ -14,7 +13,7 @@ interface ChatRequest {
 }
 
 export function registerChatRoutes(app: any) {
-  app.post("/api/chat", async (req: Request, res: Response) => {
+  app.post("/api/chat", async (req: any, res: any) => {
     try {
       const { messages } = req.body as ChatRequest;
 
