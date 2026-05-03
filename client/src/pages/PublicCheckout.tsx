@@ -335,6 +335,14 @@ export default function PublicCheckout() {
             setPendingSaleId(null);
             setIsPaid(true);
             toast({ title: "Pagamento confirmado!", description: "O seu pagamento foi confirmado com sucesso." });
+            return;
+          }
+          if (d.status === "failed") {
+            stopPoll();
+            setShowMobileModal(false);
+            setPendingSaleId(null);
+            toast({ title: "Pagamento falhado", description: "Não foi possível iniciar o pagamento. Verifique o número e tente novamente.", variant: "destructive" });
+            return;
           }
         }
       } catch { /* ignore network errors during polling */ }

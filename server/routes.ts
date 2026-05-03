@@ -11,7 +11,7 @@ import { getVapidPublicKey, saveSubscription } from "./services/notification";
 
 import { registerTrackingRoutes } from "./trackingRoutes";
 import { registerChatRoutes } from "./chat";
-import { initiateE2Payment, makeReference } from "./services/e2payments";
+import { initiateE2Payment, makeReference, normalizeMzPhone } from "./services/e2payments";
 import { sendBuyerConfirmation, sendSellerNewSale, sendWithdrawalUpdate, sendWithdrawalReceived, sendProductApproved, sendProductRejected, sendNewBankAccount, sendWelcomeEmail } from "./email";
 
 function fmtUsd(cents: number) { return `$${(cents / 100).toFixed(2)} USD`; }
@@ -590,7 +590,9 @@ export async function registerRoutes(
         });
 
         const reference = makeReference(sale.id);
-        const amountMajor = (totalMinor || totalUsdCents || 0) / 100;
+        // For MZN products totalUsdCents IS the MZN minor amount (same currency).
+        // Divide by 100 to get MZN major units for the e2payments API.
+        const amountMajor = Math.round((totalUsdCents || 0) / 100);
         const walletId = paymentMethod === "mpesa"
           ? sellerSettings.e2paymentsMpesaWalletId
           : sellerSettings.e2paymentsEmolaWalletId;
@@ -600,23 +602,29 @@ export async function registerRoutes(
         const protocol = host.includes("replit") || host.includes("https") ? "https" : "http";
         const callbackUrl = `${protocol}://${host}/api/e2payments/callback`;
 
-        try {
-          const e2res = await initiateE2Payment(paymentMethod as "mpesa" | "emola", {
-            clientId: sellerSettings.e2paymentsClientId,
-            clientSecret: sellerSettings.e2paymentsClientSecret,
-            walletId,
-            contact: mobilePhone.replace(/^258/, ""),
-            amount: amountMajor,
-            reference,
-            callbackUrl,
-          });
-          console.log(`[E2PAY] ${paymentMethod.toUpperCase()} STK push — saleId=${sale.id}, ref=${reference}, phone=${mobilePhone}, amount=${amountMajor}`, e2res);
-        } catch (e2err: any) {
-          // If e2payments call fails, delete the pending sale and surface the error
-          await storage.updateSaleStatus(sale.id, "failed").catch(() => {});
-          console.error("[E2PAY] initiate error:", e2err?.message);
-          return res.status(502).json({ message: e2err?.response?.data?.message || "Erro ao iniciar pagamento. Verifique o número e tente novamente." });
-        }
+        const phoneLocal = normalizeMzPhone(mobilePhone);
+
+        // Fire e2payments call asynchronously — respond to client immediately
+        // so the browser doesn't timeout waiting for the STK push
+        setImmediate(async () => {
+          try {
+            const e2res = await initiateE2Payment(paymentMethod as "mpesa" | "emola", {
+              clientId: sellerSettings.e2paymentsClientId,
+              clientSecret: sellerSettings.e2paymentsClientSecret,
+              walletId,
+              phone: phoneLocal,
+              amount: amountMajor,
+              reference,
+              callbackUrl,
+            });
+            console.log(`[E2PAY] ${paymentMethod.toUpperCase()} STK push sent — saleId=${sale.id}, ref=${reference}, phone=${phoneLocal}, amount=${amountMajor} MZN`, JSON.stringify(e2res));
+          } catch (e2err: any) {
+            const errMsg = e2err?.response?.data?.message || e2err?.message || "unknown";
+            console.error(`[E2PAY] initiate error — saleId=${sale.id}: ${errMsg}`);
+            // Mark sale as failed so the frontend polling detects it
+            await storage.updateSaleStatus(sale.id, "failed").catch(() => {});
+          }
+        });
 
         return res.json({ id: sale.id, status: "pending", paymentMethod, message: "Verifique o seu telemóvel e insira o PIN para confirmar o pagamento." });
 
