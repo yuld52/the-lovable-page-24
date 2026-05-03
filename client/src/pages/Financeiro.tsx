@@ -30,7 +30,7 @@ export default function Financeiro() {
   const [pixKey, setPixKey] = useState("");
   const [withdrawMethod, setWithdrawMethod] = useState<"mpesa" | "emola">("mpesa");
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"visao" | "historico" | "contas">("visao");
+  const [activeTab, setActiveTab] = useState<"visao" | "historico" | "contas" | "regras">("visao");
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [addAccountStep, setAddAccountStep] = useState<1 | 2 | 3>(1);
   const [newAccount, setNewAccount] = useState<{ type: "mpesa" | "emola"; phone: string; name: string }>({ type: "mpesa", phone: "", name: "" });
@@ -243,6 +243,18 @@ export default function Financeiro() {
           <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
           <span className="text-xs sm:hidden truncate">Contas</span>
           <span className="text-sm hidden sm:inline">Contas</span>
+        </button>
+        <button 
+          className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all font-medium flex-1 min-w-0 ${
+            activeTab === 'regras' 
+              ? 'bg-purple-600 text-white shadow-lg scale-105' 
+              : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+          }`}
+          onClick={() => setActiveTab('regras')}
+        >
+          <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="text-xs sm:hidden truncate">Regras</span>
+          <span className="text-sm hidden sm:inline">Regras e Taxas</span>
         </button>
       </div>
 
@@ -528,6 +540,108 @@ export default function Financeiro() {
         </Card>
       )}
 
+
+      {activeTab === 'regras' && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-600/15 rounded-xl flex items-center justify-center">
+                  <ShieldCheck className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-base font-bold text-white">Informações sobre Saques</CardTitle>
+                  <CardDescription className="text-xs text-zinc-500">Leia com atenção antes de solicitar um saque.</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+            <CardContent className="pt-5">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                  <Clock className="w-4 h-4 text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white mb-1">Processamento</p>
+                  <p className="text-sm text-zinc-400">1–2 dias úteis, das <span className="text-white font-medium">9:30h</span> até <span className="text-white font-medium">15:30h</span></p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+            <CardHeader className="pb-2 pt-5">
+              <div className="flex items-center gap-2">
+                <Banknote className="w-4 h-4 text-emerald-400" />
+                <p className="text-sm font-semibold text-white">Taxas de Saque</p>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {[
+                { label: "M-Pesa", rate: "10%", logo: "https://yt3.googleusercontent.com/ytc/AIdro_k9S-mKWfmtSx85sbylUgINsr7-ErWacXBh0R39hZ_2rg=s900-c-k-c0x00ffffff-no-rj" },
+                { label: "e-Mola", rate: "10%", logo: "https://play-lh.googleusercontent.com/2TGAhJ55tiyhCwW0ZM43deGv4lUTFTBMoq83mnAO6-bU5hi2NPyKX8BN8iKt13irK7Y" },
+              ].map((m) => (
+                <div key={m.label} className="flex items-center justify-between bg-zinc-900/50 border border-zinc-800/50 rounded-xl px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <img src={m.logo} alt={m.label} className="h-7 w-auto object-contain rounded" />
+                    <span className="text-sm text-white font-medium">{m.label}</span>
+                  </div>
+                  <span className="text-sm font-bold text-purple-400">{m.rate}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+            <CardHeader className="pb-2 pt-5">
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-yellow-400" />
+                <p className="text-sm font-semibold text-white">Valor Mínimo para Saque</p>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { currency: "USD", amount: "50", flag: "🇺🇸" },
+                  { currency: "MZN", amount: "600", flag: "🇲🇿" },
+                  { currency: "BRL", amount: "250", flag: "🇧🇷" },
+                ].map((v) => (
+                  <div key={v.currency} className="flex flex-col items-center justify-center bg-zinc-900/50 border border-zinc-800/50 rounded-xl py-4 gap-1">
+                    <span className="text-xl">{v.flag}</span>
+                    <span className="text-xs text-zinc-400 font-medium">{v.currency}</span>
+                    <span className="text-base font-bold text-white">{v.amount}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+            <CardHeader className="pb-2 pt-5">
+              <div className="flex items-center gap-2">
+                <Info className="w-4 h-4 text-amber-400" />
+                <p className="text-sm font-semibold text-white">Regras Importantes</p>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {[
+                "Verificações de segurança antes do saque são obrigatórias para proteger sua conta.",
+                "Não nos responsabilizamos por informações incorretas fornecidas pelo usuário.",
+                "É responsabilidade do usuário manter seus dados atualizados e verificar todas as informações antes de confirmar transações.",
+              ].map((rule, i) => (
+                <div key={i} className="flex items-start gap-3 bg-zinc-900/40 border border-zinc-800/40 rounded-xl px-4 py-3">
+                  <div className="w-5 h-5 bg-amber-500/10 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-amber-400 text-[10px] font-bold">{i + 1}</span>
+                  </div>
+                  <p className="text-sm text-zinc-300 leading-relaxed">{rule}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Withdraw Form Dialog — 3-step */}
       <Dialog open={showWithdrawForm} onOpenChange={(v) => {
