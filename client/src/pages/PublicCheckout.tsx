@@ -739,7 +739,7 @@ export default function PublicCheckout() {
                     {orderBumpProductsData.length > 0 && (
                       <div className="space-y-3">
                         {orderBumpProductsData.map(p => (
-                          <div key={p.id} className="rounded-lg border" style={{ borderColor: config.primaryColor }}>
+                          <div key={p.id} className="rounded-lg border overflow-hidden" style={{ borderColor: config.primaryColor }}>
                             <div className="flex items-start gap-3 p-3">
                               <div className="flex-1">
                                 <h4 className="text-[17px] font-medium">{p.name}</h4>
