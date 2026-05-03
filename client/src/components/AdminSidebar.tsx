@@ -10,6 +10,7 @@ import {
   Trophy,
   Percent,
   Receipt,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
@@ -24,6 +25,7 @@ const navItems = [
   { href: "/admin/users", label: "Gerenciar Usuários", icon: Users },
   { href: "/admin/sales", label: "Aprovação de Vendas", icon: Receipt },
   { href: "/admin/withdrawals", label: "Aprovação de Saques", icon: ArrowDownToLine },
+  { href: "/admin/email", label: "Enviar Email", icon: Mail },
   { href: "/admin/revenue-ranking", label: "Ranking de Faturamento", icon: Trophy },
   { href: "/admin/rules-fees", label: "Regras e Taxas", icon: Percent },
 ];

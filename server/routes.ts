@@ -960,6 +960,44 @@ export async function registerRoutes(
     }
   });
 
+  // Admin: send custom email to any address
+  app.post("/api/admin/send-email", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
+      const { to, subject, body } = req.body || {};
+      if (!to || !subject || !body) return res.status(400).json({ message: "to, subject e body são obrigatórios" });
+      const { Resend } = await import("resend");
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const FROM = process.env.EMAIL_FROM || "Meteorfy <onboarding@resend.dev>";
+      const html = `<!DOCTYPE html>
+<html lang="pt">
+<head><meta charset="UTF-8"/><title>${subject}</title></head>
+<body style="margin:0;padding:0;background:#09090b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#09090b;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+        <tr><td style="padding-bottom:24px;text-align:center;">
+          <span style="font-size:22px;font-weight:900;color:#7c3aed;letter-spacing:-0.5px;">Meteor<span style="color:#ffffff">fy</span></span>
+        </td></tr>
+        <tr><td style="background:#18181b;border:1px solid #27272a;border-radius:16px;padding:32px;">
+          <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0;white-space:pre-wrap;">${body.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+        </td></tr>
+        <tr><td style="padding-top:24px;text-align:center;">
+          <p style="color:#71717a;font-size:12px;margin:0;">© 2026 Meteorfy Inc.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+      await resend.emails.send({ from: FROM, to, subject, html });
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error("Error sending admin email:", err);
+      res.status(500).json({ message: err.message || "Erro ao enviar email" });
+    }
+  });
+
   // Admin: approve / reject individual mobile sales
   app.post("/api/admin/sales/:id/approve", requireAuth, async (req, res) => {
     try {
