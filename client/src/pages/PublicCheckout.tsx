@@ -317,6 +317,21 @@ export default function PublicCheckout() {
       toast({ title: "Erro", description: "Preencha seu nome e e-mail para continuar.", variant: "destructive" });
       return;
     }
+    if (!formData.email.includes("@")) {
+      setShowErrors(true);
+      toast({ title: "Erro", description: "O e-mail deve conter @.", variant: "destructive" });
+      return;
+    }
+    if (!formData.confirmEmail) {
+      setShowErrors(true);
+      toast({ title: "Erro", description: "Preencha a confirmação do e-mail.", variant: "destructive" });
+      return;
+    }
+    if (formData.email !== formData.confirmEmail) {
+      setShowErrors(true);
+      toast({ title: "Erro", description: "Os e-mails não coincidem.", variant: "destructive" });
+      return;
+    }
     if (!mobilePhone) {
       setShowPhoneError(true);
       toast({ title: "Erro", description: "Insira o número de telemóvel.", variant: "destructive" });
@@ -384,7 +399,17 @@ export default function PublicCheckout() {
       toast({ title: "Erro", description: "Preencha seu nome e e-mail para continuar.", variant: "destructive" });
       throw new Error("Validation failed");
     }
-    if (formData.confirmEmail && formData.email !== formData.confirmEmail) {
+    if (!formData.email.includes("@")) {
+      setShowErrors(true);
+      toast({ title: "Erro", description: "O e-mail deve conter @.", variant: "destructive" });
+      throw new Error("Invalid email");
+    }
+    if (!formData.confirmEmail) {
+      setShowErrors(true);
+      toast({ title: "Erro", description: "Preencha a confirmação do e-mail.", variant: "destructive" });
+      throw new Error("Confirm email required");
+    }
+    if (formData.email !== formData.confirmEmail) {
       setShowErrors(true);
       toast({ title: "Erro", description: "Os e-mails não coincidem.", variant: "destructive" });
       throw new Error("Email mismatch");
@@ -571,11 +596,11 @@ export default function PublicCheckout() {
             <div className="p-4 space-y-4">
               <div className="space-y-1">
                 <label className="block text-[11px]">{t.emailLabel}</label>
-                <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder={t.emailPlaceholder} className={`w-full h-11 px-3 rounded-md border text-sm focus:outline-none focus:ring-1 ${showErrors && !formData.email ? 'border-red-500' : 'border-gray-300'}`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
+                <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder={t.emailPlaceholder} className={`w-full h-11 px-3 rounded-md border text-sm focus:outline-none focus:ring-1 ${showErrors && (!formData.email || !formData.email.includes("@")) ? 'border-red-500' : 'border-gray-300'}`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
               </div>
               <div className="space-y-1">
                 <label className="block text-[11px]">{t.confirmEmailLabel}</label>
-                <input type="email" value={formData.confirmEmail} onChange={(e) => setFormData({ ...formData, confirmEmail: e.target.value })} placeholder={t.confirmEmailPlaceholder} className={`w-full h-11 px-3 rounded-md border text-sm focus:outline-none focus:ring-1 ${showErrors && formData.email && formData.confirmEmail && formData.email !== formData.confirmEmail ? 'border-red-500' : 'border-gray-300'}`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
+                <input type="email" value={formData.confirmEmail} onChange={(e) => setFormData({ ...formData, confirmEmail: e.target.value })} placeholder={t.confirmEmailPlaceholder} className={`w-full h-11 px-3 rounded-md border text-sm focus:outline-none focus:ring-1 ${showErrors && (!formData.confirmEmail || formData.email !== formData.confirmEmail) ? 'border-red-500' : 'border-gray-300'}`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
                 {showErrors && formData.email && formData.confirmEmail && formData.email !== formData.confirmEmail && (
                   <p className="text-red-500 text-[11px] mt-1">Os e-mails não coincidem</p>
                 )}
