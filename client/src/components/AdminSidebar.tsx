@@ -8,7 +8,6 @@ import {
   Shield,
   ArrowDownToLine,
   Trophy,
-  Percent,
   Receipt,
   Mail,
 } from "lucide-react";
@@ -27,7 +26,6 @@ const navItems = [
   { href: "/admin/withdrawals", label: "Aprovação de Saques", icon: ArrowDownToLine },
   { href: "/admin/email", label: "Enviar Email", icon: Mail },
   { href: "/admin/revenue-ranking", label: "Ranking de Faturamento", icon: Trophy },
-  { href: "/admin/rules-fees", label: "Regras e Taxas", icon: Percent },
 ];
 
 export function AdminSidebar() {
