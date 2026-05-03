@@ -33,8 +33,6 @@ import Profile from "@/pages/Profile";
 import MembersArea from "@/pages/MembersArea";
 import FAQ from "@/pages/FAQ";
 import Help from "@/pages/Help";
-import Support from "@/pages/Support";
-import AdminSupport from "@/pages/AdminSupport";
 import { ChatSupport } from "@/components/ChatSupport";
 import { useUser } from "@/hooks/use-user";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -86,7 +84,6 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/members-area" component={MembersArea} />
       <Route path="/faq" component={FAQ} />
-      <Route path="/support" component={Support} />
       
       {/* Admin Routes */}
       <Route path="/admin-login" component={AdminLogin} />
@@ -99,7 +96,6 @@ function Router() {
       <Route path="/admin/revenue-ranking" component={AdminRevenueRanking} />
       <Route path="/admin/rules-fees" component={AdminRulesFees} />
       <Route path="/admin/settings" component={AdminSettings} />
-      <Route path="/admin/support" component={AdminSupport} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />

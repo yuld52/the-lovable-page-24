@@ -13,7 +13,6 @@ import {
   DollarSign,
   Folder,
   Users,
-  LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStats } from "@/hooks/use-stats";
@@ -210,18 +209,6 @@ export function Sidebar() {
             >
               <DollarSign size={18} strokeWidth={2.5} />
               Financeiro
-            </button>
-          </Link>
-
-          <Link href="/support">
-            <button
-              className={cn(
-                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-                location === "/support" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
-              )}
-            >
-              <LifeBuoy size={18} strokeWidth={2.5} />
-              Suporte
             </button>
           </Link>
 
