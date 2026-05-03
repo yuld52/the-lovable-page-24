@@ -3,12 +3,10 @@ import {
   LayoutDashboard,
   Package,
   Users,
-  Settings,
   LogOut,
   Shield,
   ArrowDownToLine,
   Trophy,
-  Receipt,
   Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,7 +20,6 @@ const navItems = [
   { href: "/admin", label: "Visão Geral", icon: LayoutDashboard, exact: true },
   { href: "/admin/products", label: "Aprovação de Produtos", icon: Package },
   { href: "/admin/users", label: "Gerenciar Usuários", icon: Users },
-  { href: "/admin/sales", label: "Aprovação de Vendas", icon: Receipt },
   { href: "/admin/withdrawals", label: "Aprovação de Saques", icon: ArrowDownToLine },
   { href: "/admin/email", label: "Enviar Email", icon: Mail },
   { href: "/admin/revenue-ranking", label: "Ranking de Faturamento", icon: Trophy },
