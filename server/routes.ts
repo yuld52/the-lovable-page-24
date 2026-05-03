@@ -1,4 +1,4 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import type { Application, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { neonStorage as storage, getPool } from "./neon-storage";
 import { z } from "zod";
@@ -22,8 +22,8 @@ const withdrawCodes = new Map<string, { code: string; expiresAt: number }>();
 // Cleanup expired entries every 10 minutes
 setInterval(() => {
   const now = Date.now();
-  for (const [k, v] of verifCodes) { if (v.expiresAt < now) verifCodes.delete(k); }
-  for (const [k, v] of withdrawCodes) { if (v.expiresAt < now) withdrawCodes.delete(k); }
+  verifCodes.forEach((v, k) => { if (v.expiresAt < now) verifCodes.delete(k); });
+  withdrawCodes.forEach((v, k) => { if (v.expiresAt < now) withdrawCodes.delete(k); });
 }, 10 * 60 * 1000);
 
 function fmtUsd(cents: number) { return `$${(cents / 100).toFixed(2)} USD`; }
@@ -34,7 +34,7 @@ const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
 export async function registerRoutes(
   httpServer: Server,
-  app: Express
+  app: Application
 ): Promise<Server> {
   registerTrackingRoutes(app, storage as any);
   registerChatRoutes(app);
@@ -1089,7 +1089,7 @@ export async function registerRoutes(
         const email = fu.email || dbEmailMap[fu.uid] || fu.uid;
         merged.set(fu.uid, { id: fu.uid, uid: fu.uid, email, username: email, createdAt: fu.createdAt || null, disabled: fu.disabled || false, products: pCnt[fu.uid] || 0, sales: sCnt[fu.uid] || 0, withdrawals: wCnt[fu.uid] || 0 });
       }
-      for (const uid of dbUids) {
+      Array.from(dbUids).forEach(uid => {
         const email = dbEmailMap[uid] || uid;
         if (!merged.has(uid)) {
           merged.set(uid, { id: uid, uid, email, username: email, createdAt: null, disabled: false, products: pCnt[uid] || 0, sales: sCnt[uid] || 0, withdrawals: wCnt[uid] || 0 });
@@ -1098,7 +1098,7 @@ export async function registerRoutes(
           ex.products = pCnt[uid] || 0; ex.sales = sCnt[uid] || 0; ex.withdrawals = wCnt[uid] || 0;
           if (!ex.email || ex.email === uid) { ex.email = email; ex.username = email; }
         }
-      }
+      });
 
       const users = Array.from(merged.values()).sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
       res.json(users);

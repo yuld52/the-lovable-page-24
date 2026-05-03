@@ -83,7 +83,7 @@ export async function getSubscriptions(userId: string) {
     // 3. Firestore — last resort
     try {
         const dbSubs = await adminDb.collection("pushSubscriptions").where("userId", "==", userId).get();
-        dbSubs.forEach(doc => {
+        dbSubs.forEach((doc: any) => {
             const d = doc.data();
             if (!byEndpoint.has(d.endpoint)) byEndpoint.set(d.endpoint, d);
         });

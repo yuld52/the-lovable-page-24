@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         query += ` ORDER BY created_at DESC`;
         
         const result = await client.query(query, params);
-        return res.json(result.rows.map(row => toCamelCase(row)));
+        return res.json(result.rows.map((row: any) => toCamelCase(row)));
       }
 
       if (req.method === "POST") {

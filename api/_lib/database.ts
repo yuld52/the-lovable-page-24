@@ -1,30 +1,27 @@
-import { Pool } from "pg";
+import { Pool, neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
 
-// Neon serverless connection - no pooling needed
-const connectionString = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL || "";
+neonConfig.webSocketConstructor = ws;
+
+const connectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || "";
 
 if (!connectionString) {
-  console.error("DATABASE_URL or NEON_DATABASE_URL is required");
+  console.error("NEON_DATABASE_URL or DATABASE_URL is required");
 }
 
-// For Neon serverless, we create a new connection for each request
-// No connection pooling in serverless
 export async function getDbClient() {
   if (!connectionString) {
     throw new Error("Database URL not configured");
   }
 
-  const client = new Pool({ 
+  const client = new Pool({
     connectionString,
-    max: 1, // Serverless: only need 1 connection per invocation
-    idleTimeoutMillis: 0,
+    max: 1,
   });
 
   return client;
 }
 
-// Helper to convert snake_case to camelCase
 export function toCamelCase(obj: any): any {
   if (Array.isArray(obj)) {
     return obj.map(v => toCamelCase(v));
@@ -39,7 +36,6 @@ export function toCamelCase(obj: any): any {
   return obj;
 }
 
-// Helper to convert camelCase to snake_case
 export function toSnakeCase(obj: any): any {
   if (Array.isArray(obj)) {
     return obj.map(v => toSnakeCase(v));

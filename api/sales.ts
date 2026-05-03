@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const params: any[] = [userId];
         
         const result = await client.query(query, params);
-        return res.json(result.rows.map(row => toCamelCase(row)));
+        return res.json(result.rows.map((row: any) => toCamelCase(row)));
       }
 
       return res.status(405).json({ message: "Method not allowed" });

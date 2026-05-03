@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Application } from "express";
 import crypto from "crypto";
 import { adminDb } from "./firebase-admin";
 import type { FirestoreStorage } from "./firestore-storage";
@@ -62,7 +62,7 @@ async function insertTrackingLog(row: {
   }
 }
 
-export function registerTrackingRoutes(app: Express, storage: FirestoreStorage) {
+export function registerTrackingRoutes(app: Application, storage: FirestoreStorage) {
   // Top-of-funnel + checkout intent events (public)
   app.post("/api/tracking/event", async (req, res) => {
     try {

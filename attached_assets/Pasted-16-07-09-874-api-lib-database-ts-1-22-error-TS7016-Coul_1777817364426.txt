@@ -1,0 +1,195 @@
+16:07:09.874 api/_lib/database.ts(1,22): error TS7016: Could not find a declaration file for module 'pg'. '/vercel/path0/node_modules/pg/esm/index.mjs' implicitly has an 'any' type.
+16:07:15.080 api/checkouts.ts(34,41): error TS7006: Parameter 'row' implicitly has an 'any' type.
+16:07:18.933 api/index.ts(10,24): error TS7006: Parameter '_res' implicitly has an 'any' type.
+16:07:18.934 api/index.ts(10,30): error TS7006: Parameter 'buf' implicitly has an 'any' type.
+16:07:18.934 api/index.ts(28,17): error TS2339: Property 'headersSent' does not exist on type 'Response<any, Record<string, any>>'.
+16:07:18.935 api/index.ts(28,37): error TS2349: This expression is not callable.
+16:07:18.935 api/index.ts(29,13): error TS2339: Property 'status' does not exist on type 'Response<any, Record<string, any>>'.
+16:07:20.114 server/routes.ts(65,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.115 server/routes.ts(65,80): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.115 server/routes.ts(89,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.115 server/routes.ts(89,36): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.115 server/routes.ts(89,41): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.115 server/routes.ts(97,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.115 server/routes.ts(97,55): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.115 server/routes.ts(97,60): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.115 server/routes.ts(111,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.115 server/routes.ts(111,62): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.115 server/routes.ts(111,67): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.115 server/routes.ts(129,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.115 server/routes.ts(129,44): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.115 server/routes.ts(129,49): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.115 server/routes.ts(146,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.115 server/routes.ts(146,45): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.116 server/routes.ts(146,50): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.118 server/routes.ts(159,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.118 server/routes.ts(159,55): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.118 server/routes.ts(159,60): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.118 server/routes.ts(176,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.118 server/routes.ts(176,44): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.119 server/routes.ts(176,49): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.119 server/routes.ts(205,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.119 server/routes.ts(205,44): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.119 server/routes.ts(205,49): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.119 server/routes.ts(220,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.119 server/routes.ts(220,48): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.119 server/routes.ts(220,53): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.119 server/routes.ts(231,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.122 server/routes.ts(231,49): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.123 server/routes.ts(231,54): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.123 server/routes.ts(274,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.123 server/routes.ts(274,39): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.123 server/routes.ts(274,44): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.123 server/routes.ts(285,7): error TS2339: Property 'patch' does not exist on type 'Express'.
+16:07:20.123 server/routes.ts(285,54): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.123 server/routes.ts(285,59): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.123 server/routes.ts(329,7): error TS2339: Property 'delete' does not exist on type 'Express'.
+16:07:20.123 server/routes.ts(329,55): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.123 server/routes.ts(329,60): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.123 server/routes.ts(340,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.124 server/routes.ts(340,49): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.124 server/routes.ts(340,54): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.124 server/routes.ts(351,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.124 server/routes.ts(351,50): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.124 server/routes.ts(351,55): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.124 server/routes.ts(363,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.124 server/routes.ts(363,53): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.124 server/routes.ts(363,58): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.124 server/routes.ts(375,7): error TS2339: Property 'patch' does not exist on type 'Express'.
+16:07:20.124 server/routes.ts(375,55): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.124 server/routes.ts(375,60): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.125 server/routes.ts(386,7): error TS2339: Property 'delete' does not exist on type 'Express'.
+16:07:20.125 server/routes.ts(386,56): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.125 server/routes.ts(386,61): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.125 server/routes.ts(397,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.125 server/routes.ts(397,45): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.125 server/routes.ts(397,50): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.125 server/routes.ts(410,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.125 server/routes.ts(410,48): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.125 server/routes.ts(410,53): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.125 server/routes.ts(441,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.125 server/routes.ts(441,49): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.127 server/routes.ts(441,54): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.127 server/routes.ts(453,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.127 server/routes.ts(453,45): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.128 server/routes.ts(453,50): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.128 server/routes.ts(472,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.128 server/routes.ts(472,48): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.128 server/routes.ts(472,53): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.128 server/routes.ts(497,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.128 server/routes.ts(497,55): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.128 server/routes.ts(497,60): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.128 server/routes.ts(520,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.128 server/routes.ts(520,47): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.129 server/routes.ts(520,52): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.129 server/routes.ts(541,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.130 server/routes.ts(541,43): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.130 server/routes.ts(541,48): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.130 server/routes.ts(560,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.130 server/routes.ts(560,47): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.130 server/routes.ts(560,52): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.130 server/routes.ts(617,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.130 server/routes.ts(617,40): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.130 server/routes.ts(617,45): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.130 server/routes.ts(765,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.130 server/routes.ts(765,47): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.130 server/routes.ts(765,52): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.130 server/routes.ts(881,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.130 server/routes.ts(881,57): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.130 server/routes.ts(881,62): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.131 server/routes.ts(1033,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.131 server/routes.ts(1033,48): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.131 server/routes.ts(1033,53): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.131 server/routes.ts(1111,7): error TS2339: Property 'delete' does not exist on type 'Express'.
+16:07:20.131 server/routes.ts(1111,56): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.131 server/routes.ts(1111,61): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.131 server/routes.ts(1123,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.131 server/routes.ts(1123,49): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.131 server/routes.ts(1123,54): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.131 server/routes.ts(1136,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.131 server/routes.ts(1136,51): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.131 server/routes.ts(1136,56): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.131 server/routes.ts(1147,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.131 server/routes.ts(1147,52): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.131 server/routes.ts(1147,57): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.131 server/routes.ts(1187,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.132 server/routes.ts(1187,70): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.132 server/routes.ts(1187,75): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.132 server/routes.ts(1209,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.132 server/routes.ts(1209,72): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.132 server/routes.ts(1209,77): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.132 server/routes.ts(1232,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.132 server/routes.ts(1232,57): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.132 server/routes.ts(1232,62): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.132 server/routes.ts(1246,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.132 server/routes.ts(1246,70): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.132 server/routes.ts(1246,75): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.132 server/routes.ts(1279,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.132 server/routes.ts(1279,69): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.133 server/routes.ts(1279,74): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.133 server/routes.ts(1313,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.133 server/routes.ts(1313,51): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.133 server/routes.ts(1313,56): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.133 server/routes.ts(1326,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.133 server/routes.ts(1326,57): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.134 server/routes.ts(1326,62): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.134 server/routes.ts(1364,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.134 server/routes.ts(1364,64): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.134 server/routes.ts(1364,69): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.134 server/routes.ts(1377,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.134 server/routes.ts(1377,63): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.134 server/routes.ts(1377,68): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.135 server/routes.ts(1391,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.135 server/routes.ts(1391,54): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.135 server/routes.ts(1391,59): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.135 server/routes.ts(1403,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.135 server/routes.ts(1403,61): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.135 server/routes.ts(1403,66): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.135 server/routes.ts(1431,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.135 server/routes.ts(1431,60): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.136 server/routes.ts(1431,65): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.136 server/routes.ts(1460,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.136 server/routes.ts(1460,53): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.136 server/routes.ts(1460,58): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.136 server/routes.ts(1470,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.136 server/routes.ts(1470,54): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.136 server/routes.ts(1470,59): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.136 server/routes.ts(1498,7): error TS2339: Property 'delete' does not exist on type 'Express'.
+16:07:20.137 server/routes.ts(1498,60): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.137 server/routes.ts(1498,65): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.137 server/routes.ts(1509,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.137 server/routes.ts(1509,55): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.137 server/routes.ts(1509,60): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.137 server/routes.ts(1522,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.137 server/routes.ts(1522,61): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.138 server/routes.ts(1522,66): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.138 server/routes.ts(1534,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.138 server/routes.ts(1534,62): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.138 server/routes.ts(1534,67): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.138 server/routes.ts(1547,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.138 server/routes.ts(1547,42): error TS7006: Parameter '_req' implicitly has an 'any' type.
+16:07:20.138 server/routes.ts(1547,48): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.139 server/routes.ts(1566,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.139 server/routes.ts(1566,61): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.139 server/routes.ts(1566,66): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.139 server/routes.ts(1656,7): error TS2339: Property 'get' does not exist on type 'Express'.
+16:07:20.139 server/routes.ts(1656,34): error TS7006: Parameter '_req' implicitly has an 'any' type.
+16:07:20.139 server/routes.ts(1656,40): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.829 server/trackingRoutes.ts(67,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.830 server/trackingRoutes.ts(67,42): error TS7006: Parameter 'req' implicitly has an 'any' type.
+16:07:20.830 server/trackingRoutes.ts(67,47): error TS7006: Parameter 'res' implicitly has an 'any' type.
+16:07:20.854 server/chat.ts(17,7): error TS2339: Property 'post' does not exist on type 'Express'.
+16:07:20.855 server/chat.ts(19,32): error TS2339: Property 'body' does not exist on type 'Request<core.ParamsDictionary, any, any, core.Query, Record<string, any>>'.
+16:07:20.855 server/chat.ts(22,20): error TS2339: Property 'status' does not exist on type 'Response<any, Record<string, any>>'.
+16:07:20.855 server/chat.ts(225,20): error TS2339: Property 'status' does not exist on type 'Response<any, Record<string, any>>'.
+16:07:20.855 server/chat.ts(233,11): error TS2339: Property 'json' does not exist on type 'Response<any, Record<string, any>>'.
+16:07:20.855 server/chat.ts(240,11): error TS2339: Property 'status' does not exist on type 'Response<any, Record<string, any>>'.
+16:07:21.012 server/middleware/auth.ts(20,26): error TS2339: Property 'headers' does not exist on type 'Request<core.ParamsDictionary, any, any, core.Query, Record<string, any>>'.
+16:07:21.013 server/middleware/auth.ts(23,16): error TS2339: Property 'status' does not exist on type 'Response<any, Record<string, any>>'.
+16:07:21.014 server/middleware/auth.ts(32,18): error TS2339: Property 'status' does not exist on type 'Response<any, Record<string, any>>'.
+16:07:21.014 server/middleware/auth.ts(48,5): error TS2349: This expression is not callable.
+16:07:21.014 server/middleware/auth.ts(54,16): error TS2339: Property 'status' does not exist on type 'Response<any, Record<string, any>>'.
+16:07:21.057 server/services/notification.ts(86,24): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+16:07:21.074 server/services/e2payments.ts(1,19): error TS2307: Cannot find module 'axios' or its corresponding type declarations.
+16:07:25.938 api/products.ts(44,41): error TS7006: Parameter 'row' implicitly has an 'any' type.
+16:07:29.219 api/sales.ts(27,41): error TS7006: Parameter 'row' implicitly has an 'any' type.
