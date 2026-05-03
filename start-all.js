@@ -3,10 +3,9 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const tsxBin = path.join(__dirname, 'node_modules', '.bin', 'tsx');
 
 console.log('Starting Meteorfy server...');
-const server = spawn(tsxBin, ['--watch', 'server/index.ts'], {
+const server = spawn('npx', ['tsx', '--watch', 'server/index.ts'], {
     stdio: 'inherit',
     shell: false,
     cwd: __dirname,
