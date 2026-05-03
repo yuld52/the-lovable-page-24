@@ -152,9 +152,14 @@ function ProductDetailDialog({
               label="Preço"
               value={
                 <span className="text-lg font-bold text-white">
-                  {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-                    (product.price || 0) / 100
-                  )}
+                  {(() => {
+                    const cur = (product.currency || "USD").toUpperCase();
+                    try {
+                      return new Intl.NumberFormat(cur === "MZN" ? "pt-MZ" : "en-US", { style: "currency", currency: cur }).format((product.price || 0) / 100);
+                    } catch {
+                      return `${cur} ${((product.price || 0) / 100).toFixed(2)}`;
+                    }
+                  })()}
                 </span>
               }
             />
@@ -393,9 +398,14 @@ export default function AdminProducts() {
                           </td>
                           <td className="px-6 py-4">
                             <span className="text-sm font-semibold text-white">
-                              {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-                                (p.price || 0) / 100
-                              )}
+                              {(() => {
+                                const cur = (p.currency || "USD").toUpperCase();
+                                try {
+                                  return new Intl.NumberFormat(cur === "MZN" ? "pt-MZ" : "en-US", { style: "currency", currency: cur }).format((p.price || 0) / 100);
+                                } catch {
+                                  return `${cur} ${((p.price || 0) / 100).toFixed(2)}`;
+                                }
+                              })()}
                             </span>
                           </td>
                           <td className="px-6 py-4">
