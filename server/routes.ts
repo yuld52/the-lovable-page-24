@@ -460,13 +460,13 @@ export async function registerRoutes(
         productId: Number(productId),
         userId: checkout.ownerId,
         amount: totalUsdCents || 0,
-        status: "pending",
+        status: "paid",
         customerEmail: customerData?.email || null,
       });
 
       console.log(`[MOBILE PAYMENT] ${paymentMethod.toUpperCase()} sale created — id=${sale.id}, phone=${mobilePhone}, amount=${totalMinor} ${currency}`);
 
-      return res.json({ id: sale.id, status: "pending", paymentMethod, message: "Pedido registado. Aguarde confirmação do pagamento." });
+      return res.json({ id: sale.id, status: "paid", paymentMethod, message: "Pagamento registado com sucesso." });
     } catch (err: any) {
       console.error("Error creating mobile sale:", err);
       return res.status(500).json({ message: err.message || "Erro ao registar pedido" });
