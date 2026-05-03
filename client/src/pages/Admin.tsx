@@ -1,13 +1,17 @@
 import { useEffect } from "react";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Shield, Users, Package, ShoppingCart, Loader2, ArrowDownToLine, Receipt } from "lucide-react";
+import { Shield, Users, Package, ShoppingCart, Loader2, ArrowDownToLine, Receipt, TrendingUp } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAdminProducts, useAdminCheckouts } from "@/hooks/use-admin";
+import { useAdminProducts, useAdminCheckouts, useAdminRevenueRanking } from "@/hooks/use-admin";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { useUser } from "@/hooks/use-user";
+
+function fmtMT(cents: number) {
+  return new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100) + " MT";
+}
 
 const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
@@ -26,6 +30,7 @@ export default function Admin() {
 
   const { data: allProducts, isLoading: loadingProducts } = useAdminProducts();
   const { data: checkouts, isLoading: loadingCheckouts } = useAdminCheckouts();
+  const { data: ranking } = useAdminRevenueRanking();
 
   const { data: withdrawals, isLoading: loadingWithdrawals } = useQuery<any[]>({
     queryKey: ["/api/admin/withdrawals"],
@@ -66,6 +71,9 @@ export default function Admin() {
   const isLoading = loadingUsers || loadingProducts || loadingCheckouts || loadingWithdrawals || loadingSales;
 
   const pendingWithdrawals = withdrawals?.filter(w => w.status === 'pending') || [];
+  const totalRevenueMT = ranking?.reduce((sum: number, r: any) => sum + (r.totalRevenue || 0), 0) || 0;
+  const paidSales = allSales?.filter(s => s.status === 'paid' || s.status === 'captured') || [];
+  const pendingSales = allSales?.filter(s => s.status === 'pending') || [];
 
   if (isLoading) {
     return (
@@ -126,9 +134,20 @@ export default function Admin() {
                 <CardContent>
                     <div className="text-3xl font-bold text-white">{allSales?.length || 0}</div>
                     <div className="flex gap-3 mt-1">
-                      <p className="text-xs text-emerald-400">{allSales?.filter(s => s.status === 'paid').length || 0} pagas</p>
-                      <p className="text-xs text-amber-400">{allSales?.filter(s => s.status === 'pending').length || 0} pendentes</p>
+                      <p className="text-xs text-emerald-400">{paidSales.length} pagas</p>
+                      <p className="text-xs text-amber-400">{pendingSales.length} pendentes</p>
                     </div>
+                </CardContent>
+                </Card>
+
+                <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">FATURAMENTO TOTAL</CardTitle>
+                    <TrendingUp className="w-4 h-4 text-emerald-500" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold text-emerald-400">{fmtMT(totalRevenueMT)}</div>
+                    <p className="text-xs text-zinc-500 mt-1">Soma de todas as vendas pagas</p>
                 </CardContent>
                 </Card>
 

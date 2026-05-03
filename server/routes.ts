@@ -1301,12 +1301,21 @@ export async function registerRoutes(
         const result = await conn.query(`
           SELECT
             c.owner_id,
-            COALESCE(SUM(s.amount), 0)::bigint AS total_revenue,
+            COALESCE(SUM(
+              CASE COALESCE(p.currency, 'USD')
+                WHEN 'MZN' THEN s.amount
+                WHEN 'USD' THEN s.amount * 64
+                WHEN 'BRL' THEN s.amount * 11
+                WHEN 'EUR' THEN s.amount * 71
+                ELSE s.amount * 64
+              END
+            ), 0)::bigint AS total_revenue,
             COUNT(s.id)::int AS total_sales,
             MAX(s.created_at) AS last_sale_at
           FROM checkouts c
           LEFT JOIN sales s ON s.checkout_id = c.id
             AND s.status IN ('paid', 'captured')
+          LEFT JOIN products p ON p.id = s.product_id
           WHERE c.owner_id IS NOT NULL
           GROUP BY c.owner_id
           HAVING COUNT(s.id) > 0
