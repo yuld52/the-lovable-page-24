@@ -466,7 +466,13 @@ export default function CreateProduct() {
                       type="number"
                       min="0"
                       step="0.01"
-                      className={`bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500 ${showErrors && !newProduct.price ? 'border-red-500/50 focus-visible:ring-red-500' : ''}`}
+                      className={`bg-black/40 h-11 focus-visible:ring-purple-500 ${
+                        !newProduct.price
+                          ? 'border-zinc-800'
+                          : isPriceBelowMin()
+                            ? 'border-red-500 focus-visible:ring-red-500'
+                            : 'border-zinc-800'
+                      }`}
                       value={newProduct.price}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -476,15 +482,11 @@ export default function CreateProduct() {
                       }}
                       placeholder="Ex: 19.90"
                     />
-                    {showErrors && !newProduct.price && (
-                      <p className="text-[10px] text-red-500 font-medium ml-1">Campo obrigatório</p>
-                    )}
-                    {showErrors && newProduct.price && isPriceBelowMin() && (
+                    {newProduct.price && isPriceBelowMin() ? (
                       <p className="text-[10px] text-red-500 font-medium ml-1">
                         Preço mínimo: {newProduct.currency === "MZN" ? "50 MT" : `3,90 ${newProduct.currency}`}
                       </p>
-                    )}
-                    {!showErrors && (
+                    ) : (
                       <p className="text-[11px] text-zinc-500 ml-1">
                         Mínimo: {newProduct.currency === "MZN" ? "50 MT" : `3,90 ${newProduct.currency}`}
                       </p>
@@ -796,7 +798,7 @@ export default function CreateProduct() {
               <Button
                 className="flex-[2] h-12 bg-purple-600 hover:bg-purple-500 text-white font-bold border-0 shadow-none"
                 onClick={() => (step === 3 ? handleCreate() : handleNext())}
-                disabled={createProduct.isPending || isUploadingDeliveryFiles || isUploadingImage}
+                disabled={createProduct.isPending || isUploadingDeliveryFiles || isUploadingImage || !isStepValid()}
               >
                 {createProduct.isPending || isUploadingDeliveryFiles ? (
                   <span className="inline-flex items-center gap-2">
