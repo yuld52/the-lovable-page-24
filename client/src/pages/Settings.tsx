@@ -60,19 +60,6 @@ const defaultLocal = {
 
 const integrations: Integration[] = [
   {
-    id: "e2payments",
-    name: "e2Payments",
-    description: "M-Pesa & e-Mola (Moçambique)",
-    icon: "https://e2payments.explicador.co.mz/images/logo.png",
-    configured: (s) => !!s.e2paymentsClientId && !!s.e2paymentsClientSecret,
-    fields: [
-      { key: "e2paymentsClientId", label: "Client ID", placeholder: "O seu Client ID do e2payments" },
-      { key: "e2paymentsClientSecret", label: "Client Secret", placeholder: "O seu Client Secret", type: "password" },
-      { key: "e2paymentsMpesaWalletId", label: "Wallet ID — M-Pesa", placeholder: "ID da carteira M-Pesa" },
-      { key: "e2paymentsEmolaWalletId", label: "Wallet ID — e-Mola", placeholder: "ID da carteira e-Mola" },
-    ],
-  },
-  {
     id: "webhook",
     name: "Integração Webhook",
     description: "Notificações de vendas via URL",
