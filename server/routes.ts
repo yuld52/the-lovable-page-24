@@ -1312,23 +1312,6 @@ export async function registerRoutes(
       const conn = await getPool().connect();
 
       try {
-        // Debug: log raw sale amounts to diagnose revenue calculation
-        const debugRows = await conn.query(`
-          SELECT s.id, s.amount, s.status, s.payment_method,
-                 p.price AS product_price, p.currency AS product_currency, p.name AS product_name,
-                 COALESCE(p.currency, 'USD') AS effective_currency,
-                 CASE COALESCE(p.currency, 'USD')
-                   WHEN 'MZN' THEN s.amount
-                   WHEN 'USD' THEN s.amount * 64
-                   ELSE s.amount * 64
-                 END AS revenue_mzn_minor
-          FROM sales s
-          LEFT JOIN products p ON p.id = s.product_id
-          WHERE s.status IN ('paid', 'captured')
-          ORDER BY s.id DESC LIMIT 20
-        `);
-        console.log("[revenue-ranking DEBUG] individual sales:", JSON.stringify(debugRows.rows));
-
         const result = await conn.query(`
           SELECT
             c.owner_id,
