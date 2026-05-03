@@ -739,7 +739,7 @@ export default function PublicCheckout() {
                     {orderBumpProductsData.length > 0 && (
                       <div className="space-y-3">
                         {orderBumpProductsData.map(p => (
-                          <div key={p.id} className="rounded-lg border-2 border-dashed" style={{ borderColor: config.primaryColor }}>
+                          <div key={p.id} className="rounded-lg border" style={{ borderColor: config.primaryColor }}>
                             <div className="flex items-start gap-3 p-3">
                               <div className="flex-1">
                                 <h4 className="text-[17px] font-medium">{p.name}</h4>
@@ -780,7 +780,7 @@ export default function PublicCheckout() {
 
                     {/* Google Pay — show "coming soon" notice */}
                     {isGooglePay(selectedPaymentMethod) && (
-                      <div className="rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-5 flex flex-col items-center gap-2 text-center">
+                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 flex flex-col items-center gap-2 text-center">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg" style={{ backgroundColor: "#4285F4" }}>G</div>
                         <p className="text-sm font-semibold text-gray-700">Google Pay</p>
                         <p className="text-xs text-gray-400">Integração em breve. Por favor escolha outro método de pagamento.</p>
