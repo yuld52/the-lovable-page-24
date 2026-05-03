@@ -11,6 +11,7 @@ import { getVapidPublicKey, saveSubscription } from "./services/notification";
 
 import { registerTrackingRoutes } from "./trackingRoutes";
 import { registerChatRoutes } from "./chat";
+import { initiateE2Payment, makeReference } from "./services/e2payments";
 import { sendBuyerConfirmation, sendSellerNewSale, sendWithdrawalUpdate, sendWithdrawalReceived, sendProductApproved, sendProductRejected, sendNewBankAccount, sendWelcomeEmail } from "./email";
 
 function fmtUsd(cents: number) { return `$${(cents / 100).toFixed(2)} USD`; }
@@ -477,7 +478,80 @@ export async function registerRoutes(
     }
   });
 
-  // Mobile payment (M-Pesa / e-Mola) — creates a pending sale
+  // Poll sale status (used by frontend after mobile payment)
+  app.get("/api/sales/:id/status", async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      if (!id) return res.status(400).json({ message: "ID inválido" });
+      const conn = await getPool().connect();
+      try {
+        const r = await conn.query(`SELECT id, status FROM sales WHERE id = $1 LIMIT 1`, [id]);
+        if (!r.rows.length) return res.status(404).json({ message: "Venda não encontrada" });
+        return res.json({ id: r.rows[0].id, status: r.rows[0].status });
+      } finally { conn.release(); }
+    } catch (err: any) {
+      return res.status(500).json({ message: err.message });
+    }
+  });
+
+  // e2payments callback — called by e2payments when STK-push confirmed
+  app.post("/api/e2payments/callback", async (req, res) => {
+    try {
+      const body = req.body || {};
+      console.log("[E2PAY CALLBACK]", JSON.stringify(body));
+      // Try to extract reference from various possible field names
+      const ref: string = body.reference || body.ref || body.order_id || body.orderId || "";
+      // Reference format: MTF000001
+      const saleIdMatch = ref.match(/MTF(\d+)/i);
+      if (!saleIdMatch) {
+        return res.json({ status: "ignored", reason: "no reference" });
+      }
+      const saleId = Number(saleIdMatch[1]);
+      await storage.updateSaleStatus(saleId, "paid");
+
+      // Post-payment: send email & push
+      const conn = await getPool().connect();
+      try {
+        const r = await conn.query(
+          `SELECT s.*, p.name AS product_name, p.delivery_url, p.delivery_files, p.no_email_delivery, c.owner_id
+           FROM sales s
+           LEFT JOIN products p ON p.id = s.product_id
+           LEFT JOIN checkouts c ON c.id = s.checkout_id
+           WHERE s.id = $1 LIMIT 1`, [saleId]
+        );
+        if (r.rows.length) {
+          const row = r.rows[0];
+          if (row.customer_email) {
+            sendBuyerConfirmation({
+              to: row.customer_email,
+              productName: row.product_name || "",
+              amount: `${(row.amount / 100).toFixed(2)}`,
+              orderId: String(saleId),
+              paymentMethod: methodLabel(row.payment_method || ""),
+              deliveryUrl: row.no_email_delivery ? null : (row.delivery_url ?? null),
+              deliveryFiles: row.no_email_delivery ? [] : (row.delivery_files as string[] ?? []),
+            }).catch((e: any) => console.error("[E2PAY EMAIL]", e?.message));
+          }
+          if (row.owner_id) {
+            import("./services/notification").then(({ sendNotification }) => {
+              sendNotification({
+                userId: String(row.owner_id),
+                type: "sale_captured",
+                metadata: { amount: ((row.amount || 0) / 100).toFixed(2), currency: "MZN", productName: row.product_name || "" },
+              }).catch(() => {});
+            }).catch(() => {});
+          }
+        }
+      } finally { conn.release(); }
+
+      return res.json({ status: "ok" });
+    } catch (err: any) {
+      console.error("[E2PAY CALLBACK ERROR]", err);
+      return res.status(500).json({ message: err.message });
+    }
+  });
+
+  // Mobile payment (M-Pesa / e-Mola) — real STK push via e2payments if configured
   app.post("/api/sales/mobile", async (req, res) => {
     try {
       const { checkoutId, productId, currency, totalUsdCents, totalMinor, paymentMethod, mobilePhone, customerData } = req.body;
@@ -493,50 +567,97 @@ export async function registerRoutes(
       if (!checkout || !product) return res.status(404).json({ message: "Checkout/Produto não encontrado" });
       if (product.status !== "approved") return res.status(403).json({ message: "Produto não aprovado" });
 
-      const sale = await storage.createSale({
-        checkoutId: Number(checkoutId),
-        productId: Number(productId),
-        userId: checkout.ownerId,
-        amount: totalUsdCents || 0,
-        status: "paid",
-        customerEmail: customerData?.email || null,
-        paymentMethod,
-      });
+      // Load seller settings to check for e2payments credentials
+      let sellerSettings: any = checkout.ownerId ? await storage.getSettings(String(checkout.ownerId)) : null;
+      if (!sellerSettings) sellerSettings = await storage.getAnySettings();
 
-      console.log(`[MOBILE PAYMENT] ${paymentMethod.toUpperCase()} sale created — id=${sale.id}, phone=${mobilePhone}, amount=${totalMinor} ${currency}`);
+      const hasE2 =
+        sellerSettings?.e2paymentsClientId &&
+        sellerSettings?.e2paymentsClientSecret &&
+        (paymentMethod === "mpesa" ? sellerSettings?.e2paymentsMpesaWalletId : sellerSettings?.e2paymentsEmolaWalletId);
 
-      // ── Email to buyer with delivery (fire-and-forget) ──
-      if (customerData?.email) {
-        const mobileEmailAmount = `${(totalUsdCents / 100).toFixed(2)} USD`;
-        sendBuyerConfirmation({
-          to: customerData.email,
-          productName: product.name,
-          amount: mobileEmailAmount,
-          orderId: String(sale.id),
-          paymentMethod: methodLabel(paymentMethod),
-          deliveryUrl: product.noEmailDelivery ? null : (product.deliveryUrl ?? null),
-          deliveryFiles: product.noEmailDelivery ? [] : (product.deliveryFiles as string[] ?? []),
-        }).catch((e: any) => console.error("[EMAIL] buyer confirmation (mobile):", e?.message));
+      if (hasE2) {
+        // ── Real e2payments flow ──
+        // 1. Create sale as pending first so we have an ID for the reference
+        const sale = await storage.createSale({
+          checkoutId: Number(checkoutId),
+          productId: Number(productId),
+          userId: checkout.ownerId,
+          amount: totalUsdCents || 0,
+          status: "pending",
+          customerEmail: customerData?.email || null,
+          paymentMethod,
+        });
+
+        const reference = makeReference(sale.id);
+        const amountMajor = (totalMinor || totalUsdCents || 0) / 100;
+        const walletId = paymentMethod === "mpesa"
+          ? sellerSettings.e2paymentsMpesaWalletId
+          : sellerSettings.e2paymentsEmolaWalletId;
+
+        // Determine public callback URL
+        const host = (req as any).headers["x-forwarded-host"] || (req as any).headers.host || "";
+        const protocol = host.includes("replit") || host.includes("https") ? "https" : "http";
+        const callbackUrl = `${protocol}://${host}/api/e2payments/callback`;
+
+        try {
+          const e2res = await initiateE2Payment(paymentMethod as "mpesa" | "emola", {
+            clientId: sellerSettings.e2paymentsClientId,
+            clientSecret: sellerSettings.e2paymentsClientSecret,
+            walletId,
+            contact: mobilePhone.replace(/^258/, ""),
+            amount: amountMajor,
+            reference,
+            callbackUrl,
+          });
+          console.log(`[E2PAY] ${paymentMethod.toUpperCase()} STK push — saleId=${sale.id}, ref=${reference}, phone=${mobilePhone}, amount=${amountMajor}`, e2res);
+        } catch (e2err: any) {
+          // If e2payments call fails, delete the pending sale and surface the error
+          await storage.updateSaleStatus(sale.id, "failed").catch(() => {});
+          console.error("[E2PAY] initiate error:", e2err?.message);
+          return res.status(502).json({ message: e2err?.response?.data?.message || "Erro ao iniciar pagamento. Verifique o número e tente novamente." });
+        }
+
+        return res.json({ id: sale.id, status: "pending", paymentMethod, message: "Verifique o seu telemóvel e insira o PIN para confirmar o pagamento." });
+
+      } else {
+        // ── Fallback: immediate (no real gateway) ──
+        const sale = await storage.createSale({
+          checkoutId: Number(checkoutId),
+          productId: Number(productId),
+          userId: checkout.ownerId,
+          amount: totalUsdCents || 0,
+          status: "paid",
+          customerEmail: customerData?.email || null,
+          paymentMethod,
+        });
+
+        console.log(`[MOBILE PAYMENT] ${paymentMethod.toUpperCase()} sale created (no e2payments) — id=${sale.id}, phone=${mobilePhone}, amount=${totalMinor} ${currency}`);
+
+        if (customerData?.email) {
+          sendBuyerConfirmation({
+            to: customerData.email,
+            productName: product.name,
+            amount: `${(totalUsdCents / 100).toFixed(2)}`,
+            orderId: String(sale.id),
+            paymentMethod: methodLabel(paymentMethod),
+            deliveryUrl: product.noEmailDelivery ? null : (product.deliveryUrl ?? null),
+            deliveryFiles: product.noEmailDelivery ? [] : (product.deliveryFiles as string[] ?? []),
+          }).catch((e: any) => console.error("[EMAIL] buyer confirmation (mobile):", e?.message));
+        }
+
+        if (checkout.ownerId) {
+          import("./services/notification").then(({ sendNotification }) => {
+            sendNotification({
+              userId: String(checkout.ownerId),
+              type: "sale_captured",
+              metadata: { amount: ((totalUsdCents || 0) / 100).toFixed(2), currency: currency || "USD", productName: product?.name || "" },
+            }).catch((e: any) => console.error("[PUSH] Mobile payment notify error:", e?.message));
+          }).catch(() => {});
+        }
+
+        return res.json({ id: sale.id, status: "paid", paymentMethod, message: "Pagamento registado com sucesso." });
       }
-      // ────────────────────────────────────────────────────
-
-      // ── Push notification to seller (fire-and-forget) ──
-      if (checkout.ownerId) {
-        import("./services/notification").then(({ sendNotification }) => {
-          sendNotification({
-            userId: String(checkout.ownerId),
-            type: "sale_captured",
-            metadata: {
-              amount: ((totalUsdCents || 0) / 100).toFixed(2),
-              currency: currency || "USD",
-              productName: product?.name || "",
-            },
-          }).catch((e: any) => console.error("[PUSH] Mobile payment notify error:", e?.message));
-        }).catch(() => {});
-      }
-      // ────────────────────────────────────────────────────
-
-      return res.json({ id: sale.id, status: "paid", paymentMethod, message: "Pagamento registado com sucesso." });
     } catch (err: any) {
       console.error("Error creating mobile sale:", err);
       return res.status(500).json({ message: err.message || "Erro ao registar pedido" });

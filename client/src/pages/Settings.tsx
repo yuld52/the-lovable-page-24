@@ -52,9 +52,26 @@ const defaultLocal = {
   webhookUrl: "",
   webhookEvents: "sale.pending,sale.paid,sale.refunded",
   environment: "production",
+  e2paymentsClientId: "",
+  e2paymentsClientSecret: "",
+  e2paymentsMpesaWalletId: "",
+  e2paymentsEmolaWalletId: "",
 };
 
 const integrations: Integration[] = [
+  {
+    id: "e2payments",
+    name: "e2Payments",
+    description: "M-Pesa & e-Mola (Moçambique)",
+    icon: "https://e2payments.explicador.co.mz/images/logo.png",
+    configured: (s) => !!s.e2paymentsClientId && !!s.e2paymentsClientSecret,
+    fields: [
+      { key: "e2paymentsClientId", label: "Client ID", placeholder: "O seu Client ID do e2payments" },
+      { key: "e2paymentsClientSecret", label: "Client Secret", placeholder: "O seu Client Secret", type: "password" },
+      { key: "e2paymentsMpesaWalletId", label: "Wallet ID — M-Pesa", placeholder: "ID da carteira M-Pesa" },
+      { key: "e2paymentsEmolaWalletId", label: "Wallet ID — e-Mola", placeholder: "ID da carteira e-Mola" },
+    ],
+  },
   {
     id: "webhook",
     name: "Integração Webhook",
@@ -108,6 +125,7 @@ const integrations: Integration[] = [
 ];
 
 const integrationIconFallback: Record<string, string> = {
+  e2payments: "📱",
   webhook: "🔗",
   meta: "📘",
   utmify: "📊",
@@ -154,6 +172,10 @@ export default function Settings() {
         webhookUrl: (settings as any).webhookUrl || "",
         webhookEvents: (settings as any).webhookEvents || "sale.pending,sale.paid,sale.refunded",
         environment: settings.environment || "production",
+        e2paymentsClientId: (settings as any).e2paymentsClientId || "",
+        e2paymentsClientSecret: (settings as any).e2paymentsClientSecret || "",
+        e2paymentsMpesaWalletId: (settings as any).e2paymentsMpesaWalletId || "",
+        e2paymentsEmolaWalletId: (settings as any).e2paymentsEmolaWalletId || "",
       };
       setLocalSettings(s);
     }

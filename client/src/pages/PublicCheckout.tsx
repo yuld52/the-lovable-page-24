@@ -285,6 +285,8 @@ export default function PublicCheckout() {
   const [mobileSubmitting, setMobileSubmitting] = useState(false);
   const [showPhoneError, setShowPhoneError] = useState(false);
   const [showMobileModal, setShowMobileModal] = useState(false);
+  const [pendingSaleId, setPendingSaleId] = useState<number | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Validate Mozambique mobile prefix (strip country code 258 then check first 2 digits)
   const getMobilePhoneError = (method: string, phone: string): string => {
@@ -311,6 +313,43 @@ export default function PublicCheckout() {
   }, [product]);
 
   // Submit mobile payment (mpesa / emola)
+  // Stop polling helper
+  const stopPoll = () => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+  };
+
+  // Poll sale status until paid or timeout (3 min)
+  const startPolling = (saleId: number) => {
+    stopPoll();
+    let elapsed = 0;
+    const MAX = 180;
+    pollRef.current = setInterval(async () => {
+      elapsed += 4;
+      try {
+        const r = await fetch(`/api/sales/${saleId}/status`);
+        if (r.ok) {
+          const d = await r.json();
+          if (d.status === "paid" || d.status === "captured") {
+            stopPoll();
+            setShowMobileModal(false);
+            setPendingSaleId(null);
+            setIsPaid(true);
+            toast({ title: "Pagamento confirmado!", description: "O seu pagamento foi confirmado com sucesso." });
+          }
+        }
+      } catch { /* ignore network errors during polling */ }
+      if (elapsed >= MAX) {
+        stopPoll();
+        setShowMobileModal(false);
+        setPendingSaleId(null);
+        toast({ title: "Tempo expirado", description: "Não recebemos confirmação. Verifique o seu telemóvel e tente novamente.", variant: "destructive" });
+      }
+    }, 4000);
+  };
+
+  // Clean up poll on unmount
+  useEffect(() => () => stopPoll(), []);
+
   const handleMobileSubmit = async () => {
     if (!formData.email || !formData.name) {
       setShowErrors(true);
@@ -368,8 +407,16 @@ export default function PublicCheckout() {
         toast({ title: "Erro", description: data?.message || "Erro ao registar pedido.", variant: "destructive" });
         return;
       }
-      setIsPaid(true);
-      toast({ title: "Pagamento confirmado!", description: "O seu pagamento foi registado com sucesso." });
+      if (data.status === "pending") {
+        // e2payments STK push initiated — wait for PIN confirmation
+        setPendingSaleId(data.id);
+        startPolling(data.id);
+      } else {
+        // Immediate confirmation (no e2payments configured)
+        setShowMobileModal(false);
+        setIsPaid(true);
+        toast({ title: "Pagamento confirmado!", description: "O seu pagamento foi registado com sucesso." });
+      }
     } catch {
       setShowMobileModal(false);
       toast({ title: "Erro", description: "Sem ligação. Tente novamente.", variant: "destructive" });
@@ -924,26 +971,41 @@ export default function PublicCheckout() {
       {showMobileModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.55)" }}>
           <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl bg-white">
-            {/* Blue header */}
             <div className="flex flex-col items-center justify-center gap-3 px-6 py-8" style={{ background: "linear-gradient(135deg, #16a34a 0%, #15803d 100%)" }}>
               <div className="w-14 h-14 rounded-full border-4 border-white/30 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 text-white animate-spin" />
               </div>
-              <p className="text-white text-xl font-bold">Processando pagamento…</p>
+              <p className="text-white text-xl font-bold">
+                {pendingSaleId ? "Aguardando confirmação…" : "Processando pagamento…"}
+              </p>
             </div>
-            {/* Body */}
             <div className="px-6 py-6 space-y-4">
-              <p className="text-gray-700 text-sm text-center">
-                Um código USSD foi enviado para{" "}
-                <span className="font-semibold">+{mobilePhone}</span>
-              </p>
-              <p className="text-gray-800 text-base font-bold text-center">
-                Valor: {moneyFromUsdCents(calculateTotal())}
-              </p>
-              <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-center text-sm text-blue-800">
-                <span className="font-bold">Não feche esta página.</span>{" "}
-                Confirmaremos automaticamente quando você inserir o PIN.
-              </div>
+              {pendingSaleId ? (
+                <>
+                  <p className="text-gray-700 text-sm text-center">
+                    Um pedido de pagamento foi enviado para{" "}
+                    <span className="font-semibold">+{mobilePhone}</span>
+                  </p>
+                  <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-4 text-center space-y-1">
+                    <p className="text-green-800 text-base font-bold">Insira o seu PIN no telemóvel</p>
+                    <p className="text-green-700 text-sm">para confirmar o pagamento de <span className="font-semibold">{moneyFromUsdCents(calculateTotal())}</span></p>
+                  </div>
+                  <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-center text-sm text-blue-800">
+                    <span className="font-bold">Não feche esta página.</span>{" "}
+                    Confirmaremos automaticamente assim que o pagamento for aprovado.
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-700 text-sm text-center">
+                    A registar o seu pedido para{" "}
+                    <span className="font-semibold">+{mobilePhone}</span>
+                  </p>
+                  <p className="text-gray-800 text-base font-bold text-center">
+                    Valor: {moneyFromUsdCents(calculateTotal())}
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>
