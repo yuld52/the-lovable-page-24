@@ -629,6 +629,20 @@ export async function registerRoutes(
             if (isConfirmed) {
               await storage.updateSaleStatus(sale.id, "paid").catch(() => {});
               console.log(`[E2PAY] sale ${sale.id} marked PAID (sync confirmation)`);
+              // Push notification to seller
+              if (checkout.ownerId) {
+                import("./services/notification").then(({ sendNotification }) => {
+                  sendNotification({
+                    userId: String(checkout.ownerId),
+                    type: "sale_captured",
+                    metadata: {
+                      amount: ((totalUsdCents || 0) / 100).toFixed(2),
+                      currency: currency || "MZN",
+                      productName: product?.name || "",
+                    },
+                  }).catch((e: any) => console.error("[PUSH] e2pay notify error:", e?.message));
+                }).catch(() => {});
+              }
             }
           } catch (e2err: any) {
             const status = e2err?.response?.status;
