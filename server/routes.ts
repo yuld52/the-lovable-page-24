@@ -12,7 +12,16 @@ import { getVapidPublicKey, saveSubscription } from "./services/notification";
 import { registerTrackingRoutes } from "./trackingRoutes";
 import { registerChatRoutes } from "./chat";
 import { initiateE2Payment, makeReference, normalizeMzPhone } from "./services/e2payments";
-import { sendBuyerConfirmation, sendSellerNewSale, sendWithdrawalUpdate, sendWithdrawalReceived, sendProductApproved, sendProductRejected, sendNewBankAccount, sendWelcomeEmail } from "./email";
+import { sendBuyerConfirmation, sendSellerNewSale, sendWithdrawalUpdate, sendWithdrawalReceived, sendProductApproved, sendProductRejected, sendNewBankAccount, sendWelcomeEmail, sendVerificationCode } from "./email";
+
+// ── In-memory verification code store ──
+interface VerifEntry { code: string; uid: string; expiresAt: number; }
+const verifCodes = new Map<string, VerifEntry>(); // key: email (lowercase)
+// Cleanup expired entries every 10 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of verifCodes) { if (v.expiresAt < now) verifCodes.delete(k); }
+}, 10 * 60 * 1000);
 
 function fmtUsd(cents: number) { return `$${(cents / 100).toFixed(2)} USD`; }
 function fmtMzn(minor: number) { return `MZN ${(minor / 100).toFixed(2)}`; }
@@ -140,6 +149,51 @@ export async function registerRoutes(
       res.json({ ok: true });
     } catch (err: any) {
       res.status(500).json({ message: err.message });
+    }
+  });
+
+  // ── Send 6-digit verification code ──
+  app.post("/api/auth/send-verification-code", async (req, res) => {
+    try {
+      const { email, uid } = req.body;
+      if (!email || !uid) return res.status(400).json({ message: "email e uid são obrigatórios" });
+      const key = email.toLowerCase().trim();
+      const code = String(Math.floor(100000 + Math.random() * 900000));
+      verifCodes.set(key, { code, uid: String(uid), expiresAt: Date.now() + 15 * 60 * 1000 });
+      await sendVerificationCode({ to: key, code });
+      console.log(`[VERIF] code sent to ${key}`);
+      res.json({ ok: true });
+    } catch (err: any) {
+      console.error("[VERIF] send error:", err?.message);
+      res.status(500).json({ message: err.message || "Erro ao enviar código" });
+    }
+  });
+
+  // ── Verify code and activate account ──
+  app.post("/api/auth/verify-code", async (req, res) => {
+    try {
+      const { email, code } = req.body;
+      if (!email || !code) return res.status(400).json({ message: "email e código são obrigatórios" });
+      const key = email.toLowerCase().trim();
+      const entry = verifCodes.get(key);
+      if (!entry) return res.status(400).json({ message: "Código não encontrado ou expirado. Solicite um novo." });
+      if (Date.now() > entry.expiresAt) {
+        verifCodes.delete(key);
+        return res.status(400).json({ message: "Código expirado. Solicite um novo." });
+      }
+      if (entry.code !== String(code).trim()) {
+        return res.status(400).json({ message: "Código incorrecto. Verifique e tente novamente." });
+      }
+      // Mark email as verified in Firebase
+      await adminAuth.updateUser(entry.uid, { emailVerified: true });
+      verifCodes.delete(key);
+      console.log(`[VERIF] email verified for uid=${entry.uid}`);
+      // Send welcome email
+      sendWelcomeEmail({ to: key }).catch(() => {});
+      res.json({ ok: true });
+    } catch (err: any) {
+      console.error("[VERIF] verify error:", err?.message);
+      res.status(500).json({ message: err.message || "Erro ao verificar código" });
     }
   });
 

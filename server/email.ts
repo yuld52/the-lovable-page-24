@@ -470,7 +470,54 @@ export async function sendNewBankAccount(opts: {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 8. NEW USER — Welcome + Email Verification reminder
+// 8. VERIFICATION CODE
+// ─────────────────────────────────────────────────────────────
+export async function sendVerificationCode(opts: {
+  to: string;
+  code: string;
+}) {
+  const { to, code } = opts;
+  const digits = code.split("");
+  const digitBoxes = digits.map(d =>
+    `<span style="display:inline-block;width:44px;height:52px;line-height:52px;text-align:center;font-size:26px;font-weight:900;color:${BRAND.text};background:#27272a;border:2px solid ${BRAND.purple};border-radius:10px;margin:0 4px;">${d}</span>`
+  ).join("");
+
+  const body = `
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding-bottom:24px;text-align:center;">
+          <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:${BRAND.purple}22;border-radius:50%;margin-bottom:12px;">
+            <span style="font-size:28px;">🔐</span>
+          </div>
+          <h1 style="margin:0 0 4px;font-size:20px;font-weight:800;color:${BRAND.text};">Código de verificação</h1>
+          <p style="margin:0;font-size:14px;color:${BRAND.muted};">Introduza este código para activar a sua conta Meteorfy.</p>
+        </td>
+      </tr>
+      ${divider()}
+      <tr>
+        <td style="padding:24px 0;text-align:center;">
+          ${digitBoxes}
+        </td>
+      </tr>
+      ${divider()}
+      <tr>
+        <td style="padding-top:16px;font-size:12px;color:${BRAND.muted};line-height:1.6;text-align:center;">
+          Este código expira em <strong style="color:${BRAND.text};">15 minutos</strong>.<br/>
+          Se não criou esta conta, ignore este email.
+        </td>
+      </tr>
+    </table>`;
+
+  return resend.emails.send({
+    from: FROM,
+    to,
+    subject: `${code} — Código de verificação Meteorfy`,
+    html: baseLayout("Código de Verificação", body),
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// 9. NEW USER — Welcome
 // ─────────────────────────────────────────────────────────────
 export async function sendWelcomeEmail(opts: {
   to: string;
