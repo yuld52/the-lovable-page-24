@@ -290,6 +290,9 @@ export default function PublicCheckout() {
   const getMobilePhoneError = (method: string, phone: string): string => {
     if (!phone) return "";
     const local = phone.startsWith("258") ? phone.slice(3) : phone;
+    if (local.length < 9) {
+      return "⚠ O número deve ter pelo menos 9 dígitos.";
+    }
     const prefix = local.slice(0, 2);
     if (method === "mpesa" && prefix !== "84" && prefix !== "85") {
       return "⚠ Número inválido para M-Pesa. Deve começar com 84 ou 85.";
