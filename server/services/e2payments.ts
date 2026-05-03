@@ -46,7 +46,7 @@ export async function initiateE2Payment(
 
   const payload: Record<string, any> = {
     client_id: params.clientId,
-    contact: params.contact,
+    phone: params.contact,
     amount: params.amount,
     reference: params.reference,
   };
