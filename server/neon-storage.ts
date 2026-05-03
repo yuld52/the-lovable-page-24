@@ -593,12 +593,17 @@ export class NeonStorage {
       try {
         const saleData = toSnakeCase(sale);
         
-        // Ensure payment_method column exists
+        // Ensure optional columns exist
         await client.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS payment_method TEXT`).catch(() => {});
+        await client.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS utm_source TEXT`).catch(() => {});
+        await client.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS utm_medium TEXT`).catch(() => {});
+        await client.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS utm_campaign TEXT`).catch(() => {});
+        await client.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS utm_content TEXT`).catch(() => {});
+        await client.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS utm_term TEXT`).catch(() => {});
 
         const result = await client.query(`
-          INSERT INTO sales (checkout_id, product_id, user_id, amount, status, customer_email, paypal_order_id, paypal_currency, paypal_amount_minor, payment_method, created_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+          INSERT INTO sales (checkout_id, product_id, user_id, amount, status, customer_email, paypal_order_id, paypal_currency, paypal_amount_minor, payment_method, utm_source, utm_medium, utm_campaign, utm_content, utm_term, created_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
           RETURNING *
         `, [
           saleData.checkout_id || null,
@@ -611,6 +616,11 @@ export class NeonStorage {
           saleData.paypal_currency || null,
           saleData.paypal_amount_minor || null,
           saleData.payment_method || null,
+          saleData.utm_source || null,
+          saleData.utm_medium || null,
+          saleData.utm_campaign || null,
+          saleData.utm_content || null,
+          saleData.utm_term || null,
         ]);
         
         return toCamelCase(result.rows[0]);
@@ -679,6 +689,9 @@ export class NeonStorage {
     try {
       const client = await getPool().connect();
       try {
+        // Ensure optional columns exist before updating
+        await client.query(`ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS processed_at TIMESTAMP`).catch(() => {});
+        await client.query(`ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS admin_note TEXT`).catch(() => {});
         const result = await client.query(`
           UPDATE withdrawals 
           SET status = $1, processed_at = NOW(), admin_note = $2

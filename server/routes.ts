@@ -520,6 +520,7 @@ export async function registerRoutes(
         paypalOrderId: order.id,
         paypalCurrency: paypalCurrency,
         paypalAmountMinor: paypalAmountMinor,
+        paymentMethod: "paypal",
         utmSource: body.utmSource || null,
         utmMedium: body.utmMedium || null,
         utmCampaign: body.utmCampaign || null,
