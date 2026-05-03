@@ -1,4 +1,4 @@
-import type { Application, Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { neonStorage as storage, getPool } from "./neon-storage";
 import { z } from "zod";
@@ -34,7 +34,7 @@ const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
 export async function registerRoutes(
   httpServer: Server,
-  app: Application
+  app: any
 ): Promise<Server> {
   registerTrackingRoutes(app, storage as any);
   registerChatRoutes(app);
