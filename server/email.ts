@@ -83,7 +83,7 @@ function row(label: string, value: string, valueColor = BRAND.text): string {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 1. BUYER — Sale Confirmation
+// 1. BUYER — Sale Confirmation + Delivery
 // ─────────────────────────────────────────────────────────────
 export async function sendBuyerConfirmation(opts: {
   to: string;
@@ -91,8 +91,35 @@ export async function sendBuyerConfirmation(opts: {
   amount: string;
   orderId: string;
   paymentMethod: string;
+  deliveryUrl?: string | null;
+  deliveryFiles?: string[];
 }) {
-  const { to, productName, amount, orderId, paymentMethod } = opts;
+  const { to, productName, amount, orderId, paymentMethod, deliveryUrl, deliveryFiles } = opts;
+
+  const hasDelivery = deliveryUrl || (deliveryFiles && deliveryFiles.length > 0);
+
+  const deliverySection = hasDelivery ? `
+    ${divider()}
+    <tr>
+      <td style="padding-top:16px;">
+        <p style="margin:0 0 12px;font-size:11px;font-weight:700;color:${BRAND.muted};text-transform:uppercase;letter-spacing:1px;">📦 Acesso ao Produto</p>
+        ${deliveryUrl ? `
+        <a href="${deliveryUrl}" target="_blank"
+           style="display:block;background:${BRAND.purple};color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:12px 18px;border-radius:10px;text-align:center;margin-bottom:8px;">
+          Aceder ao Produto →
+        </a>` : ""}
+        ${deliveryFiles && deliveryFiles.length > 0 ? deliveryFiles.map((f: string, i: number) => {
+          const fileName = f.split("/").pop() || `Arquivo ${i + 1}`;
+          return `<a href="${f}" target="_blank"
+             style="display:flex;align-items:center;gap:8px;background:#27272a;border:1px solid #3f3f46;color:#a1a1aa;text-decoration:none;font-size:12px;padding:10px 14px;border-radius:8px;margin-bottom:6px;">
+            <span style="font-size:16px;">📎</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${fileName}</span>
+            <span style="color:${BRAND.purple};font-weight:700;flex-shrink:0;">Baixar</span>
+          </a>`;
+        }).join("") : ""}
+      </td>
+    </tr>` : "";
+
   const body = `
     <table width="100%" cellpadding="0" cellspacing="0">
       <tr>
@@ -113,6 +140,7 @@ export async function sendBuyerConfirmation(opts: {
           ${row("ID do pedido", `#${orderId}`, BRAND.muted)}
         </table>
       </td></tr>
+      ${deliverySection}
       ${divider()}
       <tr>
         <td style="padding-top:16px;font-size:13px;color:${BRAND.muted};line-height:1.6;">

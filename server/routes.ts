@@ -495,6 +495,21 @@ export async function registerRoutes(
 
       console.log(`[MOBILE PAYMENT] ${paymentMethod.toUpperCase()} sale created — id=${sale.id}, phone=${mobilePhone}, amount=${totalMinor} ${currency}`);
 
+      // ── Email to buyer with delivery (fire-and-forget) ──
+      if (customerData?.email) {
+        const mobileEmailAmount = `${(totalUsdCents / 100).toFixed(2)} USD`;
+        sendBuyerConfirmation({
+          to: customerData.email,
+          productName: product.name,
+          amount: mobileEmailAmount,
+          orderId: String(sale.id),
+          paymentMethod: methodLabel(paymentMethod),
+          deliveryUrl: product.noEmailDelivery ? null : (product.deliveryUrl ?? null),
+          deliveryFiles: product.noEmailDelivery ? [] : (product.deliveryFiles as string[] ?? []),
+        }).catch((e: any) => console.error("[EMAIL] buyer confirmation (mobile):", e?.message));
+      }
+      // ────────────────────────────────────────────────────
+
       // ── Push notification to seller (fire-and-forget) ──
       if (checkout.ownerId) {
         import("./services/notification").then(({ sendNotification }) => {
@@ -669,6 +684,8 @@ export async function registerRoutes(
           amount: emailAmount,
           orderId: emailOrderId,
           paymentMethod: "PayPal",
+          deliveryUrl: product?.noEmailDelivery ? null : (product?.deliveryUrl ?? null),
+          deliveryFiles: product?.noEmailDelivery ? [] : (product?.deliveryFiles as string[] ?? []),
         }).catch((e: any) => console.error("[EMAIL] buyer confirmation:", e?.message));
       }
       if (sale.userId) {
