@@ -37,6 +37,7 @@ import { ChatSupport } from "@/components/ChatSupport";
 import { useUser } from "@/hooks/use-user";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AdminGuard } from "@/components/AdminGuard";
 
 function Router() {
   const [params, setLocation] = useRoute("/:any*");
@@ -85,17 +86,18 @@ function Router() {
       <Route path="/members-area" component={MembersArea} />
       <Route path="/faq" component={FAQ} />
       
-      {/* Admin Routes */}
+      {/* Admin Routes — public login page */}
       <Route path="/admin-login" component={AdminLogin} />
-      <Route path="/admin" component={Admin} />
-      <Route path="/admin/products" component={AdminProducts} />
-      <Route path="/admin/users" component={AdminUsers} />
-      <Route path="/admin/sales" component={AdminSales} />
-      <Route path="/admin/email" component={AdminEmail} />
-      <Route path="/admin/withdrawals" component={AdminWithdrawals} />
-      <Route path="/admin/revenue-ranking" component={AdminRevenueRanking} />
-      <Route path="/admin/rules-fees" component={AdminRulesFees} />
-      <Route path="/admin/settings" component={AdminSettings} />
+      {/* Admin Routes — protected by AdminGuard */}
+      <Route path="/admin">{() => <AdminGuard><Admin /></AdminGuard>}</Route>
+      <Route path="/admin/products">{() => <AdminGuard><AdminProducts /></AdminGuard>}</Route>
+      <Route path="/admin/users">{() => <AdminGuard><AdminUsers /></AdminGuard>}</Route>
+      <Route path="/admin/sales">{() => <AdminGuard><AdminSales /></AdminGuard>}</Route>
+      <Route path="/admin/email">{() => <AdminGuard><AdminEmail /></AdminGuard>}</Route>
+      <Route path="/admin/withdrawals">{() => <AdminGuard><AdminWithdrawals /></AdminGuard>}</Route>
+      <Route path="/admin/revenue-ranking">{() => <AdminGuard><AdminRevenueRanking /></AdminGuard>}</Route>
+      <Route path="/admin/rules-fees">{() => <AdminGuard><AdminRulesFees /></AdminGuard>}</Route>
+      <Route path="/admin/settings">{() => <AdminGuard><AdminSettings /></AdminGuard>}</Route>
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
