@@ -91,6 +91,9 @@ export default function Financeiro() {
     },
   });
 
+  // If user already has any prior withdrawal, documents were already submitted — skip step 2
+  const hasSubmittedDocsBefore = (userWithdrawals?.length ?? 0) > 0;
+
   // Calculate real financial data
   // Sale amounts are in USD cents (product.price, currency="USD").
   // Withdrawal amounts are in MZN minor units (user enters MTn, server × 100).
@@ -652,13 +655,15 @@ export default function Financeiro() {
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-white flex items-center justify-between">
               <span>Solicitar Saque</span>
-              <span className="text-xs font-normal text-zinc-500">Passo {withdrawStep} de 3</span>
+              <span className="text-xs font-normal text-zinc-500">
+                Passo {hasSubmittedDocsBefore ? (withdrawStep === 1 ? 1 : 2) : withdrawStep} de {hasSubmittedDocsBefore ? 2 : 3}
+              </span>
             </DialogTitle>
           </DialogHeader>
 
           {/* Step indicator */}
           <div className="flex items-center gap-1 pt-1 pb-2">
-            {([1, 2, 3] as const).map((s) => (
+            {(hasSubmittedDocsBefore ? [1, 3] : [1, 2, 3] as const).map((s) => (
               <div key={s} className="flex-1 flex items-center gap-1">
                 <div className={`flex-1 h-1 rounded-full transition-all ${withdrawStep >= s ? "bg-purple-500" : "bg-zinc-800"}`} />
               </div>
@@ -745,7 +750,7 @@ export default function Financeiro() {
                 </div>
 
                 <Button
-                  onClick={() => setWithdrawStep(2)}
+                  onClick={() => setWithdrawStep(hasSubmittedDocsBefore ? 3 : 2)}
                   disabled={!amount || !pixKey}
                   className={`w-full text-white h-11 ${METHOD_COLORS[withdrawMethod]}`}
                 >
@@ -892,25 +897,37 @@ export default function Financeiro() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3 space-y-1.5">
-                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">Documentos</p>
-                  {[
-                    { label: "BI / Passaporte (Frente)", file: idFront },
-                    { label: "BI / Passaporte (Verso)", file: idBack },
-                    { label: "Selfie com Documento", file: selfieFile },
-                    { label: "Comprovativo de Residência", file: proofOfAddress },
-                  ].map(({ label, file }) => (
-                    <div key={label} className="flex items-center justify-between">
-                      <span className="text-[11px] text-zinc-400">{label}</span>
-                      {file
-                        ? <span className="flex items-center gap-1 text-[11px] text-emerald-400"><Check className="w-3 h-3" /> Enviado</span>
-                        : <span className="text-[11px] text-zinc-600">Não enviado</span>}
+                {hasSubmittedDocsBefore ? (
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
                     </div>
-                  ))}
-                </div>
+                    <div>
+                      <p className="text-sm font-semibold text-emerald-400">Identidade já verificada</p>
+                      <p className="text-[11px] text-emerald-300/60">Os seus documentos foram submetidos anteriormente.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3 space-y-1.5">
+                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">Documentos</p>
+                    {[
+                      { label: "BI / Passaporte (Frente)", file: idFront },
+                      { label: "BI / Passaporte (Verso)", file: idBack },
+                      { label: "Selfie com Documento", file: selfieFile },
+                      { label: "Comprovativo de Residência", file: proofOfAddress },
+                    ].map(({ label, file }) => (
+                      <div key={label} className="flex items-center justify-between">
+                        <span className="text-[11px] text-zinc-400">{label}</span>
+                        {file
+                          ? <span className="flex items-center gap-1 text-[11px] text-emerald-400"><Check className="w-3 h-3" /> Enviado</span>
+                          : <span className="text-[11px] text-zinc-600">Não enviado</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" onClick={() => setWithdrawStep(2)}
+                  <Button variant="outline" onClick={() => setWithdrawStep(hasSubmittedDocsBefore ? 1 : 2)}
                     className="h-11 border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-500 bg-transparent">
                     ← Voltar
                   </Button>
