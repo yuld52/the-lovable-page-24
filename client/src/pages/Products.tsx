@@ -137,7 +137,7 @@ export default function Products() {
                 onClick={() => setLocation(`/products/edit/${product.id}`)}
               >
                 <p className="text-[10px] text-zinc-500 mb-0.5">
-                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.price / 100)}
+                  {(() => { const cur = (product.currency || "USD").toUpperCase(); try { return new Intl.NumberFormat(cur === "MZN" ? "pt-MZ" : "en-US", { style: "currency", currency: cur }).format(product.price / 100); } catch { return `${cur} ${(product.price / 100).toFixed(2)}`; } })()}
                 </p>
                 <h3 className="text-sm font-semibold text-white group-hover:text-purple-400 transition-colors leading-snug line-clamp-2">
                   {product.name}
