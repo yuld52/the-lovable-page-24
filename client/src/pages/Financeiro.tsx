@@ -1,6 +1,6 @@
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { DollarSign, ArrowDownToLine, History, Loader2, PieChart, CreditCard, Plus, Trash2, Check, Clock, AlertCircle, ArrowLeft, ShieldCheck, Banknote, Info, FileText, User, Home, ChevronDown, ChevronUp, Upload } from "lucide-react";
+import { DollarSign, ArrowDownToLine, History, Loader2, PieChart, CreditCard, Plus, Trash2, Check, Clock, AlertCircle, ArrowLeft, ShieldCheck, Banknote, Info, FileText, User, Home, ChevronDown, ChevronUp, Upload, Mail, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useRef } from "react";
@@ -40,6 +40,14 @@ export default function Financeiro() {
   const [showWithdrawForm, setShowWithdrawForm] = useState(false);
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+
+  // Email code confirmation state (inside confirm dialog)
+  const [withdrawCodeStep, setWithdrawCodeStep] = useState<"confirm" | "code">("confirm");
+  const [withdrawEmailCode, setWithdrawEmailCode] = useState("");
+  const [withdrawCodeSending, setWithdrawCodeSending] = useState(false);
+  const [withdrawCodeVerifying, setWithdrawCodeVerifying] = useState(false);
+  const [withdrawCodeError, setWithdrawCodeError] = useState("");
+  const [withdrawMaskedEmail, setWithdrawMaskedEmail] = useState("");
 
   // Withdraw step
   const [withdrawStep, setWithdrawStep] = useState<1 | 2 | 3>(1);
@@ -105,6 +113,50 @@ export default function Financeiro() {
   const approvedWithdrawalsMznMinor = userWithdrawals?.filter(w => w.status === 'approved').reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
   const pendingWithdrawalsMznMinor = userWithdrawals?.filter(w => w.status === 'pending').reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
   const availableBalanceMznMinor = Math.max(0, totalEarningsMznMinor - approvedWithdrawalsMznMinor - pendingWithdrawalsMznMinor);
+
+  const resetWithdrawCodeState = () => {
+    setWithdrawCodeStep("confirm");
+    setWithdrawEmailCode("");
+    setWithdrawCodeError("");
+    setWithdrawMaskedEmail("");
+  };
+
+  const sendWithdrawConfirmCode = async () => {
+    setWithdrawCodeSending(true);
+    setWithdrawCodeError("");
+    try {
+      const res = await apiRequest("POST", "/api/withdrawals/send-confirm-code", {
+        amount,
+        method: withdrawMethod,
+      });
+      const data = await res.json();
+      setWithdrawMaskedEmail(data.maskedEmail || "");
+      setWithdrawCodeStep("code");
+    } catch (err: any) {
+      setWithdrawCodeError(err.message || "Erro ao enviar código. Tente novamente.");
+    } finally {
+      setWithdrawCodeSending(false);
+    }
+  };
+
+  const verifyAndWithdraw = async () => {
+    if (withdrawEmailCode.length !== 6) {
+      setWithdrawCodeError("Introduza os 6 dígitos do código.");
+      return;
+    }
+    setWithdrawCodeVerifying(true);
+    setWithdrawCodeError("");
+    try {
+      await apiRequest("POST", "/api/withdrawals/verify-confirm-code", { code: withdrawEmailCode });
+      setShowWithdrawDialog(false);
+      resetWithdrawCodeState();
+      await handleWithdraw();
+    } catch (err: any) {
+      setWithdrawCodeError(err.message || "Código inválido.");
+    } finally {
+      setWithdrawCodeVerifying(false);
+    }
+  };
 
   const handleWithdraw = async () => {
     if (!amount || !pixKey) {
@@ -943,58 +995,165 @@ export default function Financeiro() {
       </Dialog>
 
       {/* Withdrawal Confirmation Dialog */}
-      <Dialog open={showWithdrawDialog} onOpenChange={setShowWithdrawDialog}>
+      <Dialog open={showWithdrawDialog} onOpenChange={(open) => { setShowWithdrawDialog(open); if (!open) resetWithdrawCodeState(); }}>
         <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ArrowDownToLine className="w-5 h-5 text-purple-400" />
-              Confirmar Saque
+              {withdrawCodeStep === "confirm" ? (
+                <><ArrowDownToLine className="w-5 h-5 text-purple-400" />Confirmar Saque</>
+              ) : (
+                <><Mail className="w-5 h-5 text-amber-400" />Código de Autorização</>
+              )}
             </DialogTitle>
             <DialogDescription className="text-zinc-400">
-              Revise os dados antes de confirmar.
+              {withdrawCodeStep === "confirm"
+                ? "Revise os dados e confirme para receber o código de autorização."
+                : `Introduza o código de 6 dígitos enviado para ${withdrawMaskedEmail || "o seu email"}.`}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="bg-zinc-900/50 rounded-lg p-4 space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-zinc-400">Valor:</span>
-                <span className="text-lg font-bold text-white">
-                  {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(parseFloat(amount) || 0)}
-                </span>
+
+          {withdrawCodeStep === "confirm" && (
+            <>
+              <div className="space-y-4 py-4">
+                <div className="bg-zinc-900/50 rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-zinc-400">Valor:</span>
+                    <span className="text-lg font-bold text-white">
+                      {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(parseFloat(amount) || 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-zinc-400">{KEY_LABELS[withdrawMethod]}:</span>
+                    <span className="text-sm font-medium text-white">{pixKey}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-zinc-400">Método:</span>
+                    <span className={`text-sm font-bold ${withdrawMethod === 'mpesa' ? 'text-red-400' : withdrawMethod === 'emola' ? 'text-orange-400' : 'text-purple-400'}`}>
+                      {METHOD_LABELS[withdrawMethod]}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+                  <p className="text-xs text-amber-400">
+                    ⚠️ Certifique-se que o número está correto. Um código de segurança será enviado ao seu email.
+                  </p>
+                </div>
+                {withdrawCodeError && (
+                  <p className="text-xs text-red-400 text-center">{withdrawCodeError}</p>
+                )}
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-zinc-400">{KEY_LABELS[withdrawMethod]}:</span>
-                <span className="text-sm font-medium text-white">{pixKey}</span>
+              <DialogFooter className="gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => { setShowWithdrawDialog(false); resetWithdrawCodeState(); setShowWithdrawForm(true); }}
+                  className="border-zinc-700 text-zinc-300"
+                  disabled={withdrawCodeSending}
+                >
+                  Voltar
+                </Button>
+                <Button
+                  onClick={sendWithdrawConfirmCode}
+                  disabled={withdrawCodeSending || !amount || !pixKey}
+                  className={`text-white ${METHOD_COLORS[withdrawMethod]}`}
+                >
+                  {withdrawCodeSending
+                    ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />A enviar...</>
+                    : <><Mail className="w-4 h-4 mr-2" />Enviar Código</>}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+
+          {withdrawCodeStep === "code" && (
+            <>
+              <div className="space-y-5 py-4">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                    <Mail className="w-6 h-6 text-amber-400" />
+                  </div>
+                  <p className="text-xs text-zinc-500 text-center">
+                    Código enviado para <span className="text-white font-semibold">{withdrawMaskedEmail}</span>.<br/>
+                    Válido durante <span className="text-amber-400 font-semibold">10 minutos</span>.
+                  </p>
+                </div>
+
+                <div className="flex justify-center gap-2">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <input
+                      key={i}
+                      id={`wc-${i}`}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={withdrawEmailCode[i] || ""}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "");
+                        const arr = withdrawEmailCode.split("");
+                        arr[i] = val.slice(-1);
+                        const next = arr.join("").slice(0, 6);
+                        setWithdrawEmailCode(next);
+                        setWithdrawCodeError("");
+                        if (val && i < 5) {
+                          document.getElementById(`wc-${i + 1}`)?.focus();
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Backspace" && !withdrawEmailCode[i] && i > 0) {
+                          document.getElementById(`wc-${i - 1}`)?.focus();
+                        }
+                      }}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+                        setWithdrawEmailCode(pasted);
+                        setWithdrawCodeError("");
+                        const nextIdx = Math.min(pasted.length, 5);
+                        document.getElementById(`wc-${nextIdx}`)?.focus();
+                      }}
+                      className="w-11 h-13 text-center text-xl font-bold bg-zinc-900 border-2 border-zinc-700 rounded-xl text-white focus:outline-none focus:border-amber-500 transition-colors"
+                      style={{ height: "52px" }}
+                    />
+                  ))}
+                </div>
+
+                {withdrawCodeError && (
+                  <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                    <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                    <p className="text-xs text-red-400">{withdrawCodeError}</p>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => { setWithdrawEmailCode(""); setWithdrawCodeError(""); sendWithdrawConfirmCode(); }}
+                  disabled={withdrawCodeSending}
+                  className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors mx-auto disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3 h-3 ${withdrawCodeSending ? "animate-spin" : ""}`} />
+                  {withdrawCodeSending ? "A reenviar..." : "Reenviar código"}
+                </button>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-zinc-400">Método:</span>
-                <span className={`text-sm font-bold ${withdrawMethod === 'mpesa' ? 'text-red-400' : withdrawMethod === 'emola' ? 'text-orange-400' : 'text-purple-400'}`}>
-                  {METHOD_LABELS[withdrawMethod]}
-                </span>
-              </div>
-            </div>
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
-              <p className="text-xs text-amber-400">
-                ⚠️ Certifique-se que o número está correto. O processamento leva até 3 dias úteis.
-              </p>
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => { setShowWithdrawDialog(false); setShowWithdrawForm(true); }}
-              className="border-zinc-700 text-zinc-300"
-            >
-              Voltar
-            </Button>
-            <Button
-              onClick={() => { setShowWithdrawDialog(false); handleWithdraw(); }}
-              disabled={isLoading}
-              className={`text-white ${METHOD_COLORS[withdrawMethod]}`}
-            >
-              {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Confirmar Saque"}
-            </Button>
-          </DialogFooter>
+
+              <DialogFooter className="gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => { setWithdrawCodeStep("confirm"); setWithdrawEmailCode(""); setWithdrawCodeError(""); }}
+                  className="border-zinc-700 text-zinc-300"
+                  disabled={withdrawCodeVerifying}
+                >
+                  Voltar
+                </Button>
+                <Button
+                  onClick={verifyAndWithdraw}
+                  disabled={withdrawCodeVerifying || withdrawEmailCode.length !== 6}
+                  className={`text-white ${METHOD_COLORS[withdrawMethod]}`}
+                >
+                  {withdrawCodeVerifying
+                    ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />A verificar...</>
+                    : <><DollarSign className="w-4 h-4 mr-2" />Autorizar Saque</>}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 

@@ -518,7 +518,56 @@ export async function sendVerificationCode(opts: {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 9. NEW USER — Welcome
+// 9. WITHDRAWAL — Confirmation Code
+// ─────────────────────────────────────────────────────────────
+export async function sendWithdrawalConfirmCode(opts: {
+  to: string;
+  code: string;
+  amount: string;
+  method: string;
+}) {
+  const { to, code, amount, method } = opts;
+  const digits = code.split("");
+  const digitBoxes = digits.map(d =>
+    `<span style="display:inline-block;width:44px;height:52px;line-height:52px;text-align:center;font-size:26px;font-weight:900;color:${BRAND.text};background:#27272a;border:2px solid ${BRAND.amber};border-radius:10px;margin:0 4px;">${d}</span>`
+  ).join("");
+
+  const body = `
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding-bottom:24px;text-align:center;">
+          <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:${BRAND.amber}22;border-radius:50%;margin-bottom:12px;">
+            <span style="font-size:28px;">🔒</span>
+          </div>
+          <h1 style="margin:0 0 4px;font-size:20px;font-weight:800;color:${BRAND.text};">Confirmar saque</h1>
+          <p style="margin:0;font-size:14px;color:${BRAND.muted};">Introduza este código para autorizar o saque de <strong style="color:${BRAND.amber};">${amount}</strong> via <strong style="color:${BRAND.text};">${method}</strong>.</p>
+        </td>
+      </tr>
+      ${divider()}
+      <tr>
+        <td style="padding:24px 0;text-align:center;">
+          ${digitBoxes}
+        </td>
+      </tr>
+      ${divider()}
+      <tr>
+        <td style="padding-top:16px;font-size:12px;color:${BRAND.muted};line-height:1.6;text-align:center;">
+          Este código expira em <strong style="color:${BRAND.text};">10 minutos</strong>.<br/>
+          Se não solicitou este saque, ignore este email e verifique a sua conta.
+        </td>
+      </tr>
+    </table>`;
+
+  return resendStrict.emails.send({
+    from: FROM,
+    to,
+    subject: `${code} — Autorização de saque Meteorfy (${amount})`,
+    html: baseLayout("Autorização de Saque", body),
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// 10. NEW USER — Welcome
 // ─────────────────────────────────────────────────────────────
 export async function sendWelcomeEmail(opts: {
   to: string;

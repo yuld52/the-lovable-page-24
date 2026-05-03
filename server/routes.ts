@@ -12,15 +12,18 @@ import { getVapidPublicKey, saveSubscription } from "./services/notification";
 import { registerTrackingRoutes } from "./trackingRoutes";
 import { registerChatRoutes } from "./chat";
 import { initiateE2Payment, makeReference, normalizeMzPhone } from "./services/e2payments";
-import { sendBuyerConfirmation, sendSellerNewSale, sendWithdrawalUpdate, sendWithdrawalReceived, sendProductApproved, sendProductRejected, sendNewBankAccount, sendWelcomeEmail, sendVerificationCode } from "./email";
+import { sendBuyerConfirmation, sendSellerNewSale, sendWithdrawalUpdate, sendWithdrawalReceived, sendProductApproved, sendProductRejected, sendNewBankAccount, sendWelcomeEmail, sendVerificationCode, sendWithdrawalConfirmCode } from "./email";
 
 // ── In-memory verification code store ──
 interface VerifEntry { code: string; uid: string; expiresAt: number; }
 const verifCodes = new Map<string, VerifEntry>(); // key: email (lowercase)
+// Withdrawal confirmation codes — key: uid, 10-min expiry
+const withdrawCodes = new Map<string, { code: string; expiresAt: number }>();
 // Cleanup expired entries every 10 minutes
 setInterval(() => {
   const now = Date.now();
   for (const [k, v] of verifCodes) { if (v.expiresAt < now) verifCodes.delete(k); }
+  for (const [k, v] of withdrawCodes) { if (v.expiresAt < now) withdrawCodes.delete(k); }
 }, 10 * 60 * 1000);
 
 function fmtUsd(cents: number) { return `$${(cents / 100).toFixed(2)} USD`; }
@@ -1180,6 +1183,52 @@ export async function registerRoutes(
     } catch (err: any) {
       console.error("Error creating withdrawal:", err);
       res.status(500).json({ message: err.message || "Erro ao solicitar saque" });
+    }
+  });
+
+  // ── Send withdrawal confirmation code ──
+  app.post("/api/withdrawals/send-confirm-code", requireAuth, async (req, res) => {
+    try {
+      const uid = String((req as any).user?.id || "");
+      const email = (req as any).user?.email as string | undefined;
+      if (!email) return res.status(400).json({ message: "Email não disponível na conta." });
+
+      const { amount, method } = req.body;
+      const code = String(Math.floor(100000 + Math.random() * 900000));
+      withdrawCodes.set(uid, { code, expiresAt: Date.now() + 10 * 60 * 1000 });
+
+      const amountLabel = amount ? `${parseFloat(amount).toFixed(2)} MZN` : "—";
+      const methodLabel2 = method === "mpesa" ? "M-Pesa" : method === "emola" ? "e-Mola" : method || "—";
+
+      await sendWithdrawalConfirmCode({ to: email, code, amount: amountLabel, method: methodLabel2 });
+      return res.json({ ok: true, maskedEmail: email.replace(/(.{2}).*(@.*)/, "$1****$2") });
+    } catch (err: any) {
+      console.error("[WITHDRAW CODE] send error:", err?.message);
+      return res.status(500).json({ message: err?.message || "Erro ao enviar código" });
+    }
+  });
+
+  // ── Verify withdrawal confirmation code ──
+  app.post("/api/withdrawals/verify-confirm-code", requireAuth, async (req, res) => {
+    try {
+      const uid = String((req as any).user?.id || "");
+      const { code } = req.body;
+      if (!code) return res.status(400).json({ message: "Código obrigatório." });
+
+      const entry = withdrawCodes.get(uid);
+      if (!entry) return res.status(400).json({ message: "Nenhum código pendente. Solicite um novo." });
+      if (Date.now() > entry.expiresAt) {
+        withdrawCodes.delete(uid);
+        return res.status(400).json({ message: "Código expirado. Solicite um novo." });
+      }
+      if (entry.code !== String(code).trim()) {
+        return res.status(400).json({ message: "Código inválido." });
+      }
+      withdrawCodes.delete(uid);
+      return res.json({ ok: true });
+    } catch (err: any) {
+      console.error("[WITHDRAW CODE] verify error:", err?.message);
+      return res.status(500).json({ message: err?.message || "Erro ao verificar código" });
     }
   });
 
