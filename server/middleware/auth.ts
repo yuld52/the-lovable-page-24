@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { adminAuth } from "../firebase-admin";
+import { neonStorage } from "../neon-storage";
 
 function serializeError(err: any) {
   return {
@@ -40,6 +41,10 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       email_verified: decodedToken.email_verified,
       firebase: decodedToken,
     };
+    // Persist email on every authenticated request so admin can display it
+    if (decodedToken.uid && decodedToken.email) {
+      neonStorage.saveUserEmail(decodedToken.uid, decodedToken.email).catch(() => {});
+    }
     next();
   } catch (err: any) {
     const safe = serializeError(err);

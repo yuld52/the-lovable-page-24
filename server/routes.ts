@@ -995,18 +995,6 @@ export async function registerRoutes(
         emailResult.rows.forEach((r: any) => {
           if (r.email) emailMap[r.uid] = r.email;
         });
-        // Also backfill from sales.customer_email if still missing
-        if (uids.some(u => !emailMap[u])) {
-          const missingUids = uids.filter(u => !emailMap[u]);
-          const salesEmails = await emailConn.query(
-            `SELECT DISTINCT user_id::text AS uid, customer_email AS email FROM sales
-             WHERE user_id = ANY($1::text[]) AND customer_email IS NOT NULL LIMIT 200`,
-            [missingUids]
-          );
-          salesEmails.rows.forEach((r: any) => {
-            if (r.email && !emailMap[r.uid]) emailMap[r.uid] = r.email;
-          });
-        }
       } catch (e) {
         console.warn("[users-v2] email lookup failed:", (e as any)?.message);
       } finally {
@@ -1497,15 +1485,6 @@ export async function registerRoutes(
               [ownerIds]
             );
             dbEmails.rows.forEach((r: any) => { if (r.email) userMap[r.uid] = r.email; });
-            // Sales customer_email fallback for any still-missing
-            const missing = ownerIds.filter((u: string) => !userMap[u]);
-            if (missing.length > 0) {
-              const saleEmails = await emailConn2.query(
-                `SELECT DISTINCT user_id::text AS uid, customer_email AS email FROM sales WHERE user_id = ANY($1::text[]) AND customer_email IS NOT NULL`,
-                [missing]
-              );
-              saleEmails.rows.forEach((r: any) => { if (r.email && !userMap[r.uid]) userMap[r.uid] = r.email; });
-            }
           } catch (e) {
             console.warn("[revenue-ranking] DB email lookup failed:", (e as any)?.message);
           } finally {
