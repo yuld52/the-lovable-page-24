@@ -275,8 +275,15 @@ export default function PublicCheckout() {
   }, [autoCurrency, config]);
   const usdToCurrencyRate = usdRates?.[currency] ?? 1;
 
+  // If the product's own currency matches the checkout display currency,
+  // prices are already stored in checkout-currency minor units — no conversion needed.
+  const productCurrency = product?.currency as SupportedCurrencyCode | undefined;
+  const isSameCurrency = !!productCurrency && productCurrency === currency;
+
   const moneyFromUsdCents = (usdCents: number) =>
-    formatMoney({ currency, minor: convertUsdCentsToCurrencyMinor(usdCents, currency, usdToCurrencyRate) });
+    isSameCurrency
+      ? formatMoney({ currency, minor: usdCents })
+      : formatMoney({ currency, minor: convertUsdCentsToCurrencyMinor(usdCents, currency, usdToCurrencyRate) });
 
   const [formData, setFormData] = useState({ email: "", confirmEmail: "", name: "", surname: "", cpf: "", phone: "", cnpj: "", zip: "", street: "", streetNumber: "" });
   const [showErrors, setShowErrors] = useState(false);

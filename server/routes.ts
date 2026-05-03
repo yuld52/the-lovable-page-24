@@ -619,10 +619,15 @@ export async function registerRoutes(
             });
             console.log(`[E2PAY] ${paymentMethod.toUpperCase()} STK push sent — saleId=${sale.id}, ref=${reference}, phone=${phoneLocal}, amount=${amountMajor} MZN`, JSON.stringify(e2res));
           } catch (e2err: any) {
+            const status = e2err?.response?.status;
             const errMsg = e2err?.response?.data?.message || e2err?.message || "unknown";
-            console.error(`[E2PAY] initiate error — saleId=${sale.id}: ${errMsg}`);
-            // Mark sale as failed so the frontend polling detects it
-            await storage.updateSaleStatus(sale.id, "failed").catch(() => {});
+            console.error(`[E2PAY] initiate error — saleId=${sale.id}: HTTP ${status || "timeout"} — ${errMsg}`);
+            // Only mark as failed for definitive client errors (4xx, except 408/429 which are retriable).
+            // For 5xx / timeouts the STK push may still arrive on the phone — keep pending.
+            const isDefinitiveFailure = status && status >= 400 && status < 500 && status !== 408 && status !== 429;
+            if (isDefinitiveFailure) {
+              await storage.updateSaleStatus(sale.id, "failed").catch(() => {});
+            }
           }
         });
 

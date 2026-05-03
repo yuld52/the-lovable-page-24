@@ -1,7 +1,9 @@
 import axios from "axios";
 
 const BASE_URL = "https://e2payments.explicador.co.mz";
-const REQUEST_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 60_000;
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 3_000;
 
 interface TokenCache {
   token: string;
@@ -9,6 +11,17 @@ interface TokenCache {
 }
 
 const tokenCache = new Map<string, TokenCache>();
+
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function isRetryable(err: any): boolean {
+  const status = err?.response?.status;
+  // Retry on 5xx gateway errors and network timeouts
+  if (!status) return true; // timeout / network error
+  return status >= 500;
+}
 
 async function getBearerToken(clientId: string, clientSecret: string): Promise<string> {
   const cached = tokenCache.get(clientId);
@@ -53,17 +66,32 @@ export async function initiateE2Payment(
   };
   if (params.callbackUrl) payload.callback_url = params.callbackUrl;
 
-  const res = await axios.post(endpoint, payload, {
-    timeout: REQUEST_TIMEOUT_MS,
-    headers: {
-      Authorization: token,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-    },
-  });
-
-  return res.data;
+  let lastErr: any;
+  for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
+    try {
+      const res = await axios.post(endpoint, payload, {
+        timeout: REQUEST_TIMEOUT_MS,
+        headers: {
+          Authorization: token,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      });
+      return res.data;
+    } catch (err: any) {
+      lastErr = err;
+      const status = err?.response?.status;
+      const msg = err?.response?.data?.message || err?.message || "unknown";
+      console.warn(`[E2PAY] attempt ${attempt}/${MAX_RETRIES + 1} failed (HTTP ${status || "timeout"}): ${msg}`);
+      if (attempt <= MAX_RETRIES && isRetryable(err)) {
+        await sleep(RETRY_DELAY_MS * attempt);
+        continue;
+      }
+      break;
+    }
+  }
+  throw lastErr;
 }
 
 export function makeReference(saleId: number): string {
