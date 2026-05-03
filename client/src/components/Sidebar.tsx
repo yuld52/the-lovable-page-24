@@ -113,18 +113,11 @@ export function Sidebar() {
                   <span className="text-xs font-bold text-foreground whitespace-nowrap">/ MT {currentGoal.label}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-muted/50 rounded-full h-1.5 overflow-hidden border border-border/50 relative">
+                  <div className="flex-1 bg-zinc-700/60 rounded-full h-1.5 overflow-hidden relative">
                     <div 
-                      className="h-full rounded-full transition-all duration-1000 ease-out relative"
-                      style={{ 
-                        width: `${Math.max(progress, 1)}%`,
-                        background: `linear-gradient(90deg, #a855f7 0%, #a855f7 80%, #c084fc 90%, #e9d5ff 100%)`
-                      }}
-                    >
-                      <div 
-                        className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-purple-300 shadow-[0_0_8px_3px_rgba(192,132,252,0.7)]"
-                      />
-                    </div>
+                      className="h-full rounded-full bg-purple-500 transition-all duration-1000 ease-out"
+                      style={{ width: `${Math.max(progress, 1)}%` }}
+                    />
                   </div>
                   <span className="text-[10px] font-bold text-white tabular-nums">{Math.floor(progress)}%</span>
                 </div>
