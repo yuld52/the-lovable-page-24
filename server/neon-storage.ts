@@ -402,20 +402,117 @@ export class NeonStorage {
     try {
       const client = await getPool().connect();
       try {
-        // Ensure email column exists (idempotent)
         await client.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS email TEXT`);
-        // Upsert: create settings row if missing, otherwise just update email
-        await client.query(`
-          INSERT INTO settings (user_id, email)
-          VALUES ($1, $2)
-          ON CONFLICT (user_id) DO UPDATE SET email = EXCLUDED.email
-        `, [userId, email]);
+        // Use UPDATE first; if no row exists yet, INSERT — avoids ON CONFLICT (no unique constraint)
+        const upd = await client.query(
+          `UPDATE settings SET email = $2 WHERE user_id = $1`,
+          [userId, email]
+        );
+        if (upd.rowCount === 0) {
+          await client.query(
+            `INSERT INTO settings (user_id, email) VALUES ($1, $2)`,
+            [userId, email]
+          ).catch(() => {}); // ignore if another row was inserted concurrently
+        }
       } finally {
         client.release();
       }
     } catch (err) {
-      // Non-critical — never crash the request over this
       console.warn("[saveUserEmail]", (err as any)?.message);
+    }
+  }
+
+  // ── Push subscriptions (Neon persistent store) ──────────────────────────────
+  private async ensurePushSubsTable(client: any) {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id         SERIAL PRIMARY KEY,
+        user_id    TEXT NOT NULL,
+        endpoint   TEXT NOT NULL UNIQUE,
+        subscription JSONB NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+  }
+
+  async savePushSubscription(userId: string, subscription: any): Promise<void> {
+    if (!userId || !subscription) return;
+    const endpoint = subscription.endpoint;
+    if (!endpoint) return;
+    try {
+      const client = await getPool().connect();
+      try {
+        await this.ensurePushSubsTable(client);
+        await client.query(`
+          INSERT INTO push_subscriptions (user_id, endpoint, subscription, updated_at)
+          VALUES ($1, $2, $3, NOW())
+          ON CONFLICT (endpoint) DO UPDATE
+            SET user_id = $1, subscription = $3, updated_at = NOW()
+        `, [userId, endpoint, JSON.stringify(subscription)]);
+      } finally {
+        client.release();
+      }
+    } catch (err) {
+      console.warn("[savePushSubscription]", (err as any)?.message);
+    }
+  }
+
+  async getPushSubscriptions(userId: string): Promise<any[]> {
+    try {
+      const client = await getPool().connect();
+      try {
+        await this.ensurePushSubsTable(client);
+        const result = await client.query(
+          `SELECT endpoint, subscription FROM push_subscriptions WHERE user_id = $1`,
+          [userId]
+        );
+        return result.rows.map(r => ({
+          endpoint: r.endpoint,
+          subscription: typeof r.subscription === "string"
+            ? JSON.parse(r.subscription)
+            : r.subscription,
+        }));
+      } finally {
+        client.release();
+      }
+    } catch (err) {
+      console.warn("[getPushSubscriptions]", (err as any)?.message);
+      return [];
+    }
+  }
+
+  async deletePushSubscription(endpoint: string): Promise<void> {
+    try {
+      const client = await getPool().connect();
+      try {
+        await client.query(
+          `DELETE FROM push_subscriptions WHERE endpoint = $1`,
+          [endpoint]
+        );
+      } finally {
+        client.release();
+      }
+    } catch (err) {
+      console.warn("[deletePushSubscription]", (err as any)?.message);
+    }
+  }
+
+  async getSalesNotificationsEnabled(userId: string): Promise<boolean> {
+    try {
+      const client = await getPool().connect();
+      try {
+        const r = await client.query(
+          `SELECT sales_notifications FROM settings WHERE user_id = $1 LIMIT 1`,
+          [userId]
+        );
+        if (r.rows.length === 0) return true; // default enabled
+        return r.rows[0].sales_notifications !== false;
+      } finally {
+        client.release();
+      }
+    } catch {
+      return true; // default enabled on error
     }
   }
 
