@@ -27,6 +27,48 @@ setInterval(() => {
 }, 10 * 60 * 1000);
 
 function fmtUsd(cents: number) { return `$${(cents / 100).toFixed(2)} USD`; }
+
+async function sendSaleEmails(sale: any, product: any, amountDisplay: string, paymentMethodLabel: string) {
+  const orderId = String(sale.id).slice(-8);
+
+  // Email to buyer
+  if (sale.customerEmail) {
+    sendBuyerConfirmation({
+      to: sale.customerEmail,
+      productName: product?.name || "Produto",
+      amount: amountDisplay,
+      orderId,
+      paymentMethod: paymentMethodLabel,
+      deliveryUrl: product?.noEmailDelivery ? null : (product?.deliveryUrl ?? null),
+      deliveryFiles: product?.noEmailDelivery ? [] : (product?.deliveryFiles as string[] ?? []),
+    }).catch((e: any) => console.error("[EMAIL] buyer confirmation:", e?.message));
+  }
+
+  // Email to seller — first sale or regular
+  if (sale.userId) {
+    adminAuth.getUser(String(sale.userId))
+      .then(async (u: any) => {
+        if (!u.email) return;
+        const allSales = await storage.getSales(String(sale.userId)).catch(() => []);
+        const paidSales = allSales.filter((s: any) => s.status === "paid" || s.status === "captured");
+        const isFirstSale = paidSales.length === 1;
+        const emailOpts = {
+          to: u.email,
+          productName: product?.name || "Produto",
+          amount: amountDisplay,
+          buyerEmail: sale.customerEmail || "—",
+          orderId,
+          paymentMethod: paymentMethodLabel,
+        };
+        if (isFirstSale) {
+          sendFirstSale(emailOpts).catch((e: any) => console.error("[EMAIL] first sale:", e?.message));
+        } else {
+          sendSellerNewSale(emailOpts).catch((e: any) => console.error("[EMAIL] seller new sale:", e?.message));
+        }
+      })
+      .catch((e: any) => console.error("[EMAIL] seller lookup:", e?.message));
+  }
+}
 function fmtMzn(minor: number) { return `MZN ${(minor / 100).toFixed(2)}`; }
 function methodLabel(m: string) { return m === "mpesa" ? "M-Pesa" : m === "emola" ? "e-Mola" : m === "paypal" ? "PayPal" : m; }
 
@@ -688,6 +730,11 @@ export async function registerRoutes(
             if (isConfirmed) {
               await storage.updateSaleStatus(sale.id, "paid").catch(() => {});
               console.log(`[E2PAY] sale ${sale.id} marked PAID (sync confirmation)`);
+              // Emails to buyer + seller
+              const paidSale = { ...sale, userId: checkout.ownerId, status: "paid" };
+              const amtDisplay = `${methodLabel(paymentMethod)} ${(amountMajor).toFixed(2)} MZN`;
+              sendSaleEmails(paidSale, product, amtDisplay, methodLabel(paymentMethod))
+                .catch((e: any) => console.error("[EMAIL] e2pay sale emails:", e?.message));
               // Push notification to seller
               if (checkout.ownerId) {
                 import("./services/notification").then(({ sendNotification }) => {
@@ -732,17 +779,10 @@ export async function registerRoutes(
 
         console.log(`[MOBILE PAYMENT] ${paymentMethod.toUpperCase()} sale created (no e2payments) — id=${sale.id}, phone=${mobilePhone}, amount=${totalMinor} ${currency}`);
 
-        if (customerData?.email) {
-          sendBuyerConfirmation({
-            to: customerData.email,
-            productName: product.name,
-            amount: `${(totalUsdCents / 100).toFixed(2)}`,
-            orderId: String(sale.id),
-            paymentMethod: methodLabel(paymentMethod),
-            deliveryUrl: product.noEmailDelivery ? null : (product.deliveryUrl ?? null),
-            deliveryFiles: product.noEmailDelivery ? [] : (product.deliveryFiles as string[] ?? []),
-          }).catch((e: any) => console.error("[EMAIL] buyer confirmation (mobile):", e?.message));
-        }
+        // Emails to buyer + seller
+        const fallbackAmt = `${methodLabel(paymentMethod)} ${(totalUsdCents / 100).toFixed(2)} MZN`;
+        sendSaleEmails(sale, product, fallbackAmt, methodLabel(paymentMethod))
+          .catch((e: any) => console.error("[EMAIL] fallback sale emails:", e?.message));
 
         if (checkout.ownerId) {
           import("./services/notification").then(({ sendNotification }) => {
