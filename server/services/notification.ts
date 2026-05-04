@@ -116,7 +116,7 @@ export async function sendNotification({ userId, type, title, body, metadata }: 
             const mm = String(now.getMonth() + 1).padStart(2, "0");
             const rand = String(Math.floor(Math.random() * 1_000_000)).padStart(6, "0");
             const saleCode = `MF${dd}${mm}${rand}`;
-            finalTitle = "Venda realizada! 🔥";
+            finalTitle = "Venda realizada!";
             finalBody = `Valor: ${currency} ${amount} · ${saleCode}`;
         }
 
