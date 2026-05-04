@@ -261,7 +261,7 @@ export async function registerRoutes(
       const productData = {
         ...req.body,
         ownerId: userId,
-        status: 'approved'
+        status: 'pending'
       };
       const result = await storage.createProduct(productData);
       res.status(201).json(result);
