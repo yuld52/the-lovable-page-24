@@ -153,7 +153,7 @@ export default function Help() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <Button 
                 className="bg-[#25D366] hover:bg-[#1FBF56] text-white font-semibold h-12 px-6 gap-2"
-                onClick={() => window.open("https://wa.me/5511999999999", "_blank")}
+                onClick={() => window.open("https://wa.me/258857245896", "_blank")}
               >
                 <MessageCircle className="h-4 w-4" />
                 Falar no WhatsApp

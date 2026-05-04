@@ -157,7 +157,7 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
 
             {/* WhatsApp */}
             <a
-              href="https://wa.me/5511999999999"
+              href="https://wa.me/258857245896"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-4 p-4 rounded-xl bg-accent/50 hover:bg-accent transition-colors group"
