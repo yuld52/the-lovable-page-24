@@ -1052,7 +1052,7 @@ export async function registerRoutes(
         await storage.saveUserEmail(String(reqUser.id), String(reqUser.email)).catch(() => {});
       }
 
-      // ── 1. Try Firebase listUsers() (works only with service account creds) ──
+      // ── 1. Try Firebase listUsers() ──
       let firebaseUsers: Array<{ uid: string; email?: string; createdAt?: string; disabled?: boolean }> = [];
       try {
         let pageToken: string | undefined;
@@ -1063,41 +1063,39 @@ export async function registerRoutes(
           }
           pageToken = result.pageToken;
         } while (pageToken);
-      } catch { /* no service account — fall through to DB */ }
+      } catch (fbErr: any) {
+        console.warn("[users-v2] Firebase listUsers failed:", fbErr?.message);
+      }
 
-      // ── 2. DB: all users who have ever made an authenticated request ──
-      const conn = await getPool().connect();
-      let dbEmailMap: Record<string, string> = {};
+      // ── 2. DB email map (user_emails + settings) ──
+      const { neon: neonClient } = await import("@neondatabase/serverless");
+      const sql = neonClient(process.env.NEON_DATABASE_URL || "");
+      const [ueRows, stRows, coRows, saRows, baRows, wdRows, prRows, srRows, wrRows] = await Promise.all([
+        sql`SELECT user_id::text AS uid, email FROM user_emails WHERE user_id IS NOT NULL`,
+        sql`SELECT user_id::text AS uid, email FROM settings WHERE user_id IS NOT NULL AND email IS NOT NULL`,
+        sql`SELECT DISTINCT owner_id::text AS uid FROM checkouts WHERE owner_id IS NOT NULL`,
+        sql`SELECT DISTINCT user_id::text AS uid FROM sales WHERE user_id IS NOT NULL`,
+        sql`SELECT DISTINCT user_id::text AS uid FROM bank_accounts WHERE user_id IS NOT NULL`,
+        sql`SELECT DISTINCT user_id::text AS uid FROM withdrawals WHERE user_id IS NOT NULL`.catch(() => [] as any[]),
+        sql`SELECT owner_id::text AS uid, COUNT(*)::int AS n FROM products GROUP BY owner_id`,
+        sql`SELECT user_id::text AS uid, COUNT(*)::int AS n FROM sales GROUP BY user_id`,
+        sql`SELECT user_id::text AS uid, COUNT(*)::int AS n FROM withdrawals GROUP BY user_id`.catch(() => [] as any[]),
+      ]);
+
+      const dbEmailMap: Record<string, string> = {};
       const dbUids = new Set<string>();
-      try {
-        await conn.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS email TEXT`);
-        const [settRows, coRows, saRows, baRows, wdRows] = await Promise.all([
-          conn.query(`SELECT user_id::text AS uid, email FROM settings WHERE user_id IS NOT NULL`),
-          conn.query(`SELECT DISTINCT owner_id::text AS uid FROM checkouts WHERE owner_id IS NOT NULL`).catch(() => ({ rows: [] as any[] })),
-          conn.query(`SELECT DISTINCT user_id::text AS uid FROM sales WHERE user_id IS NOT NULL`),
-          conn.query(`SELECT DISTINCT user_id::text AS uid FROM bank_accounts WHERE user_id IS NOT NULL`),
-          conn.query(`SELECT DISTINCT user_id::text AS uid FROM withdrawals WHERE user_id IS NOT NULL`).catch(() => ({ rows: [] as any[] })),
-        ]);
-        for (const r of settRows.rows) { dbUids.add(r.uid); if (r.email) dbEmailMap[r.uid] = r.email; }
-        for (const r of [...coRows.rows, ...saRows.rows, ...baRows.rows, ...wdRows.rows]) dbUids.add(r.uid);
-        if (reqUser?.id && reqUser?.email) { dbUids.add(String(reqUser.id)); dbEmailMap[String(reqUser.id)] = String(reqUser.email); }
-      } finally { conn.release(); }
+      for (const r of [...ueRows, ...stRows]) { if (r.uid) { dbUids.add(r.uid); if (r.email) dbEmailMap[r.uid] = r.email; } }
+      for (const r of [...coRows, ...saRows, ...baRows, ...wdRows]) { if (r.uid) dbUids.add(r.uid); }
+      if (reqUser?.id && reqUser?.email) { dbUids.add(String(reqUser.id)); dbEmailMap[String(reqUser.id)] = String(reqUser.email); }
 
-      // ── 3. Per-user stats ──
-      const sc = await getPool().connect();
-      let pCnt: Record<string, number> = {}, sCnt: Record<string, number> = {}, wCnt: Record<string, number> = {};
-      try {
-        const [pr, sr, wr] = await Promise.all([
-          sc.query(`SELECT owner_id::text AS uid, COUNT(*)::int AS n FROM products GROUP BY owner_id`),
-          sc.query(`SELECT user_id::text AS uid, COUNT(*)::int AS n FROM sales GROUP BY user_id`),
-          sc.query(`SELECT user_id::text AS uid, COUNT(*)::int AS n FROM withdrawals GROUP BY user_id`).catch(() => ({ rows: [] as any[] })),
-        ]);
-        pr.rows.forEach((r: any) => { pCnt[r.uid] = r.n; });
-        sr.rows.forEach((r: any) => { sCnt[r.uid] = r.n; });
-        wr.rows.forEach((r: any) => { wCnt[r.uid] = r.n; });
-      } finally { sc.release(); }
+      const pCnt: Record<string, number> = {};
+      const sCnt: Record<string, number> = {};
+      const wCnt: Record<string, number> = {};
+      for (const r of prRows) pCnt[r.uid] = Number(r.n);
+      for (const r of srRows) sCnt[r.uid] = Number(r.n);
+      for (const r of wrRows) wCnt[r.uid] = Number(r.n);
 
-      // ── 4. Merge: Firebase (primary) + DB (fill gaps) ──
+      // ── 3. Merge Firebase + DB ──
       const merged = new Map<string, any>();
       for (const fu of firebaseUsers) {
         const email = fu.email || dbEmailMap[fu.uid] || fu.uid;
@@ -1119,6 +1117,30 @@ export async function registerRoutes(
     } catch (err: any) {
       console.error("Error listing users:", err);
       res.status(500).json({ message: err.message || "Erro ao listar usuários" });
+    }
+  });
+
+  app.post("/api/users-v2/:uid/disable", requireAuth, async (req, res) => {
+    if ((req as any).user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado." });
+    try {
+      const uid = String(req.params.uid);
+      await adminAuth.updateUser(uid, { disabled: true });
+      res.json({ success: true, disabled: true });
+    } catch (err: any) {
+      console.error("Error disabling user:", err);
+      res.status(500).json({ message: err.message || "Erro ao bloquear utilizador" });
+    }
+  });
+
+  app.post("/api/users-v2/:uid/enable", requireAuth, async (req, res) => {
+    if ((req as any).user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado." });
+    try {
+      const uid = String(req.params.uid);
+      await adminAuth.updateUser(uid, { disabled: false });
+      res.json({ success: true, disabled: false });
+    } catch (err: any) {
+      console.error("Error enabling user:", err);
+      res.status(500).json({ message: err.message || "Erro ao desbloquear utilizador" });
     }
   });
 

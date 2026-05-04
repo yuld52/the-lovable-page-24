@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Users, UserPlus, Trash2, Search, Mail, RefreshCw, Package, ShoppingCart, ArrowDownToLine } from "lucide-react";
+import { Loader2, Users, UserPlus, Trash2, Search, RefreshCw, Package, ShoppingCart, ArrowDownToLine, ShieldOff, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -31,10 +31,23 @@ export default function AdminUsers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users-v2"] });
-      toast({ title: "Usuário excluído com sucesso" });
+      toast({ title: "Utilizador eliminado com sucesso" });
     },
     onError: (err: any) => {
-      toast({ title: "Erro ao excluir", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao eliminar", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const disableUserMutation = useMutation({
+    mutationFn: async ({ uid, disable }: { uid: string; disable: boolean }) => {
+      await apiRequest("POST", `/api/users-v2/${uid}/${disable ? "disable" : "enable"}`);
+    },
+    onSuccess: (_: any, vars: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users-v2"] });
+      toast({ title: vars.disable ? "Acesso bloqueado" : "Acesso desbloqueado" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
     },
   });
 
@@ -46,7 +59,7 @@ export default function AdminUsers() {
     setIsCreatingUser(true);
     try {
       await apiRequest("POST", "/api/users-v2", { email: newUserEmail, password: newUserPassword });
-      toast({ title: "Usuário criado com sucesso!" });
+      toast({ title: "Utilizador criado com sucesso!" });
       setIsAddUserOpen(false);
       setNewUserEmail("");
       setNewUserPassword("");
@@ -168,10 +181,11 @@ export default function AdminUsers() {
                 </div>
               ) : (
                 <div className="rounded-b-xl overflow-x-auto">
-                  <table className="w-full text-left border-collapse min-w-[700px]">
+                  <table className="w-full text-left border-collapse min-w-[800px]">
                     <thead>
                       <tr className="bg-zinc-950/50 border-y border-zinc-800/50">
                         <th className="px-5 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Utilizador</th>
+                        <th className="px-5 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-center">Estado</th>
                         <th className="px-5 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-center">Produtos</th>
                         <th className="px-5 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-center">Vendas</th>
                         <th className="px-5 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-center">Saques</th>
@@ -181,17 +195,28 @@ export default function AdminUsers() {
                     </thead>
                     <tbody className="divide-y divide-zinc-800/30">
                       {filteredUsers.map((u) => (
-                        <tr key={u.id || u.uid} className="hover:bg-zinc-800/20 transition-colors">
+                        <tr key={u.id || u.uid} className={`hover:bg-zinc-800/20 transition-colors ${u.disabled ? "opacity-60" : ""}`}>
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600/20 to-blue-600/20 border border-zinc-700 flex items-center justify-center shrink-0 text-sm font-bold text-purple-300">
+                              <div className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 text-sm font-bold ${u.disabled ? "bg-zinc-800/40 border-zinc-700 text-zinc-500" : "bg-gradient-to-br from-purple-600/20 to-blue-600/20 border-zinc-700 text-purple-300"}`}>
                                 {(u.email || u.username || "?")[0].toUpperCase()}
                               </div>
                               <div className="min-w-0">
-                                <p className="text-sm text-zinc-200 truncate max-w-[200px]">{u.email || u.username || u.uid}</p>
-                                <p className="text-[10px] text-zinc-600 font-mono truncate max-w-[200px]">{u.uid || u.id}</p>
+                                <p className="text-sm text-zinc-200 truncate max-w-[220px]">{u.email || u.username || u.uid}</p>
+                                <p className="text-[10px] text-zinc-600 font-mono truncate max-w-[220px]">{u.uid || u.id}</p>
                               </div>
                             </div>
+                          </td>
+                          <td className="px-5 py-4 text-center">
+                            {u.disabled ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-1 rounded-full">
+                                <ShieldOff className="w-3 h-3" /> Bloqueado
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-full">
+                                <ShieldCheck className="w-3 h-3" /> Activo
+                              </span>
+                            )}
                           </td>
                           <td className="px-5 py-4 text-center">
                             <div className="flex items-center justify-center gap-1">
@@ -219,23 +244,41 @@ export default function AdminUsers() {
                             </span>
                           </td>
                           <td className="px-5 py-4 text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
-                              onClick={() => {
-                                if (confirm(`Excluir ${u.email || u.username}?`)) {
-                                  deleteUserMutation.mutate(u.uid || u.id);
-                                }
-                              }}
-                              disabled={deleteUserMutation.isPending}
-                            >
-                              {deleteUserMutation.isPending ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <Trash2 size={15} />
-                              )}
-                            </Button>
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={`h-8 w-8 ${u.disabled ? "text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10" : "text-zinc-500 hover:text-amber-400 hover:bg-amber-500/10"}`}
+                                title={u.disabled ? "Desbloquear acesso" : "Bloquear acesso"}
+                                onClick={() => {
+                                  const action = u.disabled ? "desbloquear" : "bloquear";
+                                  if (confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} acesso de ${u.email || u.uid}?`)) {
+                                    disableUserMutation.mutate({ uid: u.uid || u.id, disable: !u.disabled });
+                                  }
+                                }}
+                                disabled={disableUserMutation.isPending}
+                              >
+                                {u.disabled ? <ShieldCheck size={15} /> : <ShieldOff size={15} />}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
+                                title="Eliminar utilizador"
+                                onClick={() => {
+                                  if (confirm(`Eliminar permanentemente ${u.email || u.username}?`)) {
+                                    deleteUserMutation.mutate(u.uid || u.id);
+                                  }
+                                }}
+                                disabled={deleteUserMutation.isPending}
+                              >
+                                {deleteUserMutation.isPending ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Trash2 size={15} />
+                                )}
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}
