@@ -167,7 +167,7 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
               </div>
               <div>
                 <p className="text-sm font-semibold text-white group-hover:text-green-300 transition-colors">WhatsApp</p>
-                <p className="text-xs text-zinc-500">+55 (11) 99999-9999</p>
+                <p className="text-xs text-zinc-500">+258 857 245 896</p>
               </div>
             </a>
           </div>
