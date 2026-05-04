@@ -1073,7 +1073,7 @@ export async function registerRoutes(
         await conn.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS email TEXT`);
         const [settRows, coRows, saRows, baRows, wdRows] = await Promise.all([
           conn.query(`SELECT user_id::text AS uid, email FROM settings WHERE user_id IS NOT NULL`),
-          conn.query(`SELECT DISTINCT owner_id::text AS uid FROM checkouts WHERE owner_id IS NOT NULL`),
+          conn.query(`SELECT DISTINCT owner_id::text AS uid FROM checkouts WHERE owner_id IS NOT NULL`).catch(() => ({ rows: [] as any[] })),
           conn.query(`SELECT DISTINCT user_id::text AS uid FROM sales WHERE user_id IS NOT NULL`),
           conn.query(`SELECT DISTINCT user_id::text AS uid FROM bank_accounts WHERE user_id IS NOT NULL`),
           conn.query(`SELECT DISTINCT user_id::text AS uid FROM withdrawals WHERE user_id IS NOT NULL`).catch(() => ({ rows: [] as any[] })),
@@ -1088,7 +1088,7 @@ export async function registerRoutes(
       let pCnt: Record<string, number> = {}, sCnt: Record<string, number> = {}, wCnt: Record<string, number> = {};
       try {
         const [pr, sr, wr] = await Promise.all([
-          sc.query(`SELECT user_id::text AS uid, COUNT(*)::int AS n FROM products GROUP BY user_id`),
+          sc.query(`SELECT owner_id::text AS uid, COUNT(*)::int AS n FROM products GROUP BY owner_id`),
           sc.query(`SELECT user_id::text AS uid, COUNT(*)::int AS n FROM sales GROUP BY user_id`),
           sc.query(`SELECT user_id::text AS uid, COUNT(*)::int AS n FROM withdrawals GROUP BY user_id`).catch(() => ({ rows: [] as any[] })),
         ]);
