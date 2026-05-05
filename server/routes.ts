@@ -66,6 +66,15 @@ setInterval(() => {
 
 function fmtUsd(cents: number) { return `$${(cents / 100).toFixed(2)} USD`; }
 
+// Resolve a user's email: Firebase first, Neon DB as fallback
+async function resolveUserEmail(userId: string): Promise<string | null> {
+  try {
+    const u = await adminAuth.getUser(userId);
+    if (u.email) return u.email;
+  } catch { /* fall through to DB fallback */ }
+  return storage.getUserEmail(userId).catch(() => null);
+}
+
 async function sendSaleEmails(sale: any, product: any, amountDisplay: string, paymentMethodLabel: string) {
   const orderId = String(sale.id).slice(-8);
 
@@ -1367,21 +1376,20 @@ export async function registerRoutes(
       res.json(withdrawal);
       // ── Email: withdrawal approved (fire-and-forget) ──
       if (withdrawal?.userId) {
-        adminAuth.getUser(String(withdrawal.userId))
-          .then((u) => {
-            if (u.email) {
-              sendWithdrawalUpdate({
-                to: u.email,
-                status: "approved",
-                amount: fmtMzn(withdrawal.amount),
-                method: methodLabel(withdrawal.pixKeyType || ""),
-                pixKey: withdrawal.pixKey || "",
-                adminNote: adminNote || undefined,
-                withdrawalId: withdrawal.id,
-              }).catch((e: any) => console.error("[EMAIL] withdrawal approved:", e?.message));
-            }
+        resolveUserEmail(String(withdrawal.userId)).then((email) => {
+          if (!email) { console.warn("[EMAIL] withdrawal approved: no email found for uid", withdrawal.userId); return; }
+          sendWithdrawalUpdate({
+            to: email,
+            status: "approved",
+            amount: fmtMzn(withdrawal.amount),
+            method: methodLabel(withdrawal.pixKeyType || ""),
+            pixKey: withdrawal.pixKey || "",
+            adminNote: adminNote || undefined,
+            withdrawalId: withdrawal.id,
           })
-          .catch((e: any) => console.error("[EMAIL] user lookup (approve):", e?.message));
+            .then(() => console.log("[EMAIL] withdrawal approved sent to", email))
+            .catch((e: any) => console.error("[EMAIL] withdrawal approved:", e?.message));
+        }).catch((e: any) => console.error("[EMAIL] resolveUserEmail (approve):", e?.message));
       }
       // ─────────────────────────────────────────────────
     } catch (err: any) {
@@ -1400,21 +1408,20 @@ export async function registerRoutes(
       res.json(withdrawal);
       // ── Email: withdrawal rejected (fire-and-forget) ──
       if (withdrawal?.userId) {
-        adminAuth.getUser(String(withdrawal.userId))
-          .then((u) => {
-            if (u.email) {
-              sendWithdrawalUpdate({
-                to: u.email,
-                status: "rejected",
-                amount: fmtMzn(withdrawal.amount),
-                method: methodLabel(withdrawal.pixKeyType || ""),
-                pixKey: withdrawal.pixKey || "",
-                adminNote: adminNote || undefined,
-                withdrawalId: withdrawal.id,
-              }).catch((e: any) => console.error("[EMAIL] withdrawal rejected:", e?.message));
-            }
+        resolveUserEmail(String(withdrawal.userId)).then((email) => {
+          if (!email) { console.warn("[EMAIL] withdrawal rejected: no email found for uid", withdrawal.userId); return; }
+          sendWithdrawalUpdate({
+            to: email,
+            status: "rejected",
+            amount: fmtMzn(withdrawal.amount),
+            method: methodLabel(withdrawal.pixKeyType || ""),
+            pixKey: withdrawal.pixKey || "",
+            adminNote: adminNote || undefined,
+            withdrawalId: withdrawal.id,
           })
-          .catch((e: any) => console.error("[EMAIL] user lookup (reject):", e?.message));
+            .then(() => console.log("[EMAIL] withdrawal rejected sent to", email))
+            .catch((e: any) => console.error("[EMAIL] withdrawal rejected:", e?.message));
+        }).catch((e: any) => console.error("[EMAIL] resolveUserEmail (reject):", e?.message));
       }
       // ─────────────────────────────────────────────────
     } catch (err: any) {

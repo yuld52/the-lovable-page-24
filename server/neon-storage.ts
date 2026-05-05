@@ -396,6 +396,25 @@ export class NeonStorage {
     }
   }
 
+  // Retrieve stored user email from DB (fallback when Firebase lookup is unavailable)
+  async getUserEmail(userId: string): Promise<string | null> {
+    if (!userId) return null;
+    try {
+      const client = await getPool().connect();
+      try {
+        const res = await client.query(
+          `SELECT email FROM settings WHERE user_id = $1 LIMIT 1`,
+          [userId]
+        );
+        return res.rows[0]?.email ?? null;
+      } finally {
+        client.release();
+      }
+    } catch {
+      return null;
+    }
+  }
+
   // Persist user email so it can be shown in admin without Firebase credentials
   async saveUserEmail(userId: string, email: string): Promise<void> {
     if (!userId || !email) return;
