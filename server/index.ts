@@ -3,6 +3,8 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import path from "path";
+import helmet from "helmet";
+import cors from "cors";
 
 const app = express();
 const httpServer = createServer(app);
@@ -13,6 +15,36 @@ declare module "http" {
   }
 }
 
+// ── Security headers (helmet) ─────────────────────────────────
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // disabled — Vite/React injects inline scripts
+    crossOriginEmbedderPolicy: false, // disabled — allows embedding PayPal SDK etc.
+  }),
+);
+
+// ── CORS ──────────────────────────────────────────────────────
+const allowedOrigins = [
+  /\.replit\.dev$/,
+  /\.repl\.co$/,
+  /localhost/,
+  /127\.0\.0\.1/,
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // same-origin / server-to-server
+      const allowed = allowedOrigins.some((pattern) =>
+        typeof pattern === "string" ? pattern === origin : pattern.test(origin),
+      );
+      callback(null, allowed);
+    },
+    credentials: true,
+  }),
+);
+
+// ── Body parsing ──────────────────────────────────────────────
 app.use(
   express.json({
     limit: '12mb',
@@ -44,8 +76,6 @@ app.get("/api/health/basic", (_req, res) => {
 // Health check with DB (if needed)
 app.get("/api/health", async (_req, res) => {
   try {
-    // Simple check - just return ok for now
-    // In production, you'd check database connectivity here
     res.json({ ok: true, timestamp: new Date().toISOString() });
   } catch (error: any) {
     res.status(500).json({ ok: false, error: error.message });
@@ -121,8 +151,8 @@ app.use((req, res, next) => {
     },
     () => {
       console.log("\n\n" + "=".repeat(50));
-      console.log("🚀 METEORFY SERVER UPDATED & RUNNING!");
-      console.log("✅ FIREBASE AUTH & PUSH FIXES APPLIED");
+      console.log("🚀 METEORFY SERVER RUNNING");
+      console.log("🔒 SECURITY: helmet + cors + rate-limiting active");
       console.log("=".repeat(50) + "\n\n");
       log(`serving on port ${port}`);
     },

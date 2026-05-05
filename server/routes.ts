@@ -8,11 +8,49 @@ import fs from "fs";
 import { requireAuth } from "./middleware/auth";
 import { adminAuth, adminDb, adminStorage } from "./firebase-admin";
 import { getVapidPublicKey, saveSubscription } from "./services/notification";
+import rateLimit from "express-rate-limit";
 
 import { registerTrackingRoutes } from "./trackingRoutes";
 import { registerChatRoutes } from "./chat";
 import { initiateE2Payment, makeReference, normalizeMzPhone } from "./services/e2payments";
 import { sendBuyerConfirmation, sendSellerNewSale, sendFirstSale, sendWithdrawalUpdate, sendWithdrawalReceived, sendProductApproved, sendProductRejected, sendNewBankAccount, sendWelcomeEmail, sendVerificationCode, sendWithdrawalConfirmCode } from "./email";
+
+// ── Rate limiters ─────────────────────────────────────────────────────────────
+// Auth endpoints: max 10 requests per 15 minutes per IP
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Demasiadas tentativas. Tente novamente em 15 minutos." },
+});
+
+// Verification code sending: max 5 per 15 minutes per IP
+const codeRequestLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Limite de envio de códigos atingido. Tente novamente em 15 minutos." },
+});
+
+// Payment initiation: max 20 per 10 minutes per IP
+const paymentLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Demasiados pedidos de pagamento. Tente novamente em 10 minutos." },
+});
+
+// Public API (checkout data, etc.): max 100 per minute per IP
+const publicLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Demasiados pedidos. Tente novamente em breve." },
+});
 
 // ── In-memory verification code store ──
 interface VerifEntry { code: string; uid: string; expiresAt: number; }
@@ -168,7 +206,7 @@ export async function registerRoutes(
   });
 
   // --- AUTENTICAÇÃO ---
-  app.post("/api/auth/check-email", async (req, res) => {
+  app.post("/api/auth/check-email", authLimiter, async (req, res) => {
     try {
       const { email } = req.body;
       if (!email) return res.status(400).json({ message: "E-mail é obrigatório" });
@@ -185,7 +223,7 @@ export async function registerRoutes(
   });
 
   // ── Welcome email after new registration ──
-  app.post("/api/auth/send-welcome", async (req, res) => {
+  app.post("/api/auth/send-welcome", authLimiter, async (req, res) => {
     try {
       const { email } = req.body;
       if (!email) return res.status(400).json({ message: "E-mail é obrigatório" });
@@ -198,7 +236,7 @@ export async function registerRoutes(
   });
 
   // ── Send 6-digit verification code ──
-  app.post("/api/auth/send-verification-code", async (req, res) => {
+  app.post("/api/auth/send-verification-code", codeRequestLimiter, async (req, res) => {
     try {
       const { email, uid } = req.body;
       if (!email || !uid) return res.status(400).json({ message: "email e uid são obrigatórios" });
@@ -215,7 +253,7 @@ export async function registerRoutes(
   });
 
   // ── Verify code and activate account ──
-  app.post("/api/auth/verify-code", async (req, res) => {
+  app.post("/api/auth/verify-code", authLimiter, async (req, res) => {
     try {
       const { email, code } = req.body;
       if (!email || !code) return res.status(400).json({ message: "email e código são obrigatórios" });
@@ -511,7 +549,7 @@ export async function registerRoutes(
   });
 
   // --- PUBLIC CHECKOUT (no auth required) ---
-  app.get("/api/public/checkout/:slug", async (req, res) => {
+  app.get("/api/public/checkout/:slug", publicLimiter, async (req, res) => {
     try {
       const { slug } = req.params;
       const checkout = await storage.getCheckoutBySlug(slug);
@@ -536,7 +574,7 @@ export async function registerRoutes(
   });
 
   // --- PUBLIC TRACKING CONFIG ---
-  app.get("/api/public/tracking-config/:slug", async (req, res) => {
+  app.get("/api/public/tracking-config/:slug", publicLimiter, async (req, res) => {
     try {
       const slug = req.params.slug;
       const checkout = await storage.getCheckoutBySlug(slug);
@@ -599,7 +637,7 @@ export async function registerRoutes(
   });
 
   // e2payments callback — called by e2payments when STK-push confirmed
-  app.post("/api/e2payments/callback", async (req, res) => {
+  app.post("/api/e2payments/callback", paymentLimiter, async (req, res) => {
     try {
       const body = req.body || {};
       console.log("[E2PAY CALLBACK]", JSON.stringify(body));
@@ -802,7 +840,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/paypal/create-order", async (req, res) => {
+  app.post("/api/paypal/create-order", paymentLimiter, async (req, res) => {
     try {
       const { createOrderBodySchema, createOrder } = await import("./paypal");
       const { sendUtmifyOrder } = await import("./tracking");
@@ -918,7 +956,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/paypal/capture-order/:orderId", async (req, res) => {
+  app.post("/api/paypal/capture-order/:orderId", paymentLimiter, async (req, res) => {
     try {
       const { captureOrder } = await import("./paypal");
       const { sendUtmifyOrder, sendWebhookNotification, sendMetaCapiEvent } = await import("./tracking");
