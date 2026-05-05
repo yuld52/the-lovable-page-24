@@ -169,6 +169,16 @@ export function convertUsdCentsToCurrencyMinor(
 export function formatMoney({ currency, minor }: Money, locale?: string) {
   const digits = getCurrencyFractionDigits(currency);
   const major = minor / Math.pow(10, digits);
+
+  // For MZN show amount first, currency code after: "100.00 MZ"
+  if (currency === "MZN") {
+    const number = new Intl.NumberFormat(locale ?? "pt-MZ", {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    }).format(major);
+    return `${number} MZ`;
+  }
+
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
