@@ -353,6 +353,24 @@ export async function registerRoutes(
         status: 'pending'
       };
       const result = await storage.createProduct(productData);
+
+      // Auto-create a default checkout for the new product
+      try {
+        const slug = `produto-${result.id}`;
+        const baseUrl = `${req.headers['x-forwarded-proto'] || req.protocol}://${req.headers.host}`;
+        await storage.createCheckout({
+          productId: result.id,
+          ownerId: userId,
+          name: result.name,
+          slug,
+          publicUrl: `${baseUrl}/checkout/${slug}`,
+          active: true,
+          config: {},
+        });
+      } catch (checkoutErr: any) {
+        console.warn("[CREATE PRODUCT] Checkout auto-create skipped:", checkoutErr?.message);
+      }
+
       res.status(201).json(result);
     } catch (err: any) {
       console.error("[CREATE PRODUCT] Erro:", err);

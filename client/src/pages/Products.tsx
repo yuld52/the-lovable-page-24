@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { useProducts, useDeleteProduct } from "@/hooks/use-products";
+import { useCheckouts } from "@/hooks/use-checkouts";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus, PackageOpen, Search, Pencil, Trash2, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Loader2, Plus, PackageOpen, Search, Pencil, Trash2, CheckCircle2, XCircle, Clock, Link2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Products() {
   const { data: products, isLoading } = useProducts();
+  const { data: checkouts } = useCheckouts();
   const deleteProduct = useDeleteProduct();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -28,6 +30,17 @@ export default function Products() {
     } catch (error: any) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     }
+  };
+
+  const copyCheckoutLink = (productId: number) => {
+    const checkout = checkouts?.find(c => c.productId === productId);
+    if (!checkout) {
+      toast({ title: "Sem link", description: "Este produto ainda não tem um checkout associado.", variant: "destructive" });
+      return;
+    }
+    const link = `${window.location.origin}/checkout/${checkout.slug}`;
+    navigator.clipboard.writeText(link);
+    toast({ title: "Link copiado!", description: "Link de checkout copiado para a área de transferência." });
   };
 
   const getStatusChip = (status: string) => {
@@ -101,79 +114,96 @@ export default function Products() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filteredProducts?.map((product) => (
-            <Card
-              key={product.id}
-              className="bg-[#18181b] border-zinc-800/60 hover:border-purple-500/30 transition-all group overflow-hidden flex flex-col rounded-xl"
-            >
-              {/* Cover image — 16:9 */}
-              <div
-                className="w-full relative overflow-hidden cursor-pointer"
-                style={{ aspectRatio: "16/9" }}
-                onClick={() => setLocation(`/products/edit/${product.id}`)}
+          {filteredProducts?.map((product) => {
+            const checkout = checkouts?.find(c => c.productId === product.id);
+            return (
+              <Card
+                key={product.id}
+                className="bg-[#18181b] border-zinc-800/60 hover:border-purple-500/30 transition-all group overflow-hidden flex flex-col rounded-xl"
               >
-                {product.imageUrl ? (
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      if (target.src.includes('/objects-cdn/public/')) {
-                        target.src = target.src.replace('/objects-cdn/public/', '/objects-cdn/');
-                      }
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
-                    <PackageOpen className="w-8 h-8 text-zinc-600" />
-                  </div>
-                )}
-              </div>
-
-              {/* Body */}
-              <div
-                className="px-3 pt-2 pb-1 cursor-pointer flex-1"
-                onClick={() => setLocation(`/products/edit/${product.id}`)}
-              >
-                <p className="text-[10px] text-zinc-500 mb-0.5">
-                  {(() => { const cur = (product.currency || "USD").toUpperCase(); try { return new Intl.NumberFormat(cur === "MZN" ? "pt-MZ" : "en-US", { style: "currency", currency: cur }).format(product.price / 100); } catch { return `${cur} ${(product.price / 100).toFixed(2)}`; } })()}
-                </p>
-                <h3 className="text-sm font-semibold text-white group-hover:text-purple-400 transition-colors leading-snug line-clamp-2">
-                  {product.name}
-                </h3>
-              </div>
-
-              {/* Footer */}
-              <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-800/50 mt-1">
-                {getStatusChip(product.status || 'pending')}
-                <div className="flex gap-0.5">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 h-7 w-7"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setLocation(`/products/edit/${product.id}`);
-                    }}
-                  >
-                    <Pencil className="w-3 h-3" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 w-7"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(product.id);
-                    }}
-                  >
-                    {deleteProduct.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                  </Button>
+                {/* Cover image — 16:9 */}
+                <div
+                  className="w-full relative overflow-hidden cursor-pointer"
+                  style={{ aspectRatio: "16/9" }}
+                  onClick={() => setLocation(`/products/edit/${product.id}`)}
+                >
+                  {product.imageUrl ? (
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        if (target.src.includes('/objects-cdn/public/')) {
+                          target.src = target.src.replace('/objects-cdn/public/', '/objects-cdn/');
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
+                      <PackageOpen className="w-8 h-8 text-zinc-600" />
+                    </div>
+                  )}
                 </div>
-              </div>
-            </Card>
-          ))}
+
+                {/* Body */}
+                <div
+                  className="px-3 pt-2 pb-1 cursor-pointer flex-1"
+                  onClick={() => setLocation(`/products/edit/${product.id}`)}
+                >
+                  <p className="text-[10px] text-zinc-500 mb-0.5">
+                    {(() => { const cur = (product.currency || "USD").toUpperCase(); try { return new Intl.NumberFormat(cur === "MZN" ? "pt-MZ" : "en-US", { style: "currency", currency: cur }).format(product.price / 100); } catch { return `${cur} ${(product.price / 100).toFixed(2)}`; } })()}
+                  </p>
+                  <h3 className="text-sm font-semibold text-white group-hover:text-purple-400 transition-colors leading-snug line-clamp-2">
+                    {product.name}
+                  </h3>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-800/50 mt-1">
+                  {getStatusChip(product.status || 'pending')}
+                  <div className="flex gap-0.5">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      title="Copiar link de checkout"
+                      className={checkout ? "text-zinc-400 hover:text-white hover:bg-zinc-800 h-7 w-7" : "text-zinc-700 cursor-not-allowed h-7 w-7"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        copyCheckoutLink(product.id);
+                      }}
+                    >
+                      <Link2 className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      title="Editar produto"
+                      className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 h-7 w-7"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLocation(`/products/edit/${product.id}`);
+                      }}
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      title="Excluir produto"
+                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 w-7"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(product.id);
+                      }}
+                    >
+                      {deleteProduct.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
     </Layout>

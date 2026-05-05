@@ -15,6 +15,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { useStats } from "@/hooks/use-stats";
 import { useState } from "react";
@@ -197,18 +198,6 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               </div>
             )}
           </div>
-
-          <Link href="/checkouts">
-            <button
-              className={cn(
-                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-all duration-200 text-[15px]",
-                location === "/checkouts" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-accent",
-              )}
-            >
-              <ShoppingCart size={18} strokeWidth={2.5} />
-              Checkouts
-            </button>
-          </Link>
 
           <Link href="/sales">
             <button
