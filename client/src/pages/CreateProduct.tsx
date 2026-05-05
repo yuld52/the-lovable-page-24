@@ -274,20 +274,20 @@ export default function CreateProduct() {
   ];
 
   const renderStepIndicator = () => (
-    <div className="flex items-center justify-between mb-8 px-2 max-w-2xl mx-auto">
+    <div className="flex items-center justify-between mb-4 md:mb-8 px-1 md:px-2 max-w-2xl mx-auto">
       {steps.map((s, i) => (
         <div key={s.id} className="flex items-center flex-1 last:flex-none">
-          <div className={`flex flex-col items-center gap-2`}>
+          <div className={`flex flex-col items-center gap-1 md:gap-2`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${step >= s.id ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
               }`}>
               {step > s.id ? <Check className="w-4 h-4" /> : s.id}
             </div>
-            <span className={`text-[10px] font-medium whitespace-nowrap ${step >= s.id ? 'text-zinc-300' : 'text-zinc-500'}`}>
+            <span className={`text-[9px] md:text-[10px] font-medium text-center leading-tight max-w-[64px] ${step >= s.id ? 'text-zinc-300' : 'text-zinc-500'}`}>
               {s.title}
             </span>
           </div>
           {i < steps.length - 1 && (
-            <div className={`h-[1px] flex-1 mx-4 ${step > s.id ? 'bg-purple-600' : 'bg-zinc-800'}`} />
+            <div className={`h-[1px] flex-1 mx-2 md:mx-4 ${step > s.id ? 'bg-purple-600' : 'bg-zinc-800'}`} />
           )}
         </div>
       ))}
@@ -321,10 +321,10 @@ export default function CreateProduct() {
       </div>
 
       <div className="max-w-2xl mx-auto">
-        <div className="bg-[#18181b] border border-zinc-800/60 rounded-2xl p-8 shadow-xl">
+        <div className="bg-[#18181b] border border-zinc-800/60 rounded-2xl p-4 md:p-8 shadow-xl">
           {renderStepIndicator()}
 
-          <div className="space-y-6 mt-8">
+          <div className="space-y-6 mt-4 md:mt-8">
             {step === 1 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="flex items-center gap-2 text-zinc-300 font-medium pb-2 border-b border-zinc-800/50">
@@ -726,7 +726,7 @@ export default function CreateProduct() {
 
                   <div className="space-y-4">
                     <div
-                      className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center gap-4 transition-colors cursor-pointer group ${showErrors && !newProduct.deliveryUrl && deliveryFiles.length === 0
+                      className={`border-2 border-dashed rounded-2xl p-4 md:p-8 flex flex-col items-center justify-center gap-3 md:gap-4 transition-colors cursor-pointer group ${showErrors && !newProduct.deliveryUrl && deliveryFiles.length === 0
                         ? 'border-red-500/50 bg-red-500/5'
                         : 'border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60'
                         }`}
@@ -736,8 +736,8 @@ export default function CreateProduct() {
                         <Plus className="w-8 h-8 text-zinc-500" />
                       </div>
                       <div className="text-center space-y-1">
-                        <p className="text-base font-bold text-zinc-300">Arraste arquivos ou clique para selecionar</p>
-                        <p className="text-sm text-zinc-500">Tamanho máximo: 64MB • Limite: 20 arquivos</p>
+                        <p className="text-sm md:text-base font-bold text-zinc-300">Arraste arquivos ou clique para selecionar</p>
+                        <p className="text-xs md:text-sm text-zinc-500">Tamanho máximo: 64MB • Limite: 20 arquivos</p>
                       </div>
                       <input
                         id="file-delivery-upload"

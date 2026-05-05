@@ -180,25 +180,25 @@ export default function EditProduct() {
       </div>
 
       <div className="max-w-2xl mx-auto">
-        <div className="bg-[#18181b] border border-zinc-800/60 shadow-lg rounded-2xl p-8">
+        <div className="bg-[#18181b] border border-zinc-800/60 shadow-lg rounded-2xl p-4 md:p-8">
           {/* Step Indicator */}
-          <div className="flex items-center justify-between mb-8 px-2">
+          <div className="flex items-center justify-between mb-4 md:mb-8 px-2">
             {steps.map((s, i) => (
               <div key={s.id} className="flex items-center flex-1 last:flex-none">
-                <div className="flex flex-col items-center gap-2">
+                <div className="flex flex-col items-center gap-1 md:gap-2">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
                     step >= s.id ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
                   }`}>
                     {step > s.id ? <Check className="w-4 h-4" /> : s.id}
                   </div>
-                  <span className={`text-[10px] font-medium whitespace-nowrap ${
+                  <span className={`text-[9px] md:text-[10px] font-medium text-center leading-tight max-w-[64px] ${
                     step >= s.id ? 'text-zinc-300' : 'text-zinc-500'
                   }`}>
                     {s.title}
                   </span>
                 </div>
                 {i < steps.length - 1 && (
-                  <div className={`h-[1px] flex-1 mx-4 ${
+                  <div className={`h-[1px] flex-1 mx-2 md:mx-4 ${
                     step > s.id ? 'bg-purple-600' : 'bg-zinc-800'
                   }`} />
                 )}
