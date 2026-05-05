@@ -144,7 +144,8 @@ Equipa Meteorfy`,
 
 export default function AdminEmail() {
   const { toast } = useToast();
-  const [to, setTo] = useState("");
+  const [to, setTo] = useState<string[]>([]);
+  const [toInput, setToInput] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
@@ -163,6 +164,36 @@ export default function AdminEmail() {
     .map((u: any) => u.email)
     .filter((e: string) => e && e.includes("@"));
 
+  const addEmail = (email: string) => {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed || !trimmed.includes("@")) return;
+    setTo((prev) => prev.includes(trimmed) ? prev : [...prev, trimmed]);
+    setToInput("");
+  };
+
+  const removeEmail = (email: string) => {
+    setTo((prev) => prev.filter((e) => e !== email));
+  };
+
+  const toggleEmail = (email: string) => {
+    if (to.includes(email)) {
+      removeEmail(email);
+    } else {
+      addEmail(email);
+    }
+  };
+
+  const addAllEmails = () => {
+    setTo(knownEmails);
+  };
+
+  const handleToInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === "," || e.key === " ") {
+      e.preventDefault();
+      addEmail(toInput);
+    }
+  };
+
   const applyTemplate = (tpl: typeof TEMPLATES[0]) => {
     setSelectedTemplate(tpl.id);
     setSubject(tpl.subject);
@@ -170,21 +201,23 @@ export default function AdminEmail() {
   };
 
   const handleSend = async () => {
-    if (!to.trim() || !subject.trim() || !body.trim()) {
+    const recipients = to.length > 0 ? to : toInput.trim() ? [toInput.trim()] : [];
+    if (recipients.length === 0 || !subject.trim() || !body.trim()) {
       toast({ title: "Preencha todos os campos", variant: "destructive" });
       return;
     }
     setSending(true);
     try {
       await apiRequest("POST", "/api/admin/send-email", {
-        to: to.trim(),
+        to: recipients,
         subject: subject.trim(),
         body: body.trim(),
       });
       setSent(true);
-      toast({ title: "Email enviado com sucesso!" });
+      toast({ title: `Email enviado com sucesso para ${recipients.length} destinatário(s)!` });
       setTimeout(() => {
-        setTo("");
+        setTo([]);
+        setToInput("");
         setSubject("");
         setBody("");
         setSelectedTemplate(null);
@@ -261,14 +294,49 @@ export default function AdminEmail() {
               <div className="p-6 space-y-5">
                 {/* To */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                    Para (email)
-                  </Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                      Para (email)
+                    </Label>
+                    {knownEmails.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={addAllEmails}
+                        className="text-xs text-purple-400 hover:text-purple-300 font-medium transition-colors"
+                      >
+                        + Adicionar todos ({knownEmails.length})
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Selected recipient chips */}
+                  {to.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 p-2.5 bg-zinc-900/50 border border-zinc-700 rounded-lg min-h-[42px]">
+                      {to.map((email: string) => (
+                        <span
+                          key={email}
+                          className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-purple-600/20 border border-purple-500/40 text-purple-300"
+                        >
+                          {email}
+                          <button
+                            type="button"
+                            onClick={() => removeEmail(email)}
+                            className="text-purple-400 hover:text-white ml-0.5 leading-none"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   <Input
                     type="email"
-                    placeholder="email@exemplo.com"
-                    value={to}
-                    onChange={(e) => setTo(e.target.value)}
+                    placeholder={to.length > 0 ? "Adicionar outro email…" : "email@exemplo.com"}
+                    value={toInput}
+                    onChange={(e) => setToInput(e.target.value)}
+                    onKeyDown={handleToInputKeyDown}
+                    onBlur={() => { if (toInput.trim()) addEmail(toInput); }}
                     list="known-emails"
                     className="bg-zinc-900/50 border-zinc-700 focus:border-purple-500/60 h-10"
                   />
@@ -278,16 +346,16 @@ export default function AdminEmail() {
                     ))}
                   </datalist>
 
-                  {/* Email chips */}
+                  {/* Known email chips */}
                   {knownEmails.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {knownEmails.slice(0, 6).map((email: string) => (
+                    <div className="flex flex-wrap gap-1.5 pt-1 max-h-36 overflow-y-auto">
+                      {knownEmails.map((email: string) => (
                         <button
                           key={email}
                           type="button"
-                          onClick={() => setTo(email)}
+                          onClick={() => toggleEmail(email)}
                           className={`text-xs px-2.5 py-1 rounded-full border transition-all ${
-                            to === email
+                            to.includes(email)
                               ? "bg-purple-600/30 border-purple-500/60 text-purple-300"
                               : "bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-purple-500/40 hover:text-zinc-200"
                           }`}

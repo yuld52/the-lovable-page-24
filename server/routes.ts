@@ -1450,6 +1450,9 @@ export async function registerRoutes(
       if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
       const { to, subject, body } = req.body || {};
       if (!to || !subject || !body) return res.status(400).json({ message: "to, subject e body são obrigatórios" });
+      // Support single email string or array of emails
+      const recipients: string[] = Array.isArray(to) ? to : [to];
+      if (recipients.length === 0) return res.status(400).json({ message: "Nenhum destinatário fornecido" });
       const { Resend } = await import("resend");
       const resend = new Resend(process.env.RESEND_API_KEY);
       const FROM = process.env.EMAIL_FROM || "Meteorfy <onboarding@resend.dev>";
@@ -1473,8 +1476,13 @@ export async function registerRoutes(
     </td></tr>
   </table>
 </body></html>`;
-      await resend.emails.send({ from: FROM, to, subject, html });
-      res.json({ success: true });
+      // Send to each recipient individually to avoid exposing other emails
+      const results = await Promise.allSettled(
+        recipients.map((email) => resend.emails.send({ from: FROM, to: email, subject, html }))
+      );
+      const failed = results.filter((r) => r.status === "rejected").length;
+      const succeeded = results.length - failed;
+      res.json({ success: true, sent: succeeded, failed });
     } catch (err: any) {
       console.error("Error sending admin email:", err);
       res.status(500).json({ message: err.message || "Erro ao enviar email" });
