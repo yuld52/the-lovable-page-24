@@ -852,6 +852,14 @@ export default function PublicCheckout() {
                       </div>
                     )}
 
+                    {/* Total — above pay button */}
+                    <div className="pt-2 border-t border-gray-100">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-xs">{t.total}</span>
+                        <span className="font-bold text-lg" style={{ color: config.primaryColor }}>{moneyFromUsdCents(calculateTotal())}</span>
+                      </div>
+                    </div>
+
                     {/* Pay button — M-Pesa or e-Mola: below order bump */}
                     {isMobile(selectedPaymentMethod) && (
                       <Button
@@ -893,13 +901,6 @@ export default function PublicCheckout() {
                   </>
                 );
               })()}
-
-              <div className="pt-2 border-t border-gray-100">
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-xs">{t.total}</span>
-                  <span className="font-bold text-lg" style={{ color: config.primaryColor }}>{moneyFromUsdCents(calculateTotal())}</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
