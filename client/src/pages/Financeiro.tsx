@@ -259,7 +259,7 @@ export default function Financeiro() {
   return (
     <Layout title="Financeiro" subtitle="Gerencie seus saques e saldo">
       {/* Sub-navigation */}
-      <div className="flex gap-1 p-1 rounded-xl bg-zinc-900/50 border border-zinc-800 mb-6 w-fit">
+      <div className="flex gap-1 p-1 rounded-xl bg-zinc-900/50 border border-zinc-800 mb-6 w-full sm:w-fit">
         <button 
           className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all font-medium flex-1 min-w-0 ${
             activeTab === 'visao' 

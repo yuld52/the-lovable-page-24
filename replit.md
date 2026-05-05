@@ -54,6 +54,18 @@ Preferred communication style: Simple, everyday language.
 └── start-all.js      # Dev startup script
 ```
 
+### Mobile Responsiveness
+
+The app is fully mobile-responsive. Key implementation details:
+
+- **`Sidebar`** (`client/src/components/Sidebar.tsx`): Accepts `isOpen`/`onClose` props. On mobile it becomes a `fixed` overlay that slides in from the left (`-translate-x-full` → `translate-x-0`); on desktop it is `md:relative md:w-80`.
+- **`AdminSidebar`** (`client/src/components/AdminSidebar.tsx`): Same mobile overlay pattern as Sidebar.
+- **`Layout`** (`client/src/components/Layout.tsx`): Manages `sidebarOpen` state, passes it to Sidebar and as `onMenuToggle` to Header. Shows a black overlay on mobile when sidebar is open. Main content padding is `p-4 md:p-8`.
+- **`Header`** (`client/src/components/Header.tsx`): Accepts optional `onMenuToggle` prop. Shows hamburger `Menu` icon on mobile only (`md:hidden`). Height is `h-16 md:h-28`.
+- **`AdminLayout`** (`client/src/components/AdminLayout.tsx`): New reusable wrapper for all admin pages. Manages its own `sidebarOpen` state. Shows a mobile top bar with hamburger + "Admin Panel" label on small screens.
+- **Admin pages**: All 9 admin pages (`Admin`, `AdminProducts`, `AdminUsers`, `AdminWithdrawals`, `AdminEmail`, `AdminSales`, `AdminRulesFees`, `AdminRevenueRanking`, `AdminSettings`) updated to use `AdminLayout` instead of raw `flex` div with `AdminSidebar`.
+- **Page content**: Admin page main padding is `p-4 md:p-8`. Dashboard grids use `grid-cols-1 md:grid-cols-3`. Financeiro tabs are `w-full sm:w-fit`. Sales table uses `overflow-x-auto`.
+
 ### Key Design Decisions
 
 1. **Single-port development**: Express server handles both API routes and Vite frontend (via `setupVite`) on port 5000. No separate Vite dev server needed.

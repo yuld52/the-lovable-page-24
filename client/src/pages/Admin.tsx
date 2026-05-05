@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { AdminSidebar } from "@/components/AdminSidebar";
+import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Shield, Users, Package, ShoppingCart, Loader2, ArrowDownToLine, Receipt, TrendingUp } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -84,10 +84,8 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-foreground flex">
-      <AdminSidebar />
-      
-      <main className="flex-1 p-8 overflow-y-auto">
+    <AdminLayout>
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
             <h1 className="text-3xl font-bold text-white mb-2">Painel Administrativo</h1>
             <p className="text-sm text-muted-foreground mb-8">Visão geral do sistema</p>
@@ -166,6 +164,6 @@ export default function Admin() {
             </div>
         </div>
       </main>
-    </div>
+    </AdminLayout>
   );
 }

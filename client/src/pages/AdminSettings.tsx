@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import { Layout } from "@/components/Layout";
-import { AdminSidebar } from "@/components/AdminSidebar";
+import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Settings as SettingsIcon, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -53,19 +52,17 @@ export default function AdminSettings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#09090b] flex">
-        <AdminSidebar />
-        <div className="flex-1 flex items-center justify-center">
+      <AdminLayout>
+        <div className="flex-1 flex items-center justify-center min-h-[50vh]">
           <Loader2 className="w-8 h-8 text-red-500 animate-spin" />
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-foreground flex">
-      <AdminSidebar />
-      <main className="flex-1 p-8 overflow-y-auto">
+    <AdminLayout>
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-4 mb-8">
             <Button
@@ -152,6 +149,6 @@ export default function AdminSettings() {
           </div>
         </div>
       </main>
-    </div>
+    </AdminLayout>
   );
 }

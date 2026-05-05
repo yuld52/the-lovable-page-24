@@ -1,4 +1,4 @@
-import { AdminSidebar } from "@/components/AdminSidebar";
+import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -231,11 +231,10 @@ export default function AdminEmail() {
   };
 
   return (
-    <div className="flex h-screen bg-[#09090b] overflow-hidden">
-      <AdminSidebar />
+    <AdminLayout>
 
       <main className="flex-1 overflow-y-auto">
-        <div className="max-w-6xl mx-auto p-8">
+        <div className="max-w-6xl mx-auto p-4 md:p-8">
 
           {/* Header */}
           <div className="mb-8">
@@ -423,6 +422,6 @@ export default function AdminEmail() {
           </div>
         </div>
       </main>
-    </div>
+    </AdminLayout>
   );
 }

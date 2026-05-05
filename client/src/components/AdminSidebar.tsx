@@ -8,6 +8,7 @@ import {
   ArrowDownToLine,
   Trophy,
   Mail,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
@@ -25,7 +26,12 @@ const navItems = [
   { href: "/admin/revenue-ranking", label: "Ranking de Faturamento", icon: Trophy },
 ];
 
-export function AdminSidebar() {
+interface AdminSidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function AdminSidebar({ isOpen = false, onClose }: AdminSidebarProps) {
   const [location, setLocation] = useLocation();
   const { user } = useUser();
 
@@ -41,9 +47,25 @@ export function AdminSidebar() {
   };
 
   return (
-    <div className="w-80 bg-background border-r border-border flex flex-col flex-shrink-0">
+    <div
+      className={cn(
+        "flex flex-col bg-background border-r border-border",
+        "fixed inset-y-0 left-0 z-40 w-72 transition-transform duration-300 ease-in-out",
+        "md:relative md:translate-x-0 md:w-80 md:z-auto md:shrink-0",
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      )}
+    >
       {/* Logo */}
-      <div className="p-4 border-b border-border/50 flex-shrink-0 flex items-center gap-3">
+      <div className="p-4 border-b border-border/50 flex-shrink-0 flex items-center gap-3 relative">
+        {/* Close button — mobile only */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors md:hidden"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
         <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center border border-red-500/20">
           <Shield className="w-5 h-5 text-red-500" />
         </div>

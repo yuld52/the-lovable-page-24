@@ -1,4 +1,4 @@
-import { AdminSidebar } from "@/components/AdminSidebar";
+import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,9 +65,8 @@ export default function AdminSales() {
   const others = sales?.filter(s => s.status !== "pending") || [];
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      <AdminSidebar />
-      <main className="flex-1 overflow-y-auto p-6">
+    <AdminLayout>
+      <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <h1 className="text-2xl font-bold text-foreground mb-1">Aprovação de Vendas</h1>
         <p className="text-muted-foreground text-sm mb-6">Gerencie pagamentos M-Pesa / e-Mola pendentes</p>
 
@@ -187,6 +186,6 @@ export default function AdminSales() {
           </>
         )}
       </main>
-    </div>
+    </AdminLayout>
   );
 }

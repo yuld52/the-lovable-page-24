@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Bell, UserCircle, HelpCircle, LogOut, Mail, MessageCircle, X } from "lucide-react";
+import { Bell, UserCircle, HelpCircle, LogOut, Mail, MessageCircle, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -19,7 +19,15 @@ import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationModal } from "./NotificationModal";
 
-export function Header({ title, subtitle }: { title: string; subtitle?: string }) {
+export function Header({
+  title,
+  subtitle,
+  onMenuToggle,
+}: {
+  title: string;
+  subtitle?: string;
+  onMenuToggle?: () => void;
+}) {
   const { user } = useUser();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -36,22 +44,41 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
   };
 
   return (
-    <header className="h-28 border-b border-border/50 bg-background/80 backdrop-blur-md px-8 flex items-center justify-between w-full shrink-0">
-      <div>
-        <h2 className="text-3xl font-bold text-foreground tracking-tight">{title}</h2>
-        {subtitle && <p className="text-lg text-muted-foreground mt-1">{subtitle}</p>}
+    <header className="h-16 md:h-28 border-b border-border/50 bg-background/80 backdrop-blur-md px-4 md:px-8 flex items-center justify-between w-full shrink-0">
+      <div className="flex items-center gap-3 min-w-0">
+        {/* Hamburger — mobile only */}
+        {onMenuToggle && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
+            onClick={onMenuToggle}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
+        <div className="min-w-0">
+          <h2 className="text-xl md:text-3xl font-bold text-foreground tracking-tight truncate">
+            {title}
+          </h2>
+          {subtitle && (
+            <p className="text-sm md:text-lg text-muted-foreground mt-0.5 hidden sm:block truncate">
+              {subtitle}
+            </p>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4 shrink-0">
         {/* Notification Bell */}
         <Button
           variant="ghost"
           size="icon"
-          className="h-10 w-10 rounded-full hover:bg-accent text-zinc-400 hover:text-white transition-colors"
+          className="h-9 w-9 md:h-10 md:w-10 rounded-full hover:bg-accent text-zinc-400 hover:text-white transition-colors"
           onClick={() => setIsNotificationOpen(true)}
           title="Notificações"
         >
-          <Bell className="h-5 w-5" />
+          <Bell className="h-4 w-4 md:h-5 md:w-5" />
         </Button>
 
         {/* User Profile Popover */}
@@ -60,14 +87,14 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full hover:bg-accent"
+              className="h-9 w-9 md:h-10 md:w-10 rounded-full hover:bg-accent"
               title="Perfil"
             >
-              <UserCircle className="h-5 w-5 text-foreground" />
+              <UserCircle className="h-4 w-4 md:h-5 md:w-5 text-foreground" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent 
-            className="w-64 p-2 bg-card border-border shadow-2xl rounded-2xl" 
+          <PopoverContent
+            className="w-64 p-2 bg-card border-border shadow-2xl rounded-2xl"
             align="end"
             sideOffset={8}
           >
@@ -79,7 +106,7 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-white truncate">
-                    {user?.email?.split('@')[0] || "Usuário"}
+                    {user?.email?.split("@")[0] || "Usuário"}
                   </p>
                   <p className="text-[11px] text-zinc-500 truncate">
                     {user?.email || ""}
@@ -124,9 +151,9 @@ export function Header({ title, subtitle }: { title: string; subtitle?: string }
       </div>
 
       {/* Notification Modal */}
-      <NotificationModal 
-        isOpen={isNotificationOpen} 
-        onClose={() => setIsNotificationOpen(false)} 
+      <NotificationModal
+        isOpen={isNotificationOpen}
+        onClose={() => setIsNotificationOpen(false)}
       />
 
       {/* Support Dialog */}

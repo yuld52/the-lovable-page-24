@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AdminSidebar } from "@/components/AdminSidebar";
+import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Users, UserPlus, Trash2, Search, RefreshCw, Package, ShoppingCart, ArrowDownToLine, ShieldOff, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -80,19 +80,17 @@ export default function AdminUsers() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#09090b] flex">
-        <AdminSidebar />
-        <div className="flex-1 flex items-center justify-center">
+      <AdminLayout>
+        <div className="flex-1 flex items-center justify-center min-h-[50vh]">
           <Loader2 className="w-8 h-8 text-red-500 animate-spin" />
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-foreground flex">
-      <AdminSidebar />
-      <main className="flex-1 p-8 overflow-y-auto">
+    <AdminLayout>
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
@@ -340,6 +338,6 @@ export default function AdminUsers() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </AdminLayout>
   );
 }
