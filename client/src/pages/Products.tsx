@@ -1,21 +1,47 @@
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { useProducts, useDeleteProduct } from "@/hooks/use-products";
-import { useCheckouts } from "@/hooks/use-checkouts";
+import { useCheckouts, useUpdateCheckout } from "@/hooks/use-checkouts";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus, PackageOpen, Search, Pencil, Trash2, CheckCircle2, XCircle, Clock, Link2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Loader2, Plus, PackageOpen, Search, Pencil, Trash2, CheckCircle2, XCircle, Clock, Link2, Settings2, Save, ShoppingCart } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import type { CheckoutConfig } from "@shared/schema";
+
+const DEFAULT_CONFIG: Partial<CheckoutConfig> = {
+  heroTitle: "Promoção por tempo limitado",
+  payButtonText: "Buy now",
+  primaryColor: "#22a559",
+  showTimer: false,
+  timerMinutes: 10,
+  timerText: "Oferta Especial por Tempo Limitado!",
+  checkoutCurrency: "AUTO",
+  checkoutLanguage: "pt",
+  showPhone: false,
+  showCpf: false,
+  showSurname: false,
+  footerText: "Meteorfy © 2026. Todos os direitos reservados.",
+};
 
 export default function Products() {
   const { data: products, isLoading } = useProducts();
   const { data: checkouts } = useCheckouts();
   const deleteProduct = useDeleteProduct();
+  const updateCheckout = useUpdateCheckout();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
+
+  const [editCheckoutId, setEditCheckoutId] = useState<number | null>(null);
+  const [editConfig, setEditConfig] = useState<Partial<CheckoutConfig>>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   const filteredProducts = products?.filter(p =>
     p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -42,6 +68,34 @@ export default function Products() {
     navigator.clipboard.writeText(link);
     toast({ title: "Link copiado!", description: "Link de checkout copiado para a área de transferência." });
   };
+
+  const openCheckoutEditor = (productId: number) => {
+    const checkout = checkouts?.find(c => c.productId === productId);
+    if (!checkout) {
+      toast({ title: "Sem checkout", description: "Este produto não tem um checkout associado.", variant: "destructive" });
+      return;
+    }
+    const mergedConfig = { ...DEFAULT_CONFIG, ...(checkout.config || {}) };
+    setEditConfig(mergedConfig);
+    setEditCheckoutId(checkout.id);
+  };
+
+  const handleSaveCheckout = async () => {
+    if (!editCheckoutId) return;
+    setIsSaving(true);
+    try {
+      await updateCheckout.mutateAsync({ id: editCheckoutId, data: { config: editConfig as CheckoutConfig } });
+      toast({ title: "Checkout atualizado!", description: "As configurações foram salvas com sucesso." });
+      setEditCheckoutId(null);
+    } catch (error: any) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const set = (key: keyof CheckoutConfig, value: any) =>
+    setEditConfig(prev => ({ ...prev, [key]: value }));
 
   const getStatusChip = (status: string) => {
     switch (status) {
@@ -168,22 +222,25 @@ export default function Products() {
                       variant="ghost"
                       title="Copiar link de checkout"
                       className={checkout ? "text-zinc-400 hover:text-white hover:bg-zinc-800 h-7 w-7" : "text-zinc-700 cursor-not-allowed h-7 w-7"}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        copyCheckoutLink(product.id);
-                      }}
+                      onClick={(e) => { e.stopPropagation(); copyCheckoutLink(product.id); }}
                     >
                       <Link2 className="w-3 h-3" />
                     </Button>
                     <Button
                       size="icon"
                       variant="ghost"
+                      title="Editar checkout"
+                      className={checkout ? "text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-7 w-7" : "text-zinc-700 cursor-not-allowed h-7 w-7"}
+                      onClick={(e) => { e.stopPropagation(); openCheckoutEditor(product.id); }}
+                    >
+                      <ShoppingCart className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
                       title="Editar produto"
                       className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 h-7 w-7"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setLocation(`/products/edit/${product.id}`);
-                      }}
+                      onClick={(e) => { e.stopPropagation(); setLocation(`/products/edit/${product.id}`); }}
                     >
                       <Pencil className="w-3 h-3" />
                     </Button>
@@ -192,10 +249,7 @@ export default function Products() {
                       variant="ghost"
                       title="Excluir produto"
                       className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 w-7"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(product.id);
-                      }}
+                      onClick={(e) => { e.stopPropagation(); handleDelete(product.id); }}
                     >
                       {deleteProduct.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                     </Button>
@@ -206,6 +260,182 @@ export default function Products() {
           })}
         </div>
       )}
+
+      {/* Checkout Edit Dialog */}
+      <Dialog open={editCheckoutId !== null} onOpenChange={(open) => { if (!open) setEditCheckoutId(null); }}>
+        <DialogContent className="bg-[#18181b] border border-zinc-800 text-white w-[calc(100vw-2rem)] max-w-lg rounded-2xl p-0 gap-0">
+          <DialogHeader className="px-5 pt-5 pb-4 border-b border-zinc-800/60">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                <ShoppingCart className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div>
+                <DialogTitle className="text-white text-base">Editar Checkout</DialogTitle>
+                <DialogDescription className="text-zinc-500 text-xs mt-0.5">
+                  Configure as opções da sua página de vendas
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <ScrollArea className="max-h-[70vh]">
+            <div className="px-5 py-4 space-y-5">
+
+              {/* Título do hero */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Título da página</Label>
+                <Input
+                  value={editConfig.heroTitle || ""}
+                  onChange={(e) => set("heroTitle", e.target.value)}
+                  placeholder="Promoção por tempo limitado"
+                  className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-emerald-500 h-10"
+                />
+              </div>
+
+              {/* Botão de compra */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Texto do botão de compra</Label>
+                <Input
+                  value={editConfig.payButtonText || ""}
+                  onChange={(e) => set("payButtonText", e.target.value)}
+                  placeholder="Comprar agora"
+                  className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-emerald-500 h-10"
+                />
+              </div>
+
+              {/* Cor principal */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Cor principal</Label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={editConfig.primaryColor || "#22a559"}
+                    onChange={(e) => set("primaryColor", e.target.value)}
+                    className="w-10 h-10 rounded-lg border border-zinc-700 bg-zinc-900 cursor-pointer p-0.5"
+                  />
+                  <Input
+                    value={editConfig.primaryColor || ""}
+                    onChange={(e) => set("primaryColor", e.target.value)}
+                    placeholder="#22a559"
+                    className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-emerald-500 h-10 font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Moeda & Idioma */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Moeda</Label>
+                  <Select value={editConfig.checkoutCurrency || "AUTO"} onValueChange={(v) => set("checkoutCurrency", v)}>
+                    <SelectTrigger className="bg-zinc-900 border-zinc-700 text-white h-10 focus:ring-emerald-500">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-zinc-700 text-white">
+                      <SelectItem value="AUTO">Auto</SelectItem>
+                      <SelectItem value="MZN">MZN</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="EUR">EUR</SelectItem>
+                      <SelectItem value="BRL">BRL</SelectItem>
+                      <SelectItem value="GBP">GBP</SelectItem>
+                      <SelectItem value="AOA">AOA</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Idioma</Label>
+                  <Select value={editConfig.checkoutLanguage || "pt"} onValueChange={(v) => set("checkoutLanguage", v)}>
+                    <SelectTrigger className="bg-zinc-900 border-zinc-700 text-white h-10 focus:ring-emerald-500">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-zinc-700 text-white">
+                      <SelectItem value="pt">Português</SelectItem>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="es">Español</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Timer */}
+              <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Temporizador</p>
+                    <p className="text-xs text-zinc-500">Cria urgência na página</p>
+                  </div>
+                  <Switch
+                    checked={!!editConfig.showTimer}
+                    onCheckedChange={(v) => set("showTimer", v)}
+                  />
+                </div>
+                {editConfig.showTimer && (
+                  <div className="space-y-1.5 pt-1">
+                    <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Minutos</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={60}
+                      value={editConfig.timerMinutes ?? 10}
+                      onChange={(e) => set("timerMinutes", Number(e.target.value))}
+                      className="bg-zinc-950 border-zinc-700 text-white h-10 focus-visible:ring-emerald-500"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Campos opcionais */}
+              <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 space-y-3">
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Campos do formulário</p>
+                {[
+                  { key: "showPhone", label: "Telefone" },
+                  { key: "showCpf", label: "CPF" },
+                  { key: "showSurname", label: "Sobrenome" },
+                  { key: "showAddress", label: "Endereço" },
+                ].map(({ key, label }) => (
+                  <div key={key} className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-300">{label}</span>
+                    <Switch
+                      checked={!!(editConfig as any)[key]}
+                      onCheckedChange={(v) => set(key as keyof CheckoutConfig, v)}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Rodapé */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Texto do rodapé</Label>
+                <Input
+                  value={editConfig.footerText || ""}
+                  onChange={(e) => set("footerText", e.target.value)}
+                  placeholder="Meteorfy © 2026. Todos os direitos reservados."
+                  className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-emerald-500 h-10"
+                />
+              </div>
+            </div>
+          </ScrollArea>
+
+          {/* Footer actions */}
+          <div className="px-5 py-4 border-t border-zinc-800/60 flex gap-3">
+            <Button
+              variant="ghost"
+              className="flex-1 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-600"
+              onClick={() => setEditCheckoutId(null)}
+              disabled={isSaving}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="flex-[2] bg-emerald-600 hover:bg-emerald-500 text-white"
+              onClick={handleSaveCheckout}
+              disabled={isSaving}
+            >
+              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              {isSaving ? "Salvando..." : "Salvar alterações"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
