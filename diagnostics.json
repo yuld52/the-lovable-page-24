@@ -1,9 +1,0 @@
-{
-  "env": {
-    "hasDbUrl": false,
-    "hasServiceKey": false
-  },
-  "localDb": [],
-  "supabase": [],
-  "error": null
-}

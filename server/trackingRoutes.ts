@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { adminDb } from "./firebase-admin";
-import type { FirestoreStorage } from "./firestore-storage";
+
 import { processTopFunnelTracking, processCheckoutEventTracking, processPaymentPendingTracking } from "./tracking";
 
 const jsonHeaders = { "Content-Type": "application/json" };
@@ -61,7 +61,7 @@ async function insertTrackingLog(row: {
   }
 }
 
-export function registerTrackingRoutes(app: any, storage: FirestoreStorage) {
+export function registerTrackingRoutes(app: any, storage: any) {
   // Top-of-funnel + checkout intent events (public)
   app.post("/api/tracking/event", async (req, res) => {
     try {
