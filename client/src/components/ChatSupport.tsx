@@ -114,7 +114,7 @@ export function ChatSupport() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 h-[500px] bg-[#18181b] border border-zinc-800 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-0 left-0 right-0 h-[85vh] sm:bottom-6 sm:left-auto sm:right-6 sm:w-96 sm:h-[500px] bg-[#18181b] border border-zinc-800 sm:rounded-2xl rounded-t-2xl shadow-2xl z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
           {/* Header */}
           <div className="p-4 bg-gradient-to-r from-purple-600 to-purple-500 text-white flex items-center justify-between">
             <div className="flex items-center gap-3">
