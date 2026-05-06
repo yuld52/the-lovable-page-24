@@ -206,6 +206,7 @@ export async function sendUtmifyOrder(params: UtmifyOrderParams): Promise<void> 
   };
 
   console.log("📤 [UTMIFY] Enviando pedido:", { orderId, status, paymentMethod, totalAmountMinor });
+  console.log("[v0] UTMIFY Payload completo:", JSON.stringify(payload, null, 2));
 
   try {
     const response = await fetch("https://api.utmify.com.br/api-credentials/orders", {
@@ -220,11 +221,14 @@ export async function sendUtmifyOrder(params: UtmifyOrderParams): Promise<void> 
     const responseText = await response.text();
     if (!response.ok) {
       console.error("❌ [UTMIFY] Erro:", response.status, responseText);
+      console.error("[v0] UTMIFY Error response:", responseText);
     } else {
       console.log("✅ [UTMIFY] Pedido enviado com sucesso:", response.status);
+      console.log("[v0] UTMIFY Success:", responseText);
     }
   } catch (err) {
     console.error("❌ [UTMIFY] Erro de rede:", err);
+    console.error("[v0] UTMIFY Network error:", err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -287,6 +291,7 @@ export async function sendMetaCapiEvent(
   };
 
   console.log(`📘 [META CAPI] Evento '${eventName}' pixelId=${pixelId} eventId=${eventId}`);
+  console.log("[v0] META CAPI Payload:", JSON.stringify(payload, null, 2));
 
   await fetch(
     `https://graph.facebook.com/v18.0/${encodeURIComponent(pixelId)}/events?access_token=${encodeURIComponent(accessToken)}`,
@@ -299,11 +304,15 @@ export async function sendMetaCapiEvent(
     if (!r.ok) {
       const text = await r.text().catch(() => "");
       console.error(`❌ [META CAPI] Erro ${r.status}: ${text.substring(0, 300)}`);
+      console.error("[v0] META CAPI Error response:", text);
     } else {
       console.log(`✅ [META CAPI] Evento '${eventName}' enviado`);
+      const successText = await r.text().catch(() => "");
+      console.log("[v0] META CAPI Success:", successText);
     }
   }).catch((err) => {
     console.error("❌ [META CAPI] Erro de rede:", err);
+    console.error("[v0] META CAPI Network error:", err instanceof Error ? err.message : String(err));
   });
 }
 

@@ -935,6 +935,7 @@ export async function registerRoutes(
 
       // Utmify — waiting_payment
       if (settings?.utmfyToken) {
+        console.log("[v0] Chamando sendUtmifyOrder para waiting_payment, token:", settings.utmfyToken ? "***" : "ausente");
         _sendUtmify({
           token: settings.utmfyToken,
           orderId: String(sale?.id ?? order.id),
@@ -955,6 +956,8 @@ export async function registerRoutes(
           tracking: trackingCommon,
           isTest,
         }).catch((e) => console.error("[UTMIFY] waiting_payment error:", e));
+      } else {
+        console.log("[v0] Utmify token não configurado, ignorando waiting_payment");
       }
 
       // Webhook — sale.pending (only if event is enabled)
@@ -1066,6 +1069,7 @@ export async function registerRoutes(
 
       // Utmify — paid
       if (settings?.utmfyToken) {
+        console.log("[v0] Chamando sendUtmifyOrder para paid, token:", settings.utmfyToken ? "***" : "ausente", "saleId:", sale.id);
         sendUtmifyOrder({
           token: settings.utmfyToken,
           orderId: String(sale.id),
@@ -1083,6 +1087,8 @@ export async function registerRoutes(
           tracking: trackingData,
           isTest,
         }).catch((e) => console.error("[UTMIFY] paid error:", e));
+      } else {
+        console.log("[v0] Utmify token não configurado, ignorando paid event");
       }
 
       // Webhook — sale.paid (only if event is enabled)
@@ -1810,6 +1816,50 @@ export async function registerRoutes(
       });
     } catch (err: any) {
       console.error("Database test failed:", err);
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+
+  // --- WEBHOOK DIAGNOSTICS ---
+  app.get("/api/webhooks/diagnostics", async (_req, res) => {
+    try {
+      const conn = await database.getConnection();
+      try {
+        const settings = await conn.query(
+          "SELECT id, paypal_webhook_id, facebook_pixel_id, facebook_access_token, utmfy_token, webhook_url, meta_enabled, utmfy_enabled FROM settings LIMIT 1"
+        );
+        
+        const result = {
+          timestamp: new Date().toISOString(),
+          webhooks: {
+            paypal: {
+              webhookId: settings.rows[0]?.paypal_webhook_id ? "✅ Configurado" : "❌ Não configurado",
+            },
+            meta: {
+              pixelId: settings.rows[0]?.facebook_pixel_id ? "✅ Configurado" : "❌ Não configurado",
+              accessToken: settings.rows[0]?.facebook_access_token ? "✅ Configurado" : "❌ Não configurado",
+              enabled: settings.rows[0]?.meta_enabled ?? true,
+            },
+            utmify: {
+              token: settings.rows[0]?.utmfy_token ? "✅ Configurado" : "❌ Não configurado",
+              enabled: settings.rows[0]?.utmfy_enabled ?? true,
+            },
+            custom: {
+              webhookUrl: settings.rows[0]?.webhook_url ? "✅ Configurado" : "❌ Não configurado",
+            }
+          },
+          environment: {
+            WEBHOOK_SECRET: process.env.WEBHOOK_SECRET ? "✅ Configurado" : "❌ Não configurado",
+            NODE_ENV: process.env.NODE_ENV || "production",
+          }
+        };
+
+        res.json(result);
+      } finally {
+        conn.release();
+      }
+    } catch (err: any) {
+      console.error("Diagnostics failed:", err);
       res.status(500).json({ ok: false, error: err.message });
     }
   });
