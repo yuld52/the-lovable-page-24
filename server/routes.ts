@@ -1886,7 +1886,8 @@ export async function registerRoutes(
   // --- WEBHOOK DIAGNOSTICS ---
   app.get("/api/webhooks/diagnostics", async (_req, res) => {
     try {
-      const conn = await database.getConnection();
+      const pool = getPool();
+      const conn = await pool.connect();
       try {
         const settings = await conn.query(
           "SELECT id, paypal_webhook_id, facebook_pixel_id, facebook_access_token, utmfy_token, webhook_url, meta_enabled, utmfy_enabled FROM settings LIMIT 1"
