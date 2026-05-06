@@ -935,6 +935,7 @@ export async function registerRoutes(
 
       // Utmify — waiting_payment
       if (settings?.utmfyToken) {
+        console.log("[v0] Chamando sendUtmifyOrder para waiting_payment, token:", settings.utmfyToken ? "***" : "ausente");
         _sendUtmify({
           token: settings.utmfyToken,
           orderId: String(sale?.id ?? order.id),
@@ -955,6 +956,8 @@ export async function registerRoutes(
           tracking: trackingCommon,
           isTest,
         }).catch((e) => console.error("[UTMIFY] waiting_payment error:", e));
+      } else {
+        console.log("[v0] Utmify token não configurado, ignorando waiting_payment");
       }
 
       // Webhook — sale.pending (only if event is enabled)
@@ -1066,6 +1069,7 @@ export async function registerRoutes(
 
       // Utmify — paid
       if (settings?.utmfyToken) {
+        console.log("[v0] Chamando sendUtmifyOrder para paid, token:", settings.utmfyToken ? "***" : "ausente", "saleId:", sale.id);
         sendUtmifyOrder({
           token: settings.utmfyToken,
           orderId: String(sale.id),
@@ -1083,6 +1087,8 @@ export async function registerRoutes(
           tracking: trackingData,
           isTest,
         }).catch((e) => console.error("[UTMIFY] paid error:", e));
+      } else {
+        console.log("[v0] Utmify token não configurado, ignorando paid event");
       }
 
       // Webhook — sale.paid (only if event is enabled)
@@ -1812,6 +1818,125 @@ export async function registerRoutes(
       console.error("Database test failed:", err);
       res.status(500).json({ ok: false, error: err.message });
     }
+  });
+
+  // --- DATABASE CONNECTION TEST ---
+  app.get("/api/db-connection-test", async (_req, res) => {
+    try {
+      console.log("[v0] Testando conexão com Neon...");
+      
+      // Teste 1: Verificar env vars
+      const hasNeonUrl = !!process.env.NEON_DATABASE_URL;
+      const hasDatabaseUrl = !!process.env.DATABASE_URL;
+      
+      console.log(`[v0] NEON_DATABASE_URL presente: ${hasNeonUrl}`);
+      console.log(`[v0] DATABASE_URL presente: ${hasDatabaseUrl}`);
+      
+      if (!hasNeonUrl && !hasDatabaseUrl) {
+        return res.status(500).json({
+          ok: false,
+          error: "Nenhuma URL de banco de dados configurada",
+          env: {
+            NEON_DATABASE_URL: "❌ Não configurada",
+            DATABASE_URL: "❌ Não configurada",
+          }
+        });
+      }
+
+      // Teste 2: Tentar conectar
+      console.log("[v0] Tentando conectar ao pool...");
+      const pool = getPool();
+      const client = await pool.connect();
+      console.log("[v0] ✅ Conectado ao pool");
+      
+      try {
+        // Teste 3: Fazer uma query simples
+        console.log("[v0] Executando query de teste...");
+        const result = await client.query('SELECT NOW() as current_time');
+        const currentTime = result.rows[0].current_time;
+        
+        console.log(`[v0] ✅ Query bem-sucedida: ${currentTime}`);
+        
+        res.json({
+          ok: true,
+          message: "Conexão com Neon estabelecida com sucesso",
+          timestamp: new Date().toISOString(),
+          dbTime: currentTime,
+          env: {
+            NEON_DATABASE_URL: hasNeonUrl ? "✅ Configurada" : "❌",
+            DATABASE_URL: hasDatabaseUrl ? "✅ Configurada" : "❌",
+          }
+        });
+      } finally {
+        client.release();
+      }
+    } catch (err: any) {
+      console.error("[v0] Erro na conexão:", err);
+      console.error("[v0] Stack:", err.stack);
+      
+      res.status(500).json({
+        ok: false,
+        error: err.message,
+        type: err.constructor.name,
+        stack: process.env.NODE_ENV === "development" ? err.stack : undefined
+      });
+    }
+  });
+
+  // --- WEBHOOK DIAGNOSTICS ---
+  app.get("/api/webhooks/diagnostics", async (_req, res) => {
+    try {
+      const pool = getPool();
+      const conn = await pool.connect();
+      try {
+        const settings = await conn.query(
+          "SELECT id, paypal_webhook_id, facebook_pixel_id, facebook_access_token, utmfy_token, webhook_url, meta_enabled, utmfy_enabled FROM settings LIMIT 1"
+        );
+        
+        const result = {
+          timestamp: new Date().toISOString(),
+          webhooks: {
+            paypal: {
+              webhookId: settings.rows[0]?.paypal_webhook_id ? "✅ Configurado" : "❌ Não configurado",
+            },
+            meta: {
+              pixelId: settings.rows[0]?.facebook_pixel_id ? "✅ Configurado" : "❌ Não configurado",
+              accessToken: settings.rows[0]?.facebook_access_token ? "✅ Configurado" : "❌ Não configurado",
+              enabled: settings.rows[0]?.meta_enabled ?? true,
+            },
+            utmify: {
+              token: settings.rows[0]?.utmfy_token ? "✅ Configurado" : "❌ Não configurado",
+              enabled: settings.rows[0]?.utmfy_enabled ?? true,
+            },
+            custom: {
+              webhookUrl: settings.rows[0]?.webhook_url ? "✅ Configurado" : "❌ Não configurado",
+            }
+          },
+          environment: {
+            WEBHOOK_SECRET: process.env.WEBHOOK_SECRET ? "✅ Configurado" : "❌ Não configurado",
+            NODE_ENV: process.env.NODE_ENV || "production",
+          }
+        };
+
+        res.json(result);
+      } finally {
+        conn.release();
+      }
+    } catch (err: any) {
+      console.error("Diagnostics failed:", err);
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+
+  // --- CATCH-ALL for unhandled routes ---
+  app.use((req: Request, res: Response) => {
+    console.log(`[v0] 404 - Route not found: ${req.method} ${req.path}`);
+    res.status(404).json({ 
+      ok: false, 
+      message: "Rota não encontrada",
+      path: req.path,
+      method: req.method
+    });
   });
 
   return httpServer;
