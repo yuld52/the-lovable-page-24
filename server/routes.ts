@@ -1928,5 +1928,16 @@ export async function registerRoutes(
     }
   });
 
+  // --- CATCH-ALL for unhandled routes ---
+  app.use((req: Request, res: Response) => {
+    console.log(`[v0] 404 - Route not found: ${req.method} ${req.path}`);
+    res.status(404).json({ 
+      ok: false, 
+      message: "Rota não encontrada",
+      path: req.path,
+      method: req.method
+    });
+  });
+
   return httpServer;
 }
