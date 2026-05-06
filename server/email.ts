@@ -103,20 +103,47 @@ export async function sendBuyerConfirmation(opts: {
     ${divider()}
     <tr>
       <td style="padding-top:16px;">
-        <p style="margin:0 0 12px;font-size:11px;font-weight:700;color:${BRAND.muted};text-transform:uppercase;letter-spacing:1px;">📦 Acesso ao Produto</p>
+        <p style="margin:0 0 14px;font-size:11px;font-weight:700;color:${BRAND.muted};text-transform:uppercase;letter-spacing:1px;">📦 Acesso ao Produto</p>
         ${deliveryUrl ? `
-        <a href="${deliveryUrl}" target="_blank"
-           style="display:block;background:${BRAND.purple};color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:12px 18px;border-radius:10px;text-align:center;margin-bottom:8px;">
-          Aceder ao Produto →
-        </a>` : ""}
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
+          <tr>
+            <td align="center">
+              <a href="${deliveryUrl}" target="_blank"
+                 style="display:inline-block;background:${BRAND.purple};color:#ffffff;text-decoration:none;font-weight:800;font-size:15px;padding:14px 32px;border-radius:12px;letter-spacing:0.3px;">
+                🔓 Aceder ao Produto
+              </a>
+            </td>
+          </tr>
+        </table>` : ""}
         ${deliveryFiles && deliveryFiles.length > 0 ? deliveryFiles.map((f: string, i: number) => {
-          const fileName = f.split("/").pop() || `Arquivo ${i + 1}`;
-          return `<a href="${f}" target="_blank"
-             style="display:flex;align-items:center;gap:8px;background:#27272a;border:1px solid #3f3f46;color:#a1a1aa;text-decoration:none;font-size:12px;padding:10px 14px;border-radius:8px;margin-bottom:6px;">
-            <span style="font-size:16px;">📎</span>
-            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${fileName}</span>
-            <span style="color:${BRAND.purple};font-weight:700;flex-shrink:0;">Baixar</span>
-          </a>`;
+          const raw = f.split("/").pop() || `Arquivo ${i + 1}`;
+          const fileName = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(raw)
+            ? decodeURIComponent(raw.substring(37))
+            : decodeURIComponent(raw);
+          return `
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
+            <tr>
+              <td style="background:#1c1c1f;border:1px solid #3f3f46;border-radius:10px;padding:12px 14px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="width:32px;vertical-align:middle;">
+                      <span style="font-size:22px;">⬇️</span>
+                    </td>
+                    <td style="vertical-align:middle;padding:0 10px;">
+                      <p style="margin:0;font-size:13px;font-weight:600;color:#e4e4e7;word-break:break-all;">${fileName}</p>
+                      <p style="margin:2px 0 0;font-size:11px;color:${BRAND.muted};">Clique no botão para baixar</p>
+                    </td>
+                    <td style="width:90px;text-align:right;vertical-align:middle;">
+                      <a href="${f}" target="_blank"
+                         style="display:inline-block;background:${BRAND.purple};color:#ffffff;text-decoration:none;font-weight:700;font-size:12px;padding:8px 14px;border-radius:8px;white-space:nowrap;">
+                        ⬇ Baixar
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>`;
         }).join("") : ""}
       </td>
     </tr>` : "";
