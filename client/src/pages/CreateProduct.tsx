@@ -522,110 +522,7 @@ export default function CreateProduct() {
                 <p className="text-sm text-zinc-400">Selecione os métodos de pagamento que estarão disponíveis para este produto:</p>
 
                 <div className="space-y-3">
-                  <div
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                      newProduct.paymentMethods.includes('paypal')
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60'
-                    }`}
-                    onClick={() => togglePaymentMethod('paypal')}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                        newProduct.paymentMethods.includes('paypal')
-                          ? 'bg-purple-600 border-purple-600'
-                          : 'border-zinc-600'
-                      }`}>
-                        {newProduct.paymentMethods.includes('paypal') && (
-                          <Check className="w-3 h-3 text-white" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-white">PayPal</p>
-                        <p className="text-xs text-zinc-500">Pagamentos via PayPal e Cartão de Crédito</p>
-                      </div>
-                      <div className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded">Ativo</div>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                      newProduct.paymentMethods.includes('stripe')
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60'
-                    }`}
-                    onClick={() => togglePaymentMethod('stripe')}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                        newProduct.paymentMethods.includes('stripe')
-                          ? 'bg-purple-600 border-purple-600'
-                          : 'border-zinc-600'
-                      }`}>
-                        {newProduct.paymentMethods.includes('stripe') && (
-                          <Check className="w-3 h-3 text-white" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-white">Stripe</p>
-                        <p className="text-xs text-zinc-500">Pagamentos via Cartão de Crédito e Pix (Em breve)</p>
-                      </div>
-                      <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                      newProduct.paymentMethods.includes('pix')
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60'
-                    }`}
-                    onClick={() => togglePaymentMethod('pix')}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                        newProduct.paymentMethods.includes('pix')
-                          ? 'bg-purple-600 border-purple-600'
-                          : 'border-zinc-600'
-                      }`}>
-                        {newProduct.paymentMethods.includes('pix') && (
-                          <Check className="w-3 h-3 text-white" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-white">Pix</p>
-                        <p className="text-xs text-zinc-500">Pagamento instantâneo via Pix (Em breve)</p>
-                      </div>
-                      <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                      newProduct.paymentMethods.includes('googlepay')
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60'
-                    }`}
-                    onClick={() => togglePaymentMethod('googlepay')}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                        newProduct.paymentMethods.includes('googlepay')
-                          ? 'bg-purple-600 border-purple-600'
-                          : 'border-zinc-600'
-                      }`}>
-                        {newProduct.paymentMethods.includes('googlepay') && (
-                          <Check className="w-3 h-3 text-white" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-white">Google Pay</p>
-                        <p className="text-xs text-zinc-500">Pagamentos rápidos via Google Pay (Em breve)</p>
-                      </div>
-                      <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
-                    </div>
-                  </div>
-
+                  {/* M-Pesa — selectable */}
                   <div
                     className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
                       newProduct.paymentMethods.includes('mpesa')
@@ -646,12 +543,13 @@ export default function CreateProduct() {
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-bold text-white">M-Pesa</p>
-                        <p className="text-xs text-zinc-500">Pagamentos via M-Pesa (Em breve)</p>
+                        <p className="text-xs text-zinc-500">Pagamentos via M-Pesa</p>
                       </div>
-                      <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
+                      <div className="text-xs text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded">Disponível</div>
                     </div>
                   </div>
 
+                  {/* e-Mola — selectable */}
                   <div
                     className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
                       newProduct.paymentMethods.includes('emola')
@@ -672,7 +570,55 @@ export default function CreateProduct() {
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-bold text-white">e-Mola</p>
-                        <p className="text-xs text-zinc-500">Pagamentos via e-Mola (Em breve)</p>
+                        <p className="text-xs text-zinc-500">Pagamentos via e-Mola</p>
+                      </div>
+                      <div className="text-xs text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded">Disponível</div>
+                    </div>
+                  </div>
+
+                  {/* PayPal — locked */}
+                  <div className="p-4 rounded-xl border-2 border-zinc-800 bg-zinc-900/20 opacity-50 cursor-not-allowed">
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded border-2 border-zinc-700 flex items-center justify-center" />
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-zinc-400">PayPal</p>
+                        <p className="text-xs text-zinc-600">Pagamentos via PayPal e Cartão de Crédito</p>
+                      </div>
+                      <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
+                    </div>
+                  </div>
+
+                  {/* Stripe — locked */}
+                  <div className="p-4 rounded-xl border-2 border-zinc-800 bg-zinc-900/20 opacity-50 cursor-not-allowed">
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded border-2 border-zinc-700 flex items-center justify-center" />
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-zinc-400">Stripe</p>
+                        <p className="text-xs text-zinc-600">Pagamentos via Cartão de Crédito e Pix</p>
+                      </div>
+                      <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
+                    </div>
+                  </div>
+
+                  {/* Pix — locked */}
+                  <div className="p-4 rounded-xl border-2 border-zinc-800 bg-zinc-900/20 opacity-50 cursor-not-allowed">
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded border-2 border-zinc-700 flex items-center justify-center" />
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-zinc-400">Pix</p>
+                        <p className="text-xs text-zinc-600">Pagamento instantâneo via Pix</p>
+                      </div>
+                      <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
+                    </div>
+                  </div>
+
+                  {/* Google Pay — locked */}
+                  <div className="p-4 rounded-xl border-2 border-zinc-800 bg-zinc-900/20 opacity-50 cursor-not-allowed">
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded border-2 border-zinc-700 flex items-center justify-center" />
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-zinc-400">Google Pay</p>
+                        <p className="text-xs text-zinc-600">Pagamentos rápidos via Google Pay</p>
                       </div>
                       <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
                     </div>
