@@ -1820,6 +1820,69 @@ export async function registerRoutes(
     }
   });
 
+  // --- DATABASE CONNECTION TEST ---
+  app.get("/api/db-connection-test", async (_req, res) => {
+    try {
+      console.log("[v0] Testando conexão com Neon...");
+      
+      // Teste 1: Verificar env vars
+      const hasNeonUrl = !!process.env.NEON_DATABASE_URL;
+      const hasDatabaseUrl = !!process.env.DATABASE_URL;
+      
+      console.log(`[v0] NEON_DATABASE_URL presente: ${hasNeonUrl}`);
+      console.log(`[v0] DATABASE_URL presente: ${hasDatabaseUrl}`);
+      
+      if (!hasNeonUrl && !hasDatabaseUrl) {
+        return res.status(500).json({
+          ok: false,
+          error: "Nenhuma URL de banco de dados configurada",
+          env: {
+            NEON_DATABASE_URL: "❌ Não configurada",
+            DATABASE_URL: "❌ Não configurada",
+          }
+        });
+      }
+
+      // Teste 2: Tentar conectar
+      console.log("[v0] Tentando conectar ao pool...");
+      const pool = getPool();
+      const client = await pool.connect();
+      console.log("[v0] ✅ Conectado ao pool");
+      
+      try {
+        // Teste 3: Fazer uma query simples
+        console.log("[v0] Executando query de teste...");
+        const result = await client.query('SELECT NOW() as current_time');
+        const currentTime = result.rows[0].current_time;
+        
+        console.log(`[v0] ✅ Query bem-sucedida: ${currentTime}`);
+        
+        res.json({
+          ok: true,
+          message: "Conexão com Neon estabelecida com sucesso",
+          timestamp: new Date().toISOString(),
+          dbTime: currentTime,
+          env: {
+            NEON_DATABASE_URL: hasNeonUrl ? "✅ Configurada" : "❌",
+            DATABASE_URL: hasDatabaseUrl ? "✅ Configurada" : "❌",
+          }
+        });
+      } finally {
+        client.release();
+      }
+    } catch (err: any) {
+      console.error("[v0] Erro na conexão:", err);
+      console.error("[v0] Stack:", err.stack);
+      
+      res.status(500).json({
+        ok: false,
+        error: err.message,
+        type: err.constructor.name,
+        stack: process.env.NODE_ENV === "development" ? err.stack : undefined
+      });
+    }
+  });
+
   // --- WEBHOOK DIAGNOSTICS ---
   app.get("/api/webhooks/diagnostics", async (_req, res) => {
     try {

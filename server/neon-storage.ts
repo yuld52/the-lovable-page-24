@@ -10,8 +10,11 @@ function getDatabaseUrl(): string {
   const url = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || "";
   if (!url) {
     console.error("❌ NEON_DATABASE_URL não configurada");
+    console.error("[v0] NEON_DATABASE_URL:", process.env.NEON_DATABASE_URL ? "***" : "undefined");
+    console.error("[v0] DATABASE_URL:", process.env.DATABASE_URL ? "***" : "undefined");
     return "";
   }
+  console.log("[v0] Database URL encontrada:", url.substring(0, 50) + "...");
   return url;
 }
 
@@ -21,11 +24,17 @@ let pool: Pool | null = null;
 export function getPool(): Pool {
   if (!pool) {
     const url = getDatabaseUrl();
+    console.log("[v0] Criando novo Pool de conexão Neon...");
     pool = new Pool({ connectionString: url });
     
     pool.on('error', (err: Error) => {
-      console.error('Unexpected error on idle client', err);
+      console.error('[v0] Unexpected error on idle client', err);
+      console.error('[v0] Pool error stack:', err.stack);
       pool = null; // reset so next call recreates the pool
+    });
+    
+    pool.on('connect', () => {
+      console.log("[v0] ✅ Pool conectado ao Neon com sucesso");
     });
   }
   return pool;
@@ -65,7 +74,10 @@ export class NeonStorage {
   // Products
   async getProducts(userId?: string, status?: string): Promise<any[]> {
     try {
+      console.log("[v0] getProducts: Conectando ao Neon...");
       const client = await getPool().connect();
+      console.log("[v0] getProducts: ✅ Conectado ao Neon");
+      
       try {
         let query = `SELECT * FROM products`;
         const params: any[] = [];
@@ -86,13 +98,16 @@ export class NeonStorage {
         
         query += ` ORDER BY created_at DESC`;
         
+        console.log("[v0] getProducts: Executando query...");
         const result = await client.query(query, params);
+        console.log(`[v0] getProducts: ✅ ${result.rows.length} produtos encontrados`);
         return result.rows.map(row => toCamelCase(row));
       } finally {
         client.release();
       }
     } catch (error) {
-      console.error("Error getting products:", error);
+      console.error("[v0] Error getting products:", error);
+      console.error("[v0] Error stack:", error instanceof Error ? error.stack : String(error));
       return [];
     }
   }
