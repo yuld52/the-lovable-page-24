@@ -226,7 +226,7 @@ export default function Profile() {
                     )}
                   </div>
                 </div>
-                <div className="hidden sm:flex items-center self-end pb-1">
+                <div className="flex items-center justify-center sm:justify-end self-end pb-1">
                   <SalesBadges />
                 </div>
               </div>
