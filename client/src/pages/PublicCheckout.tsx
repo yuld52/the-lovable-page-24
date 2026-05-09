@@ -943,12 +943,6 @@ export default function PublicCheckout() {
 
       <footer className="py-8 text-center px-4" style={{ color: config.textColor }}>
         <div className="max-w-md mx-auto space-y-3">
-          {/* Platform processing notice */}
-          <p className="text-[12px] opacity-60 leading-snug">
-            <span className="font-semibold">Meteorfy</span> está processando este pagamento para o vendedor{" "}
-            <span className="font-semibold">Vendedor Autorizado</span>
-          </p>
-
           {/* Secure purchase row */}
           <div className="flex items-center justify-center gap-1.5 text-[12px] opacity-70">
             <ShieldCheck size={14} />
