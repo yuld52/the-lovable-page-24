@@ -6,8 +6,6 @@ import { Product, Checkout, CheckoutConfig, CheckoutLanguage } from "@shared/sch
 import { getTranslations } from "@shared/translations";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import PhoneInput from "react-phone-input-2";
-import "react-phone-input-2/lib/style.css";
 import { useAutoCurrency, useUsdRates } from "@/hooks/use-currency";
 import { useAutoLanguage } from "@/hooks/use-language";
 import {
@@ -794,29 +792,43 @@ export default function PublicCheckout() {
                         <label className="block text-sm font-semibold" style={{ color: config.textColor }}>
                           Número {selectedPaymentMethod === "mpesa" ? "M-Pesa" : "e-Mola"} <span className="text-red-500">*</span>
                         </label>
-                        <PhoneInput
-                          country="mz"
-                          value={mobilePhone}
-                          onChange={(val) => { setMobilePhone(val); setShowPhoneError(false); }}
-                          preferredCountries={["mz"]}
-                          placeholder="86 12 34 567"
-                          inputStyle={{
-                            width: "100%",
-                            height: "44px",
-                            borderRadius: "6px",
-                            border: showPhoneError && getMobilePhoneError(selectedPaymentMethod, mobilePhone) ? "1px solid #ef4444" : "1px solid #d1d5db",
-                            backgroundColor: config.backgroundColor,
-                            color: config.textColor,
-                            fontSize: "14px",
-                          }}
-                          containerStyle={{ width: "100%" }}
-                          buttonStyle={{
-                            backgroundColor: "transparent",
-                            border: showPhoneError && getMobilePhoneError(selectedPaymentMethod, mobilePhone) ? "1px solid #ef4444" : "1px solid #d1d5db",
-                            borderRight: "none",
-                            borderRadius: "6px 0 0 6px",
-                          }}
-                        />
+                        <div className="flex" style={{ width: "100%" }}>
+                          <span
+                            className="flex items-center gap-1.5 px-3 text-sm font-medium shrink-0"
+                            style={{
+                              height: "44px",
+                              border: showPhoneError && getMobilePhoneError(selectedPaymentMethod, mobilePhone) ? "1px solid #ef4444" : "1px solid #d1d5db",
+                              borderRight: "none",
+                              borderRadius: "6px 0 0 6px",
+                              backgroundColor: "transparent",
+                              color: config.textColor,
+                            }}
+                          >
+                            🇲🇿 +258
+                          </span>
+                          <input
+                            type="tel"
+                            value={mobilePhone.startsWith("258") ? mobilePhone.slice(3) : mobilePhone}
+                            onChange={(e) => {
+                              const digits = e.target.value.replace(/\D/g, "");
+                              setMobilePhone("258" + digits);
+                              setShowPhoneError(false);
+                            }}
+                            placeholder="86 123 4567"
+                            style={{
+                              flex: 1,
+                              height: "44px",
+                              borderRadius: "0 6px 6px 0",
+                              border: showPhoneError && getMobilePhoneError(selectedPaymentMethod, mobilePhone) ? "1px solid #ef4444" : "1px solid #d1d5db",
+                              backgroundColor: config.backgroundColor,
+                              color: config.textColor,
+                              fontSize: "14px",
+                              paddingLeft: "12px",
+                              paddingRight: "12px",
+                              outline: "none",
+                            }}
+                          />
+                        </div>
                         {showPhoneError && getMobilePhoneError(selectedPaymentMethod, mobilePhone) && (
                           <p className="text-red-500 text-xs mt-1">
                             {getMobilePhoneError(selectedPaymentMethod, mobilePhone)}

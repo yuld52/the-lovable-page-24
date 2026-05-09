@@ -22,8 +22,6 @@ import { CheckoutConfig, CheckoutLanguage, type CheckoutCurrency } from "@shared
 import { getTranslations } from "@shared/translations";
 import { SiPaypal } from "react-icons/si";
 import ColorPicker from "react-best-gradient-color-picker";
-import PhoneInput from "react-phone-input-2";
-import "react-phone-input-2/lib/style.css";
 import { useAutoCurrency, useUsdRates } from "@/hooks/use-currency";
 import { convertUsdCentsToCurrencyMinor, formatMoney, type SupportedCurrencyCode } from "@/lib/currency";
 
@@ -868,7 +866,10 @@ export default function CheckoutEditor() {
                     {config.showPhone && (
                       <div className="space-y-1">
                         <label className="block text-[11px] tracking-tight font-normal" style={{ color: config.textColor }}>{t.phoneLabel}</label>
-                        <PhoneInput country={'br'} inputStyle={{ width: '100%', height: '44px', backgroundColor: config.backgroundColor, color: config.textColor, borderColor: '#d1d5db', fontSize: '14px' }} containerStyle={{ width: '100%' }} />
+                        <div className="flex w-full">
+                          <span className="flex items-center gap-1.5 px-3 text-sm font-medium shrink-0" style={{ height: '44px', border: '1px solid #d1d5db', borderRight: 'none', borderRadius: '6px 0 0 6px', backgroundColor: 'transparent', color: config.textColor }}>🇲🇿 +258</span>
+                          <input type="tel" placeholder="86 123 4567" style={{ flex: 1, height: '44px', borderRadius: '0 6px 6px 0', border: '1px solid #d1d5db', backgroundColor: config.backgroundColor, color: config.textColor, fontSize: '14px', paddingLeft: '12px', paddingRight: '12px', outline: 'none' }} />
+                        </div>
                       </div>
                     )}
                     {config.showAddress && (
