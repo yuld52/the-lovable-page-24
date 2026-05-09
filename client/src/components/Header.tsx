@@ -1,5 +1,6 @@
 import * as React from "react";
-import { Bell, UserCircle, HelpCircle, LogOut, Mail, MessageCircle, Menu } from "lucide-react";
+import { Bell, UserCircle, HelpCircle, LogOut, Mail, MessageCircle, Menu, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/hooks/use-theme";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -33,6 +34,7 @@ export function Header({
   const { toast } = useToast();
   const [isNotificationOpen, setIsNotificationOpen] = React.useState(false);
   const [isSupportOpen, setIsSupportOpen] = React.useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const handleLogout = async () => {
     try {
@@ -70,11 +72,22 @@ export function Header({
       </div>
 
       <div className="flex items-center gap-2 md:gap-4 shrink-0">
+        {/* Theme toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 md:h-10 md:w-10 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+          onClick={toggleTheme}
+          title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+        >
+          {theme === "dark" ? <Sun className="h-4 w-4 md:h-5 md:w-5" /> : <Moon className="h-4 w-4 md:h-5 md:w-5" />}
+        </Button>
+
         {/* Notification Bell */}
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 md:h-10 md:w-10 rounded-full hover:bg-accent text-zinc-400 hover:text-white transition-colors"
+          className="h-9 w-9 md:h-10 md:w-10 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
           onClick={() => setIsNotificationOpen(true)}
           title="Notificações"
         >
@@ -105,10 +118,10 @@ export function Header({
                   <UserCircle className="w-6 h-6 text-purple-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white truncate">
+                  <p className="text-sm font-bold text-foreground truncate">
                     {user?.email?.split("@")[0] || "Usuário"}
                   </p>
-                  <p className="text-[11px] text-zinc-500 truncate">
+                  <p className="text-[11px] text-muted-foreground truncate">
                     {user?.email || ""}
                   </p>
                 </div>
@@ -160,11 +173,11 @@ export function Header({
       <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
         <DialogContent className="w-[340px] rounded-2xl bg-card border-border p-0 overflow-hidden">
           <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/50">
-            <DialogTitle className="text-base font-bold text-white flex items-center gap-2">
+            <DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
               <HelpCircle className="w-5 h-5 text-purple-400" />
               Ajuda & Suporte
             </DialogTitle>
-            <p className="text-xs text-zinc-500 mt-1">Entre em contato com nossa equipe</p>
+            <p className="text-xs text-muted-foreground mt-1">Entre em contato com nossa equipe</p>
           </DialogHeader>
 
           <div className="px-6 py-5 space-y-3">
@@ -177,8 +190,8 @@ export function Header({
                 <Mail className="w-5 h-5 text-purple-400" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white group-hover:text-purple-300 transition-colors">E-mail</p>
-                <p className="text-xs text-zinc-500">suporte@meteorfy.com</p>
+                <p className="text-sm font-semibold text-foreground group-hover:text-purple-400 transition-colors">E-mail</p>
+                <p className="text-xs text-muted-foreground">suporte@meteorfy.com</p>
               </div>
             </a>
 
@@ -193,14 +206,14 @@ export function Header({
                 <MessageCircle className="w-5 h-5 text-green-400" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white group-hover:text-green-300 transition-colors">WhatsApp</p>
-                <p className="text-xs text-zinc-500">+258 857 245 896</p>
+                <p className="text-sm font-semibold text-foreground group-hover:text-green-400 transition-colors">WhatsApp</p>
+                <p className="text-xs text-muted-foreground">+258 857 245 896</p>
               </div>
             </a>
           </div>
 
           <div className="px-6 pb-5">
-            <p className="text-center text-[11px] text-zinc-600">Horário de atendimento: Seg–Sex, 9h–18h</p>
+            <p className="text-center text-[11px] text-muted-foreground">Horário de atendimento: Seg–Sex, 9h–18h</p>
           </div>
         </DialogContent>
       </Dialog>

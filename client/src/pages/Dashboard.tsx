@@ -259,7 +259,6 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="bg-card border-border/60 shadow-lg transition-all duration-300 group relative overflow-hidden hover:border-primary/50 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.25)]">
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-md" />
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4">
             <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">VENDAS REALIZADAS</CardTitle>
             <Button
@@ -281,7 +280,6 @@ export default function Dashboard() {
         </Card>
 
         <Card className="bg-card border-border/60 shadow-lg transition-all duration-300 group relative overflow-hidden hover:border-primary/50 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.25)]">
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-md" />
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4">
             <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">QUANTIDADE DE VENDAS</CardTitle>
             <Button
@@ -299,7 +297,6 @@ export default function Dashboard() {
         </Card>
 
         <Card className="bg-card border-border/60 shadow-lg transition-all duration-300 group relative overflow-hidden hover:border-primary/50 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.25)]">
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-md" />
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4">
             <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">TAXA DE CONVERSÃO</CardTitle>
             <Button

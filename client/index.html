@@ -25,6 +25,9 @@
     if (window.location.pathname.startsWith('/checkout')) {
       document.body.style.backgroundColor = '#f9fafb';
     }
+    if (localStorage.getItem('theme') === 'light') {
+      document.documentElement.classList.add('light');
+    }
   </script>
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
