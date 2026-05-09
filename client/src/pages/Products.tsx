@@ -7,13 +7,17 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Plus, PackageOpen, Search, Pencil, Trash2, CheckCircle2, XCircle, Clock, Link2, Settings2, Save, ShoppingCart } from "lucide-react";
+import { Loader2, Plus, PackageOpen, Search, Pencil, Trash2, CheckCircle2, XCircle, Clock, Link2, Settings2, Save, ShoppingCart, Star, Image as ImageIcon } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import type { CheckoutConfig } from "@shared/schema";
+import { auth } from "@/lib/firebase";
+import { getIdToken } from "firebase/auth";
 
 const DEFAULT_CONFIG: Partial<CheckoutConfig> = {
   heroTitle: "Promoção por tempo limitado",
@@ -28,6 +32,9 @@ const DEFAULT_CONFIG: Partial<CheckoutConfig> = {
   showCpf: false,
   showSurname: false,
   footerText: "Meteorfy © 2026. Todos os direitos reservados.",
+  heroImageUrl: "",
+  orderBumpProducts: [],
+  testimonials: [],
 };
 
 export default function Products() {
@@ -42,6 +49,7 @@ export default function Products() {
   const [editCheckoutId, setEditCheckoutId] = useState<number | null>(null);
   const [editConfig, setEditConfig] = useState<Partial<CheckoutConfig>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
 
   const filteredProducts = products?.filter(p =>
     p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -97,6 +105,69 @@ export default function Products() {
   const set = (key: keyof CheckoutConfig, value: any) =>
     setEditConfig(prev => ({ ...prev, [key]: value }));
 
+  const toggleOrderBump = (id: number) => {
+    const current = (editConfig.orderBumpProducts as number[]) || [];
+    if (current.includes(id)) {
+      set("orderBumpProducts", current.filter(x => x !== id));
+    } else {
+      set("orderBumpProducts", [...current, id]);
+    }
+  };
+
+  const addTestimonial = () => {
+    const current = (editConfig.testimonials as any[]) || [];
+    set("testimonials", [...current, { id: Date.now().toString(), name: "Nome do cliente", rating: 5, text: "Escreva o depoimento aqui...", imageUrl: "" }]);
+  };
+
+  const updateTestimonial = (index: number, field: string, value: any) => {
+    const current = [...((editConfig.testimonials as any[]) || [])];
+    current[index] = { ...current[index], [field]: value };
+    set("testimonials", current);
+  };
+
+  const removeTestimonial = (index: number) => {
+    const current = [...((editConfig.testimonials as any[]) || [])];
+    current.splice(index, 1);
+    set("testimonials", current);
+  };
+
+  const uploadTestimonialPhoto = async (index: number, file: File) => {
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error("Não autenticado");
+      const token = await getIdToken(user);
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData });
+      if (!res.ok) throw new Error("Falha no upload");
+      const data = await res.json();
+      updateTestimonial(index, "imageUrl", data.url);
+      toast({ title: "Foto enviada!" });
+    } catch {
+      toast({ title: "Erro", description: "Não foi possível enviar a foto.", variant: "destructive" });
+    }
+  };
+
+  const uploadBanner = async (file: File) => {
+    setIsUploadingBanner(true);
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error("Não autenticado");
+      const token = await getIdToken(user);
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData });
+      if (!res.ok) throw new Error("Falha no upload");
+      const data = await res.json();
+      set("heroImageUrl", data.url);
+      toast({ title: "Banner enviado com sucesso!" });
+    } catch {
+      toast({ title: "Erro", description: "Não foi possível enviar o banner.", variant: "destructive" });
+    } finally {
+      setIsUploadingBanner(false);
+    }
+  };
+
   const getStatusChip = (status: string) => {
     switch (status) {
       case 'approved':
@@ -122,6 +193,16 @@ export default function Products() {
         );
     }
   };
+
+  const editCheckoutProductId = editCheckoutId
+    ? checkouts?.find(c => c.id === editCheckoutId)?.productId
+    : null;
+
+  const orderBumpOptions = products?.filter(
+    p => p.status === "approved" && p.id !== editCheckoutProductId
+  ) || [];
+
+  const testimonialsList = (editConfig.testimonials as any[]) || [];
 
   return (
     <Layout title="Produtos" subtitle="Gerencie seus produtos">
@@ -175,7 +256,6 @@ export default function Products() {
                 key={product.id}
                 className="bg-[#18181b] border-zinc-800/60 hover:border-purple-500/30 transition-all group overflow-hidden flex flex-col rounded-xl"
               >
-                {/* Cover image — 16:9 */}
                 <div
                   className="w-full relative overflow-hidden cursor-pointer"
                   style={{ aspectRatio: "16/9" }}
@@ -200,7 +280,6 @@ export default function Products() {
                   )}
                 </div>
 
-                {/* Body */}
                 <div
                   className="px-3 pt-2 pb-1 cursor-pointer flex-1"
                   onClick={() => setLocation(`/products/edit/${product.id}`)}
@@ -213,7 +292,6 @@ export default function Products() {
                   </h3>
                 </div>
 
-                {/* Footer */}
                 <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-800/50 mt-1">
                   {getStatusChip(product.status || 'pending')}
                   <div className="flex gap-0.5">
@@ -354,6 +432,183 @@ export default function Products() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              {/* Banner de Checkout */}
+              <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-zinc-400" />
+                  <p className="text-sm font-semibold text-white">Banner de Checkout</p>
+                </div>
+                <p className="text-xs text-zinc-500">Imagem exibida no topo da página de checkout</p>
+
+                {editConfig.heroImageUrl ? (
+                  <div className="relative group">
+                    <img
+                      src={editConfig.heroImageUrl}
+                      alt="Banner"
+                      className="w-full h-28 object-cover rounded-lg"
+                    />
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => set("heroImageUrl", "")}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-zinc-700 rounded-lg cursor-pointer hover:border-emerald-500/50 transition-colors bg-zinc-950/30">
+                    {isUploadingBanner ? (
+                      <Loader2 className="w-5 h-5 text-zinc-500 animate-spin" />
+                    ) : (
+                      <>
+                        <ImageIcon className="w-5 h-5 text-zinc-600 mb-1" />
+                        <span className="text-xs text-zinc-500">Clique para enviar imagem</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={isUploadingBanner}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) uploadBanner(file);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+
+              {/* Order Bumps */}
+              <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <ShoppingCart className="w-4 h-4 text-zinc-400" />
+                  <p className="text-sm font-semibold text-white">Order Bumps</p>
+                </div>
+                <p className="text-xs text-zinc-500">Produtos extra oferecidos durante o checkout</p>
+                {orderBumpOptions.length === 0 ? (
+                  <p className="text-xs text-zinc-600 italic">Nenhum outro produto aprovado disponível.</p>
+                ) : (
+                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                    {orderBumpOptions.map((p) => {
+                      const selected = ((editConfig.orderBumpProducts as number[]) || []).includes(p.id);
+                      return (
+                        <label key={p.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-zinc-950/60 border border-zinc-800 cursor-pointer hover:border-emerald-500/30 transition-colors">
+                          <Checkbox
+                            checked={selected}
+                            onCheckedChange={() => toggleOrderBump(p.id)}
+                            className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-white truncate">{p.name}</p>
+                            <p className="text-xs text-zinc-500">
+                              {(() => { const cur = (p.currency || "USD").toUpperCase(); try { return new Intl.NumberFormat(cur === "MZN" ? "pt-MZ" : "en-US", { style: "currency", currency: cur }).format(p.price / 100); } catch { return `${cur} ${(p.price / 100).toFixed(2)}`; } })()}
+                            </p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Depoimentos */}
+              <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Star className="w-4 h-4 text-zinc-400" />
+                    <p className="text-sm font-semibold text-white">Depoimentos</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+                    onClick={addTestimonial}
+                  >
+                    <Plus className="w-3 h-3 mr-1" /> Adicionar
+                  </Button>
+                </div>
+                <p className="text-xs text-zinc-500">Avaliações exibidas na página de checkout</p>
+
+                {testimonialsList.length === 0 ? (
+                  <p className="text-xs text-zinc-600 italic">Nenhum depoimento ainda. Clique em Adicionar.</p>
+                ) : (
+                  <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                    {testimonialsList.map((tItem: any, index: number) => (
+                      <div key={tItem.id} className="p-3 bg-zinc-950/60 border border-zinc-800 rounded-lg space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-zinc-500 uppercase font-bold">Depoimento #{index + 1}</span>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-5 w-5 text-zinc-600 hover:text-red-400"
+                            onClick={() => removeTestimonial(index)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <div className="w-9 h-9 rounded-full overflow-hidden bg-zinc-900 border border-zinc-700 flex-shrink-0 flex items-center justify-center">
+                            {tItem.imageUrl ? (
+                              <img src={tItem.imageUrl} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-zinc-600 text-xs">Foto</span>
+                            )}
+                          </div>
+                          <label className="flex-1 cursor-pointer">
+                            <span className="text-[10px] text-zinc-500 block mb-1">Foto do cliente</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) uploadTestimonialPhoto(index, file);
+                                e.target.value = "";
+                              }}
+                            />
+                            <span className="text-[10px] text-emerald-400 hover:underline cursor-pointer">Enviar foto</span>
+                          </label>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-[10px] text-zinc-500 uppercase">Nome</Label>
+                            <Input
+                              value={tItem.name}
+                              onChange={(e) => updateTestimonial(index, "name", e.target.value)}
+                              className="bg-zinc-900 border-zinc-700 text-white h-8 text-xs mt-0.5"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-zinc-500 uppercase">Estrelas (1-5)</Label>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={5}
+                              value={tItem.rating}
+                              onChange={(e) => updateTestimonial(index, "rating", parseInt(e.target.value) || 5)}
+                              className="bg-zinc-900 border-zinc-700 text-white h-8 text-xs mt-0.5"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-zinc-500 uppercase">Texto</Label>
+                          <Textarea
+                            value={tItem.text}
+                            onChange={(e) => updateTestimonial(index, "text", e.target.value)}
+                            className="bg-zinc-900 border-zinc-700 text-white h-16 text-xs resize-none mt-0.5"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Timer */}
