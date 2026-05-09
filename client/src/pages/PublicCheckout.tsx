@@ -848,7 +848,7 @@ export default function PublicCheckout() {
                                 <div className="mt-1 font-bold text-sm" style={{ color: config.primaryColor }}>+ {moneyFromUsdCents(p.price)}</div>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2 p-3 cursor-pointer" style={{ backgroundColor: getSoftBackgroundColor(config.primaryColor) }} onClick={() => {
+                            <div className="flex items-center gap-2 p-3 cursor-pointer" style={{ backgroundColor: "#dcfce7" }} onClick={() => {
                               const isSelected = orderBumpSelected.some(selectedId => String(selectedId) === String(p.id));
                               if (isSelected) {
                                 setOrderBumpSelected(orderBumpSelected.filter(selectedId => String(selectedId) !== String(p.id)));
@@ -856,8 +856,8 @@ export default function PublicCheckout() {
                                 setOrderBumpSelected([...orderBumpSelected, Number(p.id)]);
                               }
                             }}>
-                              <Checkbox checked={orderBumpSelected.some(selectedId => String(selectedId) === String(p.id))} />
-                              <span className="text-sm font-medium" style={{ color: "#000000" }}>{t.addToOrder}</span>
+                              <Checkbox checked={orderBumpSelected.some(selectedId => String(selectedId) === String(p.id))} className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600" />
+                              <span className="text-sm font-medium" style={{ color: "#166534" }}>{t.addToOrder}</span>
                             </div>
                           </div>
                         ))}
