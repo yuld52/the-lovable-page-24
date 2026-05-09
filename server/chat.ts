@@ -3,6 +3,13 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 const MODEL = "openai/gpt-oss-120b:free";
 
+if (!OPENROUTER_API_KEY) {
+  console.warn("[v0] OPENROUTER_API_KEY not configured — chat feature will not work");
+  console.warn("[v0] Check Vercel project settings → Vars section");
+} else {
+  console.log("[v0] OpenRouter API configured");
+}
+
 interface ChatMessage {
   role: "user" | "assistant" | "system";
   content: string;
@@ -15,6 +22,13 @@ interface ChatRequest {
 export function registerChatRoutes(app: any) {
   app.post("/api/chat", async (req: any, res: any) => {
     try {
+      // Check if API key is configured
+      if (!OPENROUTER_API_KEY) {
+        return res.status(503).json({ 
+          message: "Chat service is not configured. Administrator needs to set OPENROUTER_API_KEY." 
+        });
+      }
+
       const { messages } = req.body as ChatRequest;
 
       if (!messages || !Array.isArray(messages) || messages.length === 0) {

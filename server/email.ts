@@ -1,14 +1,19 @@
 import { Resend } from "resend";
 
 let _resend: Resend | null = null;
+let _emailConfigError: string | null = null;
+
 function getResend(): Resend {
   if (!_resend) {
     const key = process.env.RESEND_API_KEY;
     if (!key) {
-      console.warn("[email] RESEND_API_KEY not set — emails will not be sent");
+      const msg = "[email] RESEND_API_KEY not set — emails will not be sent. Check Vercel project settings → Vars";
+      console.warn(msg);
+      _emailConfigError = msg;
       throw new Error("RESEND_API_KEY is not configured");
     }
     _resend = new Resend(key);
+    console.log("[v0] Resend email service initialized");
   }
   return _resend;
 }

@@ -10,14 +10,23 @@ const firebaseConfig = {
 };
 
 function parsePrivateKey(raw: string): string {
+  console.log("[v0] Parsing Firebase private key...");
+  
   // Handle literal \n sequences (common when stored in env vars/secrets)
   let key = raw.replace(/\\n/g, '\n');
+  
   // If the key header and body are all on one line, reformat it
   if (!key.includes('\n')) {
     key = key
       .replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n')
       .replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----');
   }
+  
+  // Validate key format
+  if (!key.includes('-----BEGIN PRIVATE KEY-----') || !key.includes('-----END PRIVATE KEY-----')) {
+    throw new Error("Firebase private key is malformed: missing BEGIN/END markers");
+  }
+  
   return key.trim();
 }
 

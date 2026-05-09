@@ -6,7 +6,10 @@ neonConfig.webSocketConstructor = ws;
 const connectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || "";
 
 if (!connectionString) {
-  console.error("NEON_DATABASE_URL or DATABASE_URL is required");
+  console.error("[v0] ERROR: NEON_DATABASE_URL or DATABASE_URL is not set");
+  console.error("[v0] Check your Vercel project settings → Vars section");
+} else {
+  console.log("[v0] Database connection string configured");
 }
 
 export async function getDbClient() {

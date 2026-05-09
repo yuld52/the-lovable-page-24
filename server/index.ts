@@ -5,6 +5,7 @@ import { createServer } from "http";
 import path from "path";
 import helmet from "helmet";
 import cors from "cors";
+import { diagnoseEnvironment } from "./env-diagnostic";
 
 const app = express();
 const httpServer = createServer(app);
@@ -108,7 +109,41 @@ app.use((req, res, next) => {
   next();
 });
 
+// Environment validation at startup
+function validateEnv() {
+  const envVars = {
+    "NEON_DATABASE_URL or DATABASE_URL": process.env.NEON_DATABASE_URL || process.env.DATABASE_URL,
+    "FIREBASE_PROJECT_ID": process.env.FIREBASE_PROJECT_ID,
+    "FIREBASE_PRIVATE_KEY": process.env.FIREBASE_PRIVATE_KEY,
+    "FIREBASE_CLIENT_EMAIL": process.env.FIREBASE_CLIENT_EMAIL,
+  };
+
+  const missing = Object.entries(envVars)
+    .filter(([_, value]) => !value)
+    .map(([key]) => key);
+
+  if (missing.length > 0) {
+    console.error("\n❌ CRITICAL - MISSING ENVIRONMENT VARIABLES:");
+    missing.forEach(key => console.error(`   - ${key}`));
+    console.error("\nThese variables are REQUIRED. Check your Vercel project:");
+    console.error("1. Go to your Vercel Dashboard");
+    console.error("2. Select your project");
+    console.error("3. Go to Settings → Vars");
+    console.error("4. Add the missing variables");
+    console.error("5. Redeploy your application\n");
+  } else {
+    console.log("✓ All critical environment variables are configured");
+  }
+}
+
 (async () => {
+  // Run full diagnostic if in development
+  if (process.env.NODE_ENV !== "production" || process.env.DEBUG_ENV === "true") {
+    diagnoseEnvironment();
+  } else {
+    validateEnv();
+  }
+  
   try {
     await registerRoutes(httpServer, app);
   } catch (err) {
