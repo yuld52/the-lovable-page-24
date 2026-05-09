@@ -598,7 +598,7 @@ export default function PublicCheckout() {
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"><CheckCircle2 className="w-10 h-10 text-green-500" /></div>
           <h1 className="text-3xl font-bold mb-4" style={{ color: '#111827' }}>{t.paymentConfirmed}</h1>
           <p className="text-lg opacity-80 mb-8" style={{ color: '#4b5563' }}>{t.paymentConfirmedDescription}</p>
-          {product?.deliveryUrl && <Button size="lg" className="w-full bg-green-600 text-white font-bold h-14" onClick={() => window.open(product.deliveryUrl || '', '_blank')}>Acessar Conteúdo Agora</Button>}
+          {product?.deliveryUrl && <Button size="lg" className="w-full bg-green-600 text-white font-bold h-14" onClick={() => window.open(product.deliveryUrl || '', '_blank')}>{t.accessContentNow}</Button>}
         </div>
       </div>
     );
@@ -662,7 +662,7 @@ export default function PublicCheckout() {
                 <label className="block text-[11px]">{t.confirmEmailLabel}</label>
                 <input type="email" value={formData.confirmEmail} onChange={(e) => setFormData({ ...formData, confirmEmail: e.target.value })} placeholder={t.confirmEmailPlaceholder} className={`w-full h-11 px-3 rounded-md border text-sm focus:outline-none focus:ring-1 ${showErrors && (!formData.confirmEmail || formData.email !== formData.confirmEmail) ? 'border-red-500' : 'border-gray-300'}`} style={{ backgroundColor: config.backgroundColor, color: config.textColor }} />
                 {showErrors && formData.email && formData.confirmEmail && formData.email !== formData.confirmEmail && (
-                  <p className="text-red-500 text-[11px] mt-1">Os e-mails não coincidem</p>
+                  <p className="text-red-500 text-[11px] mt-1">{t.emailsDoNotMatch}</p>
                 )}
               </div>
               <div className="space-y-1">
@@ -736,7 +736,7 @@ export default function PublicCheckout() {
                     {showSelector && (
                       <div className="space-y-2">
                         <label className="block text-sm font-semibold" style={{ color: config.textColor }}>
-                          Selecione o método de pagamento <span className="text-red-500">*</span>
+                          {t.selectPaymentMethod} <span className="text-red-500">*</span>
                         </label>
                         <div className={`grid gap-2 ${knownMethods.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
                           {knownMethods.map(m => {
@@ -790,7 +790,7 @@ export default function PublicCheckout() {
                     {isMobile(selectedPaymentMethod) && (
                       <div className="space-y-2">
                         <label className="block text-sm font-semibold" style={{ color: config.textColor }}>
-                          Número {selectedPaymentMethod === "mpesa" ? "M-Pesa" : "e-Mola"} <span className="text-red-500">*</span>
+                          {t.mobilePaymentNumber} {selectedPaymentMethod === "mpesa" ? "M-Pesa" : "e-Mola"} <span className="text-red-500">*</span>
                         </label>
                         <div className="flex" style={{ width: "100%" }}>
                           <span
@@ -881,9 +881,9 @@ export default function PublicCheckout() {
                         style={{ backgroundColor: activePrimary }}
                       >
                         {mobileSubmitting ? (
-                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />A processar…</>
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t.processing}</>
                         ) : (
-                          `Pagar ${moneyFromUsdCents(calculateTotal())} via ${selectedPaymentMethod === "mpesa" ? "M-Pesa" : "e-Mola"}`
+                          `${t.payVia} ${selectedPaymentMethod === "mpesa" ? "M-Pesa" : "e-Mola"} ${moneyFromUsdCents(calculateTotal())}`
                         )}
                       </Button>
                     )}
@@ -893,7 +893,7 @@ export default function PublicCheckout() {
                       <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 flex flex-col items-center gap-2 text-center">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg" style={{ backgroundColor: "#4285F4" }}>G</div>
                         <p className="text-sm font-semibold text-gray-700">Google Pay</p>
-                        <p className="text-xs text-gray-400">Integração em breve. Por favor escolha outro método de pagamento.</p>
+                        <p className="text-xs text-gray-400">{t.googlePayComingSoon}</p>
                       </div>
                     )}
 
@@ -946,41 +946,41 @@ export default function PublicCheckout() {
           {/* Secure purchase row */}
           <div className="flex items-center justify-center gap-1.5 text-[12px] opacity-70">
             <ShieldCheck size={14} />
-            <span className="font-medium">Compra 100% segura</span>
+            <span className="font-medium">{t.securePurchase}</span>
           </div>
 
           {/* reCAPTCHA notice */}
           <p className="text-[11px] opacity-50 leading-snug">
-            Este site é protegido pelo reCAPTCHA do Google —{" "}
+            {t.recaptchaNotice}{" "}
             <a
               href="https://policies.google.com/privacy"
               target="_blank"
               rel="noopener noreferrer"
               className="underline underline-offset-2 hover:opacity-80"
             >
-              Política de Privacidade
+              {t.privacyPolicy}
             </a>
-            {" "}e{" "}
+            {" "}{t.and}{" "}
             <a
               href="https://policies.google.com/terms"
               target="_blank"
               rel="noopener noreferrer"
               className="underline underline-offset-2 hover:opacity-80"
             >
-              Termos de Uso
+              {t.termsOfUse}
             </a>
           </p>
 
           {/* Terms of purchase */}
           <p className="text-[11px] opacity-45">
-            Ao continuar, você concorda com os{" "}
+            {t.termsAgreement}{" "}
             <a
               href="https://meteorfy.com/termos"
               target="_blank"
               rel="noopener noreferrer"
               className="underline underline-offset-2 hover:opacity-80"
             >
-              Termos de Compra
+              {t.termsOfPurchase}
             </a>
           </p>
 
@@ -998,33 +998,33 @@ export default function PublicCheckout() {
                 <Loader2 className="w-8 h-8 text-white animate-spin" />
               </div>
               <p className="text-white text-xl font-bold">
-                {pendingSaleId ? "Aguardando confirmação…" : "Processando pagamento…"}
+                {pendingSaleId ? t.waitingConfirmation : t.processingPayment}
               </p>
             </div>
             <div className="px-6 py-6 space-y-4">
               {pendingSaleId ? (
                 <>
                   <p className="text-gray-700 text-sm text-center">
-                    Um pedido de pagamento foi enviado para{" "}
+                    {t.paymentRequestSent}{" "}
                     <span className="font-semibold">+{mobilePhone}</span>
                   </p>
                   <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-4 text-center space-y-1">
-                    <p className="text-green-800 text-base font-bold">Insira o seu PIN no telemóvel</p>
-                    <p className="text-green-700 text-sm">para confirmar o pagamento de <span className="font-semibold">{moneyFromUsdCents(calculateTotal())}</span></p>
+                    <p className="text-green-800 text-base font-bold">{t.enterPinOnPhone}</p>
+                    <p className="text-green-700 text-sm">{t.toConfirmPayment} <span className="font-semibold">{moneyFromUsdCents(calculateTotal())}</span></p>
                   </div>
                   <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-center text-sm text-blue-800">
-                    <span className="font-bold">Não feche esta página.</span>{" "}
-                    Confirmaremos automaticamente assim que o pagamento for aprovado.
+                    <span className="font-bold">{t.dontClosePage}</span>{" "}
+                    {t.autoConfirmNotice}
                   </div>
                 </>
               ) : (
                 <>
                   <p className="text-gray-700 text-sm text-center">
-                    A registar o seu pedido para{" "}
+                    {t.registeringOrder}{" "}
                     <span className="font-semibold">+{mobilePhone}</span>
                   </p>
                   <p className="text-gray-800 text-base font-bold text-center">
-                    Valor: {moneyFromUsdCents(calculateTotal())}
+                    {t.amount} {moneyFromUsdCents(calculateTotal())}
                   </p>
                 </>
               )}

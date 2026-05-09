@@ -52,6 +52,28 @@ type TranslationKeys = {
   allRightsReserved: string;
   timerText: string;
   exclusiveOfferPlural: string;
+  accessContentNow: string;
+  selectPaymentMethod: string;
+  mobilePaymentNumber: string;
+  processing: string;
+  payVia: string;
+  googlePayComingSoon: string;
+  securePurchase: string;
+  recaptchaNotice: string;
+  privacyPolicy: string;
+  and: string;
+  termsOfUse: string;
+  termsAgreement: string;
+  termsOfPurchase: string;
+  waitingConfirmation: string;
+  processingPayment: string;
+  paymentRequestSent: string;
+  enterPinOnPhone: string;
+  toConfirmPayment: string;
+  dontClosePage: string;
+  autoConfirmNotice: string;
+  registeringOrder: string;
+  amount: string;
 };
 
 const translations: Record<CheckoutLanguage, TranslationKeys> = {
@@ -107,6 +129,28 @@ const translations: Record<CheckoutLanguage, TranslationKeys> = {
     variousPaymentMethods: "Diversas formas de pagamento",
     secureCheckoutTechnology: "Você está em uma página de checkout segura, criada com a tecnologia Meteorfy. A responsabilidade pela oferta é do vendedor.",
     allRightsReserved: "© 2026 Meteorfy Inc. Todos os direitos reservados.",
+    accessContentNow: "Acessar Conteúdo Agora",
+    selectPaymentMethod: "Selecione o método de pagamento",
+    mobilePaymentNumber: "Número",
+    processing: "A processar…",
+    payVia: "Pagar via",
+    googlePayComingSoon: "Integração em breve. Por favor escolha outro método de pagamento.",
+    securePurchase: "Compra 100% segura",
+    recaptchaNotice: "Este site é protegido pelo reCAPTCHA do Google —",
+    privacyPolicy: "Política de Privacidade",
+    and: "e",
+    termsOfUse: "Termos de Uso",
+    termsAgreement: "Ao continuar, você concorda com os",
+    termsOfPurchase: "Termos de Compra",
+    waitingConfirmation: "Aguardando confirmação…",
+    processingPayment: "Processando pagamento…",
+    paymentRequestSent: "Um pedido de pagamento foi enviado para",
+    enterPinOnPhone: "Insira o seu PIN no telemóvel",
+    toConfirmPayment: "para confirmar o pagamento de",
+    dontClosePage: "Não feche esta página.",
+    autoConfirmNotice: "Confirmaremos automaticamente assim que o pagamento for aprovado.",
+    registeringOrder: "A registar o seu pedido para",
+    amount: "Valor:",
   },
   en: {
     emailLabel: "Your email",
@@ -160,6 +204,28 @@ const translations: Record<CheckoutLanguage, TranslationKeys> = {
     variousPaymentMethods: "Various payment methods",
     secureCheckoutTechnology: "You are on a secure checkout page, created with Meteorfy technology. Responsibility for the offer lies with the seller.",
     allRightsReserved: "© 2026 Meteorfy Inc. All rights reserved.",
+    accessContentNow: "Access Content Now",
+    selectPaymentMethod: "Select payment method",
+    mobilePaymentNumber: "Number",
+    processing: "Processing…",
+    payVia: "Pay via",
+    googlePayComingSoon: "Integration coming soon. Please choose another payment method.",
+    securePurchase: "100% Secure purchase",
+    recaptchaNotice: "This site is protected by Google reCAPTCHA —",
+    privacyPolicy: "Privacy Policy",
+    and: "and",
+    termsOfUse: "Terms of Use",
+    termsAgreement: "By continuing, you agree to the",
+    termsOfPurchase: "Terms of Purchase",
+    waitingConfirmation: "Waiting for confirmation…",
+    processingPayment: "Processing payment…",
+    paymentRequestSent: "A payment request was sent to",
+    enterPinOnPhone: "Enter your PIN on your phone",
+    toConfirmPayment: "to confirm the payment of",
+    dontClosePage: "Don't close this page.",
+    autoConfirmNotice: "We'll confirm automatically once the payment is approved.",
+    registeringOrder: "Registering your order for",
+    amount: "Amount:",
   },
   es: {
     emailLabel: "Tu email",
@@ -213,6 +279,28 @@ const translations: Record<CheckoutLanguage, TranslationKeys> = {
     variousPaymentMethods: "Diversas formas de pago",
     secureCheckoutTechnology: "Estás en una página de pago segura, creada con tecnología Meteorfy. La responsabilidad de la oferta es del vendedor.",
     allRightsReserved: "© 2026 Meteorfy Inc. Todos los derechos reservados.",
+    accessContentNow: "Acceder al Contenido Ahora",
+    selectPaymentMethod: "Seleccione el método de pago",
+    mobilePaymentNumber: "Número",
+    processing: "Procesando…",
+    payVia: "Pagar via",
+    googlePayComingSoon: "Integración próximamente. Por favor elija otro método de pago.",
+    securePurchase: "Compra 100% segura",
+    recaptchaNotice: "Este sitio está protegido por Google reCAPTCHA —",
+    privacyPolicy: "Política de Privacidad",
+    and: "y",
+    termsOfUse: "Términos de Uso",
+    termsAgreement: "Al continuar, acepta los",
+    termsOfPurchase: "Términos de Compra",
+    waitingConfirmation: "Esperando confirmación…",
+    processingPayment: "Procesando pago…",
+    paymentRequestSent: "Se envió una solicitud de pago a",
+    enterPinOnPhone: "Ingrese su PIN en el teléfono",
+    toConfirmPayment: "para confirmar el pago de",
+    dontClosePage: "No cierre esta página.",
+    autoConfirmNotice: "Confirmaremos automáticamente cuando el pago sea aprobado.",
+    registeringOrder: "Registrando su pedido para",
+    amount: "Monto:",
   },
   AUTO: {
     emailLabel: "Seu e-mail",
@@ -266,6 +354,28 @@ const translations: Record<CheckoutLanguage, TranslationKeys> = {
     variousPaymentMethods: "Diversas formas de pagamento",
     secureCheckoutTechnology: "Você está em uma página de checkout segura, criada com a tecnologia Meteorfy. A responsabilidade pela oferta é do vendedor.",
     allRightsReserved: "© 2026 Meteorfy Inc. Todos os direitos reservados.",
+    accessContentNow: "Acessar Conteúdo Agora",
+    selectPaymentMethod: "Selecione o método de pagamento",
+    mobilePaymentNumber: "Número",
+    processing: "A processar…",
+    payVia: "Pagar via",
+    googlePayComingSoon: "Integração em breve. Por favor escolha outro método de pagamento.",
+    securePurchase: "Compra 100% segura",
+    recaptchaNotice: "Este site é protegido pelo reCAPTCHA do Google —",
+    privacyPolicy: "Política de Privacidade",
+    and: "e",
+    termsOfUse: "Termos de Uso",
+    termsAgreement: "Ao continuar, você concorda com os",
+    termsOfPurchase: "Termos de Compra",
+    waitingConfirmation: "Aguardando confirmação…",
+    processingPayment: "Processando pagamento…",
+    paymentRequestSent: "Um pedido de pagamento foi enviado para",
+    enterPinOnPhone: "Insira o seu PIN no telemóvel",
+    toConfirmPayment: "para confirmar o pagamento de",
+    dontClosePage: "Não feche esta página.",
+    autoConfirmNotice: "Confirmaremos automaticamente assim que o pagamento for aprovado.",
+    registeringOrder: "A registar o seu pedido para",
+    amount: "Valor:",
   }
 };
 
