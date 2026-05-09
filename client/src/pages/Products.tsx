@@ -339,7 +339,7 @@ export default function Products() {
 
             {/* ── TAB: GERAL ── */}
             <TabsContent value="geral" className="mt-0">
-              <ScrollArea className="max-h-[55vh]">
+              <ScrollArea className="h-[55vh]">
                 <div className="px-5 py-4 space-y-5">
 
                   <div className="space-y-1.5">
@@ -450,7 +450,7 @@ export default function Products() {
 
             {/* ── TAB: DEPOIMENTOS ── */}
             <TabsContent value="depoimentos" className="mt-0">
-              <ScrollArea className="max-h-[55vh]">
+              <ScrollArea className="h-[55vh]">
                 <div className="px-5 py-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -516,7 +516,7 @@ export default function Products() {
 
             {/* ── TAB: ORDER BUMPS ── */}
             <TabsContent value="orderbumps" className="mt-0">
-              <ScrollArea className="max-h-[55vh]">
+              <ScrollArea className="h-[55vh]">
                 <div className="px-5 py-4 space-y-4">
                   <div>
                     <p className="text-sm font-semibold text-white flex items-center gap-1.5"><ShoppingCart className="w-4 h-4 text-emerald-400" /> Order Bumps</p>
