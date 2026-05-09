@@ -9,10 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Plus, PackageOpen, Search, Pencil, Trash2, CheckCircle2, XCircle, Clock, Link2, Settings2, Save, ShoppingCart, Star, Image as ImageIcon } from "lucide-react";
+import { Loader2, Plus, PackageOpen, Search, Pencil, Trash2, CheckCircle2, XCircle, Clock, Link2, Save, ShoppingCart, Star, Image as ImageIcon } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import type { CheckoutConfig } from "@shared/schema";
@@ -50,6 +51,7 @@ export default function Products() {
   const [editConfig, setEditConfig] = useState<Partial<CheckoutConfig>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [activeTab, setActiveTab] = useState("geral");
 
   const filteredProducts = products?.filter(p =>
     p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -83,9 +85,9 @@ export default function Products() {
       toast({ title: "Sem checkout", description: "Este produto não tem um checkout associado.", variant: "destructive" });
       return;
     }
-    const mergedConfig = { ...DEFAULT_CONFIG, ...(checkout.config || {}) };
-    setEditConfig(mergedConfig);
+    setEditConfig({ ...DEFAULT_CONFIG, ...(checkout.config || {}) });
     setEditCheckoutId(checkout.id);
+    setActiveTab("geral");
   };
 
   const handleSaveCheckout = async () => {
@@ -173,22 +175,19 @@ export default function Products() {
       case 'approved':
         return (
           <span className="inline-flex items-center gap-1 bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide">
-            <CheckCircle2 className="w-2.5 h-2.5" />
-            Aprovado
+            <CheckCircle2 className="w-2.5 h-2.5" />Aprovado
           </span>
         );
       case 'rejected':
         return (
           <span className="inline-flex items-center gap-1 bg-red-500/15 text-red-400 border border-red-500/25 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide">
-            <XCircle className="w-2.5 h-2.5" />
-            Rejeitado
+            <XCircle className="w-2.5 h-2.5" />Rejeitado
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1 bg-amber-500/15 text-amber-400 border border-amber-500/25 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide">
-            <Clock className="w-2.5 h-2.5" />
-            Pendente
+            <Clock className="w-2.5 h-2.5" />Pendente
           </span>
         );
     }
@@ -203,6 +202,13 @@ export default function Products() {
   ) || [];
 
   const testimonialsList = (editConfig.testimonials as any[]) || [];
+  const selectedBumps = (editConfig.orderBumpProducts as number[]) || [];
+
+  const formatPrice = (p: any) => {
+    const cur = (p.currency || "USD").toUpperCase();
+    try { return new Intl.NumberFormat(cur === "MZN" ? "pt-MZ" : "en-US", { style: "currency", currency: cur }).format(p.price / 100); }
+    catch { return `${cur} ${(p.price / 100).toFixed(2)}`; }
+  };
 
   return (
     <Layout title="Produtos" subtitle="Gerencie seus produtos">
@@ -239,10 +245,7 @@ export default function Products() {
             {searchTerm ? "Nenhum produto encontrado com este termo." : "Você ainda não criou nenhum produto. Comece criando seu primeiro produto digital para gerar links de checkout."}
           </p>
           {!searchTerm && (
-            <Button
-              className="bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700"
-              onClick={() => setLocation("/products/new")}
-            >
+            <Button className="bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700" onClick={() => setLocation("/products/new")}>
               Criar meu primeiro produto
             </Button>
           )}
@@ -252,83 +255,34 @@ export default function Products() {
           {filteredProducts?.map((product) => {
             const checkout = checkouts?.find(c => c.productId === product.id);
             return (
-              <Card
-                key={product.id}
-                className="bg-[#18181b] border-zinc-800/60 hover:border-purple-500/30 transition-all group overflow-hidden flex flex-col rounded-xl"
-              >
-                <div
-                  className="w-full relative overflow-hidden cursor-pointer"
-                  style={{ aspectRatio: "16/9" }}
-                  onClick={() => setLocation(`/products/edit/${product.id}`)}
-                >
+              <Card key={product.id} className="bg-[#18181b] border-zinc-800/60 hover:border-purple-500/30 transition-all group overflow-hidden flex flex-col rounded-xl">
+                <div className="w-full relative overflow-hidden cursor-pointer" style={{ aspectRatio: "16/9" }} onClick={() => setLocation(`/products/edit/${product.id}`)}>
                   {product.imageUrl ? (
-                    <img
-                      src={product.imageUrl}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        if (target.src.includes('/objects-cdn/public/')) {
-                          target.src = target.src.replace('/objects-cdn/public/', '/objects-cdn/');
-                        }
-                      }}
-                    />
+                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => { const t = e.target as HTMLImageElement; if (t.src.includes('/objects-cdn/public/')) t.src = t.src.replace('/objects-cdn/public/', '/objects-cdn/'); }} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
                       <PackageOpen className="w-8 h-8 text-zinc-600" />
                     </div>
                   )}
                 </div>
-
-                <div
-                  className="px-3 pt-2 pb-1 cursor-pointer flex-1"
-                  onClick={() => setLocation(`/products/edit/${product.id}`)}
-                >
-                  <p className="text-[10px] text-zinc-500 mb-0.5">
-                    {(() => { const cur = (product.currency || "USD").toUpperCase(); try { return new Intl.NumberFormat(cur === "MZN" ? "pt-MZ" : "en-US", { style: "currency", currency: cur }).format(product.price / 100); } catch { return `${cur} ${(product.price / 100).toFixed(2)}`; } })()}
-                  </p>
-                  <h3 className="text-sm font-semibold text-white group-hover:text-purple-400 transition-colors leading-snug line-clamp-2">
-                    {product.name}
-                  </h3>
+                <div className="px-3 pt-2 pb-1 cursor-pointer flex-1" onClick={() => setLocation(`/products/edit/${product.id}`)}>
+                  <p className="text-[10px] text-zinc-500 mb-0.5">{formatPrice(product)}</p>
+                  <h3 className="text-sm font-semibold text-white group-hover:text-purple-400 transition-colors leading-snug line-clamp-2">{product.name}</h3>
                 </div>
-
                 <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-800/50 mt-1">
                   {getStatusChip(product.status || 'pending')}
                   <div className="flex gap-0.5">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      title="Copiar link de checkout"
-                      className={checkout ? "text-zinc-400 hover:text-white hover:bg-zinc-800 h-7 w-7" : "text-zinc-700 cursor-not-allowed h-7 w-7"}
-                      onClick={(e) => { e.stopPropagation(); copyCheckoutLink(product.id); }}
-                    >
+                    <Button size="icon" variant="ghost" title="Copiar link" className={checkout ? "text-zinc-400 hover:text-white hover:bg-zinc-800 h-7 w-7" : "text-zinc-700 cursor-not-allowed h-7 w-7"} onClick={(e) => { e.stopPropagation(); copyCheckoutLink(product.id); }}>
                       <Link2 className="w-3 h-3" />
                     </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      title="Editar checkout"
-                      className={checkout ? "text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-7 w-7" : "text-zinc-700 cursor-not-allowed h-7 w-7"}
-                      onClick={(e) => { e.stopPropagation(); openCheckoutEditor(product.id); }}
-                    >
+                    <Button size="icon" variant="ghost" title="Editar checkout" className={checkout ? "text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-7 w-7" : "text-zinc-700 cursor-not-allowed h-7 w-7"} onClick={(e) => { e.stopPropagation(); openCheckoutEditor(product.id); }}>
                       <ShoppingCart className="w-3 h-3" />
                     </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      title="Editar produto"
-                      className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 h-7 w-7"
-                      onClick={(e) => { e.stopPropagation(); setLocation(`/products/edit/${product.id}`); }}
-                    >
+                    <Button size="icon" variant="ghost" title="Editar produto" className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 h-7 w-7" onClick={(e) => { e.stopPropagation(); setLocation(`/products/edit/${product.id}`); }}>
                       <Pencil className="w-3 h-3" />
                     </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      title="Excluir produto"
-                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 w-7"
-                      onClick={(e) => { e.stopPropagation(); handleDelete(product.id); }}
-                    >
+                    <Button size="icon" variant="ghost" title="Excluir produto" className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 w-7" onClick={(e) => { e.stopPropagation(); handleDelete(product.id); }}>
                       {deleteProduct.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                     </Button>
                   </div>
@@ -342,6 +296,8 @@ export default function Products() {
       {/* Checkout Edit Dialog */}
       <Dialog open={editCheckoutId !== null} onOpenChange={(open) => { if (!open) setEditCheckoutId(null); }}>
         <DialogContent className="bg-[#18181b] border border-zinc-800 text-white w-[calc(100vw-2rem)] max-w-lg rounded-2xl p-0 gap-0">
+
+          {/* Header */}
           <DialogHeader className="px-5 pt-5 pb-4 border-b border-zinc-800/60">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
@@ -356,335 +312,256 @@ export default function Products() {
             </div>
           </DialogHeader>
 
-          <ScrollArea className="max-h-[70vh]">
-            <div className="px-5 py-4 space-y-5">
-
-              {/* Título do hero */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Título da página</Label>
-                <Input
-                  value={editConfig.heroTitle || ""}
-                  onChange={(e) => set("heroTitle", e.target.value)}
-                  placeholder="Promoção por tempo limitado"
-                  className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-emerald-500 h-10"
-                />
-              </div>
-
-              {/* Botão de compra */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Texto do botão de compra</Label>
-                <Input
-                  value={editConfig.payButtonText || ""}
-                  onChange={(e) => set("payButtonText", e.target.value)}
-                  placeholder="Comprar agora"
-                  className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-emerald-500 h-10"
-                />
-              </div>
-
-              {/* Cor principal */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Cor principal</Label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    value={editConfig.primaryColor || "#22a559"}
-                    onChange={(e) => set("primaryColor", e.target.value)}
-                    className="w-10 h-10 rounded-lg border border-zinc-700 bg-zinc-900 cursor-pointer p-0.5"
-                  />
-                  <Input
-                    value={editConfig.primaryColor || ""}
-                    onChange={(e) => set("primaryColor", e.target.value)}
-                    placeholder="#22a559"
-                    className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-emerald-500 h-10 font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* Moeda & Idioma */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Moeda</Label>
-                  <Select value={editConfig.checkoutCurrency || "AUTO"} onValueChange={(v) => set("checkoutCurrency", v)}>
-                    <SelectTrigger className="bg-zinc-900 border-zinc-700 text-white h-10 focus:ring-emerald-500">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-700 text-white">
-                      <SelectItem value="AUTO">Auto</SelectItem>
-                      <SelectItem value="MZN">MZN</SelectItem>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="BRL">BRL</SelectItem>
-                      <SelectItem value="GBP">GBP</SelectItem>
-                      <SelectItem value="AOA">AOA</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Idioma</Label>
-                  <Select value={editConfig.checkoutLanguage || "pt"} onValueChange={(v) => set("checkoutLanguage", v)}>
-                    <SelectTrigger className="bg-zinc-900 border-zinc-700 text-white h-10 focus:ring-emerald-500">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-700 text-white">
-                      <SelectItem value="pt">Português</SelectItem>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="es">Español</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Banner de Checkout */}
-              <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4 text-zinc-400" />
-                  <p className="text-sm font-semibold text-white">Banner de Checkout</p>
-                </div>
-                <p className="text-xs text-zinc-500">Imagem exibida no topo da página de checkout</p>
-
-                {editConfig.heroImageUrl ? (
-                  <div className="relative group">
-                    <img
-                      src={editConfig.heroImageUrl}
-                      alt="Banner"
-                      className="w-full h-28 object-cover rounded-lg"
-                    />
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => set("heroImageUrl", "")}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-zinc-700 rounded-lg cursor-pointer hover:border-emerald-500/50 transition-colors bg-zinc-950/30">
-                    {isUploadingBanner ? (
-                      <Loader2 className="w-5 h-5 text-zinc-500 animate-spin" />
-                    ) : (
-                      <>
-                        <ImageIcon className="w-5 h-5 text-zinc-600 mb-1" />
-                        <span className="text-xs text-zinc-500">Clique para enviar imagem</span>
-                      </>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      disabled={isUploadingBanner}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) uploadBanner(file);
-                        e.target.value = "";
-                      }}
-                    />
-                  </label>
-                )}
-              </div>
-
-              {/* Order Bumps */}
-              <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <ShoppingCart className="w-4 h-4 text-zinc-400" />
-                  <p className="text-sm font-semibold text-white">Order Bumps</p>
-                </div>
-                <p className="text-xs text-zinc-500">Produtos extra oferecidos durante o checkout</p>
-                {orderBumpOptions.length === 0 ? (
-                  <p className="text-xs text-zinc-600 italic">Nenhum outro produto aprovado disponível.</p>
-                ) : (
-                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                    {orderBumpOptions.map((p) => {
-                      const selected = ((editConfig.orderBumpProducts as number[]) || []).includes(p.id);
-                      return (
-                        <label key={p.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-zinc-950/60 border border-zinc-800 cursor-pointer hover:border-emerald-500/30 transition-colors">
-                          <Checkbox
-                            checked={selected}
-                            onCheckedChange={() => toggleOrderBump(p.id)}
-                            className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-white truncate">{p.name}</p>
-                            <p className="text-xs text-zinc-500">
-                              {(() => { const cur = (p.currency || "USD").toUpperCase(); try { return new Intl.NumberFormat(cur === "MZN" ? "pt-MZ" : "en-US", { style: "currency", currency: cur }).format(p.price / 100); } catch { return `${cur} ${(p.price / 100).toFixed(2)}`; } })()}
-                            </p>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Depoimentos */}
-              <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4 text-zinc-400" />
-                    <p className="text-sm font-semibold text-white">Depoimentos</p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 px-2 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
-                    onClick={addTestimonial}
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
+            <div className="px-5 pt-3 pb-0 border-b border-zinc-800/60">
+              <TabsList className="bg-transparent border-0 p-0 h-auto gap-0 w-full justify-start rounded-none">
+                {[
+                  { value: "geral", label: "Geral" },
+                  { value: "depoimentos", label: "Depoimentos", badge: testimonialsList.length || undefined },
+                  { value: "orderbumps", label: "Order Bumps", badge: selectedBumps.length || undefined },
+                ].map(tab => (
+                  <TabsTrigger
+                    key={tab.value}
+                    value={tab.value}
+                    className="relative px-4 py-2.5 text-xs font-semibold rounded-none bg-transparent border-0 text-zinc-500 data-[state=active]:text-white data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-emerald-500 data-[state=active]:rounded-none transition-colors"
                   >
-                    <Plus className="w-3 h-3 mr-1" /> Adicionar
-                  </Button>
-                </div>
-                <p className="text-xs text-zinc-500">Avaliações exibidas na página de checkout</p>
+                    {tab.label}
+                    {tab.badge !== undefined && (
+                      <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-600 text-white text-[9px] font-bold">
+                        {tab.badge}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
 
-                {testimonialsList.length === 0 ? (
-                  <p className="text-xs text-zinc-600 italic">Nenhum depoimento ainda. Clique em Adicionar.</p>
-                ) : (
-                  <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
-                    {testimonialsList.map((tItem: any, index: number) => (
-                      <div key={tItem.id} className="p-3 bg-zinc-950/60 border border-zinc-800 rounded-lg space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-zinc-500 uppercase font-bold">Depoimento #{index + 1}</span>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-5 w-5 text-zinc-600 hover:text-red-400"
-                            onClick={() => removeTestimonial(index)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
+            {/* ── TAB: GERAL ── */}
+            <TabsContent value="geral" className="mt-0">
+              <ScrollArea className="max-h-[55vh]">
+                <div className="px-5 py-4 space-y-5">
 
-                        <div className="flex items-center gap-2">
-                          <div className="w-9 h-9 rounded-full overflow-hidden bg-zinc-900 border border-zinc-700 flex-shrink-0 flex items-center justify-center">
-                            {tItem.imageUrl ? (
-                              <img src={tItem.imageUrl} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="text-zinc-600 text-xs">Foto</span>
-                            )}
-                          </div>
-                          <label className="flex-1 cursor-pointer">
-                            <span className="text-[10px] text-zinc-500 block mb-1">Foto do cliente</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) uploadTestimonialPhoto(index, file);
-                                e.target.value = "";
-                              }}
-                            />
-                            <span className="text-[10px] text-emerald-400 hover:underline cursor-pointer">Enviar foto</span>
-                          </label>
-                        </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Título da página</Label>
+                    <Input value={editConfig.heroTitle || ""} onChange={(e) => set("heroTitle", e.target.value)} placeholder="Promoção por tempo limitado" className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-emerald-500 h-10" />
+                  </div>
 
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <Label className="text-[10px] text-zinc-500 uppercase">Nome</Label>
-                            <Input
-                              value={tItem.name}
-                              onChange={(e) => updateTestimonial(index, "name", e.target.value)}
-                              className="bg-zinc-900 border-zinc-700 text-white h-8 text-xs mt-0.5"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-[10px] text-zinc-500 uppercase">Estrelas (1-5)</Label>
-                            <Input
-                              type="number"
-                              min={1}
-                              max={5}
-                              value={tItem.rating}
-                              onChange={(e) => updateTestimonial(index, "rating", parseInt(e.target.value) || 5)}
-                              className="bg-zinc-900 border-zinc-700 text-white h-8 text-xs mt-0.5"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-[10px] text-zinc-500 uppercase">Texto</Label>
-                          <Textarea
-                            value={tItem.text}
-                            onChange={(e) => updateTestimonial(index, "text", e.target.value)}
-                            className="bg-zinc-900 border-zinc-700 text-white h-16 text-xs resize-none mt-0.5"
-                          />
-                        </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Texto do botão de compra</Label>
+                    <Input value={editConfig.payButtonText || ""} onChange={(e) => set("payButtonText", e.target.value)} placeholder="Comprar agora" className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-emerald-500 h-10" />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Cor principal</Label>
+                    <div className="flex items-center gap-3">
+                      <input type="color" value={editConfig.primaryColor || "#22a559"} onChange={(e) => set("primaryColor", e.target.value)} className="w-10 h-10 rounded-lg border border-zinc-700 bg-zinc-900 cursor-pointer p-0.5" />
+                      <Input value={editConfig.primaryColor || ""} onChange={(e) => set("primaryColor", e.target.value)} placeholder="#22a559" className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-emerald-500 h-10 font-mono" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Moeda</Label>
+                      <Select value={editConfig.checkoutCurrency || "AUTO"} onValueChange={(v) => set("checkoutCurrency", v)}>
+                        <SelectTrigger className="bg-zinc-900 border-zinc-700 text-white h-10 focus:ring-emerald-500"><SelectValue /></SelectTrigger>
+                        <SelectContent className="bg-zinc-900 border-zinc-700 text-white">
+                          <SelectItem value="AUTO">Auto</SelectItem>
+                          <SelectItem value="MZN">MZN</SelectItem>
+                          <SelectItem value="USD">USD</SelectItem>
+                          <SelectItem value="EUR">EUR</SelectItem>
+                          <SelectItem value="BRL">BRL</SelectItem>
+                          <SelectItem value="GBP">GBP</SelectItem>
+                          <SelectItem value="AOA">AOA</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Idioma</Label>
+                      <Select value={editConfig.checkoutLanguage || "pt"} onValueChange={(v) => set("checkoutLanguage", v)}>
+                        <SelectTrigger className="bg-zinc-900 border-zinc-700 text-white h-10 focus:ring-emerald-500"><SelectValue /></SelectTrigger>
+                        <SelectContent className="bg-zinc-900 border-zinc-700 text-white">
+                          <SelectItem value="pt">Português</SelectItem>
+                          <SelectItem value="en">English</SelectItem>
+                          <SelectItem value="es">Español</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Banner */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5"><ImageIcon className="w-3.5 h-3.5" /> Banner de Checkout</Label>
+                    {editConfig.heroImageUrl ? (
+                      <div className="relative group">
+                        <img src={editConfig.heroImageUrl} alt="Banner" className="w-full h-28 object-cover rounded-lg" />
+                        <Button size="icon" variant="destructive" className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => set("heroImageUrl", "")}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-zinc-700 rounded-lg cursor-pointer hover:border-emerald-500/50 transition-colors bg-zinc-950/30">
+                        {isUploadingBanner ? <Loader2 className="w-5 h-5 text-zinc-500 animate-spin" /> : <><ImageIcon className="w-4 h-4 text-zinc-600 mb-1" /><span className="text-xs text-zinc-500">Clique para enviar banner</span></>}
+                        <input type="file" accept="image/*" className="hidden" disabled={isUploadingBanner} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadBanner(f); e.target.value = ""; }} />
+                      </label>
+                    )}
+                  </div>
+
+                  {/* Timer */}
+                  <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-white">Temporizador</p>
+                        <p className="text-xs text-zinc-500">Cria urgência na página</p>
+                      </div>
+                      <Switch checked={!!editConfig.showTimer} onCheckedChange={(v) => set("showTimer", v)} />
+                    </div>
+                    {editConfig.showTimer && (
+                      <div className="space-y-1.5 pt-1">
+                        <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Minutos</Label>
+                        <Input type="number" min={1} max={60} value={editConfig.timerMinutes ?? 10} onChange={(e) => set("timerMinutes", Number(e.target.value))} className="bg-zinc-950 border-zinc-700 text-white h-10 focus-visible:ring-emerald-500" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Campos opcionais */}
+                  <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Campos do formulário</p>
+                    {[
+                      { key: "showPhone", label: "Telefone" },
+                      { key: "showCpf", label: "CPF" },
+                      { key: "showSurname", label: "Sobrenome" },
+                      { key: "showAddress", label: "Endereço" },
+                    ].map(({ key, label }) => (
+                      <div key={key} className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-300">{label}</span>
+                        <Switch checked={!!(editConfig as any)[key]} onCheckedChange={(v) => set(key as keyof CheckoutConfig, v)} />
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
 
-              {/* Timer */}
-              <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Temporizador</p>
-                    <p className="text-xs text-zinc-500">Cria urgência na página</p>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Texto do rodapé</Label>
+                    <Input value={editConfig.footerText || ""} onChange={(e) => set("footerText", e.target.value)} placeholder="Meteorfy © 2026. Todos os direitos reservados." className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-emerald-500 h-10" />
                   </div>
-                  <Switch
-                    checked={!!editConfig.showTimer}
-                    onCheckedChange={(v) => set("showTimer", v)}
-                  />
                 </div>
-                {editConfig.showTimer && (
-                  <div className="space-y-1.5 pt-1">
-                    <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Minutos</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={60}
-                      value={editConfig.timerMinutes ?? 10}
-                      onChange={(e) => set("timerMinutes", Number(e.target.value))}
-                      className="bg-zinc-950 border-zinc-700 text-white h-10 focus-visible:ring-emerald-500"
-                    />
-                  </div>
-                )}
-              </div>
+              </ScrollArea>
+            </TabsContent>
 
-              {/* Campos opcionais */}
-              <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 space-y-3">
-                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Campos do formulário</p>
-                {[
-                  { key: "showPhone", label: "Telefone" },
-                  { key: "showCpf", label: "CPF" },
-                  { key: "showSurname", label: "Sobrenome" },
-                  { key: "showAddress", label: "Endereço" },
-                ].map(({ key, label }) => (
-                  <div key={key} className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-300">{label}</span>
-                    <Switch
-                      checked={!!(editConfig as any)[key]}
-                      onCheckedChange={(v) => set(key as keyof CheckoutConfig, v)}
-                    />
+            {/* ── TAB: DEPOIMENTOS ── */}
+            <TabsContent value="depoimentos" className="mt-0">
+              <ScrollArea className="max-h-[55vh]">
+                <div className="px-5 py-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-white flex items-center gap-1.5"><Star className="w-4 h-4 text-amber-400" /> Depoimentos</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">Avaliações exibidas na página de checkout</p>
+                    </div>
+                    <Button size="sm" onClick={addTestimonial} className="h-8 px-3 text-xs bg-emerald-600 hover:bg-emerald-500 text-white">
+                      <Plus className="w-3 h-3 mr-1" /> Adicionar
+                    </Button>
                   </div>
-                ))}
-              </div>
 
-              {/* Rodapé */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Texto do rodapé</Label>
-                <Input
-                  value={editConfig.footerText || ""}
-                  onChange={(e) => set("footerText", e.target.value)}
-                  placeholder="Meteorfy © 2026. Todos os direitos reservados."
-                  className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-emerald-500 h-10"
-                />
-              </div>
-            </div>
-          </ScrollArea>
+                  {testimonialsList.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed border-zinc-800 rounded-xl">
+                      <Star className="w-8 h-8 text-zinc-700 mb-2" />
+                      <p className="text-sm text-zinc-500">Nenhum depoimento ainda</p>
+                      <p className="text-xs text-zinc-600 mt-1">Clique em "Adicionar" para criar o primeiro</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {testimonialsList.map((tItem: any, index: number) => (
+                        <div key={tItem.id} className="p-4 bg-zinc-900/60 border border-zinc-800 rounded-xl space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Depoimento #{index + 1}</span>
+                            <Button size="icon" variant="ghost" className="h-6 w-6 text-zinc-600 hover:text-red-400" onClick={() => removeTestimonial(index)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full overflow-hidden bg-zinc-900 border border-zinc-700 flex-shrink-0 flex items-center justify-center text-zinc-600 text-xs">
+                              {tItem.imageUrl ? <img src={tItem.imageUrl} alt="" className="w-full h-full object-cover" /> : "Foto"}
+                            </div>
+                            <label className="cursor-pointer">
+                              <span className="text-[11px] text-emerald-400 hover:underline">Enviar foto</span>
+                              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTestimonialPhoto(index, f); e.target.value = ""; }} />
+                            </label>
+                            {tItem.imageUrl && (
+                              <button className="text-[11px] text-zinc-600 hover:text-red-400" onClick={() => updateTestimonial(index, "imageUrl", "")}>Remover</button>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-[10px] text-zinc-500 uppercase font-bold">Nome</Label>
+                              <Input value={tItem.name} onChange={(e) => updateTestimonial(index, "name", e.target.value)} className="bg-zinc-950 border-zinc-700 text-white h-8 text-xs mt-0.5" />
+                            </div>
+                            <div>
+                              <Label className="text-[10px] text-zinc-500 uppercase font-bold">Estrelas (1-5)</Label>
+                              <Input type="number" min={1} max={5} value={tItem.rating} onChange={(e) => updateTestimonial(index, "rating", parseInt(e.target.value) || 5)} className="bg-zinc-950 border-zinc-700 text-white h-8 text-xs mt-0.5" />
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-zinc-500 uppercase font-bold">Texto do depoimento</Label>
+                            <Textarea value={tItem.text} onChange={(e) => updateTestimonial(index, "text", e.target.value)} className="bg-zinc-950 border-zinc-700 text-white h-16 text-xs resize-none mt-0.5" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+
+            {/* ── TAB: ORDER BUMPS ── */}
+            <TabsContent value="orderbumps" className="mt-0">
+              <ScrollArea className="max-h-[55vh]">
+                <div className="px-5 py-4 space-y-4">
+                  <div>
+                    <p className="text-sm font-semibold text-white flex items-center gap-1.5"><ShoppingCart className="w-4 h-4 text-emerald-400" /> Order Bumps</p>
+                    <p className="text-xs text-zinc-500 mt-0.5">Seleccione produtos extra a oferecer durante o checkout</p>
+                  </div>
+
+                  {orderBumpOptions.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed border-zinc-800 rounded-xl">
+                      <ShoppingCart className="w-8 h-8 text-zinc-700 mb-2" />
+                      <p className="text-sm text-zinc-500">Nenhum produto disponível</p>
+                      <p className="text-xs text-zinc-600 mt-1">Crie e aprove outros produtos para usá-los como order bumps</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {orderBumpOptions.map((p) => {
+                        const selected = selectedBumps.includes(p.id);
+                        return (
+                          <label key={p.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selected ? "border-emerald-600/50 bg-emerald-950/30" : "border-zinc-800 bg-zinc-900/40 hover:border-zinc-700"}`}>
+                            <Checkbox checked={selected} onCheckedChange={() => toggleOrderBump(p.id)} className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 shrink-0" />
+                            {p.imageUrl ? (
+                              <img src={p.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                            ) : (
+                              <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center shrink-0 text-zinc-500 text-xs font-bold">{p.name.charAt(0)}</div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-white truncate">{p.name}</p>
+                              <p className="text-xs text-emerald-400 font-semibold">+ {formatPrice(p)}</p>
+                            </div>
+                            {selected && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
 
           {/* Footer actions */}
           <div className="px-5 py-4 border-t border-zinc-800/60 flex gap-3">
-            <Button
-              variant="ghost"
-              className="flex-1 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-600"
-              onClick={() => setEditCheckoutId(null)}
-              disabled={isSaving}
-            >
+            <Button variant="ghost" className="flex-1 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-600" onClick={() => setEditCheckoutId(null)} disabled={isSaving}>
               Cancelar
             </Button>
-            <Button
-              className="flex-[2] bg-emerald-600 hover:bg-emerald-500 text-white"
-              onClick={handleSaveCheckout}
-              disabled={isSaving}
-            >
+            <Button className="flex-[2] bg-emerald-600 hover:bg-emerald-500 text-white" onClick={handleSaveCheckout} disabled={isSaving}>
               {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               {isSaving ? "Salvando..." : "Salvar alterações"}
             </Button>
