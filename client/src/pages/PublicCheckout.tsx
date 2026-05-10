@@ -758,8 +758,10 @@ export default function PublicCheckout() {
                 };
 
                 const allMethods: string[] = product?.paymentMethods || ["paypal"];
-                // Only show methods we know how to render
-                const knownMethods = allMethods.filter(m => METHOD_META[m]);
+                // Methods that are live and functional — "em breve" ones are excluded
+                const LIVE_METHODS = new Set(["mpesa", "emola", "paypal"]);
+                // Only show methods we know how to render AND that are live
+                const knownMethods = allMethods.filter(m => METHOD_META[m] && LIVE_METHODS.has(m));
                 const isMobile = (m: string) => m === "mpesa" || m === "emola";
                 const isGooglePay = (m: string) => m === "googlepay";
                 const showSelector = knownMethods.length > 1;
@@ -921,15 +923,6 @@ export default function PublicCheckout() {
                           `${t.payVia} ${selectedPaymentMethod === "mpesa" ? "M-Pesa" : "e-Mola"} ${moneyFromUsdCents(calculateTotal())}`
                         )}
                       </Button>
-                    )}
-
-                    {/* Google Pay — show "coming soon" notice */}
-                    {isGooglePay(selectedPaymentMethod) && (
-                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 flex flex-col items-center gap-2 text-center">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg" style={{ backgroundColor: "#4285F4" }}>G</div>
-                        <p className="text-sm font-semibold text-gray-700">Google Pay</p>
-                        <p className="text-xs text-gray-400">{t.googlePayComingSoon}</p>
-                      </div>
                     )}
 
                     {/* PayPal button */}
