@@ -451,17 +451,33 @@ export class NeonStorage {
     try {
       const client = await getPool().connect();
       try {
+        // 1. Upsert into user_emails (PRIMARY KEY on user_id — proper ON CONFLICT)
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS user_emails (
+            user_id TEXT PRIMARY KEY,
+            email   TEXT NOT NULL,
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+          )
+        `);
+        await client.query(`
+          INSERT INTO user_emails (user_id, email, updated_at)
+          VALUES ($1, $2, NOW())
+          ON CONFLICT (user_id) DO UPDATE SET email = EXCLUDED.email, updated_at = NOW()
+        `, [userId, email]);
+
+        // 2. Also keep settings.email in sync (no unique constraint — update existing row only)
         await client.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS email TEXT`);
-        // Use UPDATE first; if no row exists yet, INSERT — avoids ON CONFLICT (no unique constraint)
-        const upd = await client.query(
+        await client.query(
           `UPDATE settings SET email = $2 WHERE user_id = $1`,
           [userId, email]
         );
-        if (upd.rowCount === 0) {
+        // If no settings row yet, insert a minimal one
+        const check = await client.query(`SELECT 1 FROM settings WHERE user_id = $1 LIMIT 1`, [userId]);
+        if (check.rowCount === 0) {
           await client.query(
             `INSERT INTO settings (user_id, email) VALUES ($1, $2)`,
             [userId, email]
-          ).catch(() => {}); // ignore if another row was inserted concurrently
+          ).catch(() => {});
         }
       } finally {
         client.release();
