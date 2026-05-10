@@ -165,6 +165,15 @@ export default function PublicCheckout() {
   const pixelInitialized = useRef(false);
   const pageViewFired = useRef(false);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const had = root.classList.contains("light");
+    root.classList.remove("light");
+    return () => {
+      if (had) root.classList.add("light");
+    };
+  }, []);
+
   const { data: publicData, isLoading: isLoadingCheckout, error: checkoutError } = useQuery<{ checkout: any; product: any; extraProducts: any[] } | null>({
     queryKey: ["public-checkout", slug],
     enabled: !!slug,

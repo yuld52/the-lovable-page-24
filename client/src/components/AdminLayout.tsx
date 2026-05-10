@@ -1,7 +1,7 @@
 import { AdminSidebar } from "./AdminSidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { Menu, Shield } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -9,6 +9,15 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const had = root.classList.contains("light");
+    root.classList.remove("light");
+    return () => {
+      if (had) root.classList.add("light");
+    };
+  }, []);
 
   return (
     <div className="h-screen bg-background text-foreground flex overflow-hidden dark">
