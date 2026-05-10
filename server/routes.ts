@@ -1877,12 +1877,19 @@ export async function registerRoutes(
           SELECT
             c.owner_id,
             COALESCE(SUM(
-              CASE COALESCE(p.currency, 'USD')
-                WHEN 'MZN' THEN s.amount
-                WHEN 'USD' THEN s.amount * 64
-                WHEN 'BRL' THEN s.amount * 11
-                WHEN 'EUR' THEN s.amount * 71
-                ELSE s.amount * 64
+              CASE
+                -- Mobile payments (M-Pesa, e-Mola) are always MZN minor units
+                WHEN s.payment_method IN ('mpesa', 'emola', 'e2pay', 'mobile') THEN s.amount
+                -- PayPal is USD cents → convert to MZN minor (1 USD = 64 MZN, so cents*64 = MZN minor)
+                WHEN s.payment_method = 'paypal' THEN s.amount * 64
+                -- Fallback: use product currency, defaulting to MZN (not USD)
+                ELSE CASE COALESCE(p.currency, 'MZN')
+                  WHEN 'MZN' THEN s.amount
+                  WHEN 'USD' THEN s.amount * 64
+                  WHEN 'BRL' THEN s.amount * 11
+                  WHEN 'EUR' THEN s.amount * 71
+                  ELSE s.amount
+                END
               END
             ), 0)::bigint AS total_revenue,
             COUNT(s.id)::int AS total_sales,
