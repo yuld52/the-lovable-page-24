@@ -198,7 +198,7 @@ export class NeonStorage {
         
         // 2. Try to nullify product reference in sales (if exists and allows null)
         // This prevents blocking deletion if sales exist, while preserving financial records
-        await client.query(`UPDATE sales SET product_id = NULL WHERE product_id = $1`).catch(() => {});
+        await client.query(`UPDATE sales SET product_id = NULL WHERE product_id = $1`, [id]).catch(() => {});
         
         // 3. Finally delete the product
         await client.query(`DELETE FROM products WHERE id = $1`, [id]);
