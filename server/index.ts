@@ -10,6 +10,9 @@ import cors from "cors";
 const app = express();
 const httpServer = createServer(app);
 
+// Trust Replit's reverse proxy so rate-limiters see the real client IP
+app.set("trust proxy", 1);
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;

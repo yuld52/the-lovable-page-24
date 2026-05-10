@@ -1208,6 +1208,7 @@ export async function registerRoutes(
           }
           pageToken = result.pageToken;
         } while (pageToken);
+        console.log(`[users-v2] Firebase listUsers OK — ${firebaseUsers.length} users`);
       } catch (fbErr: any) {
         console.warn("[users-v2] Firebase listUsers failed:", fbErr?.message);
       }
@@ -1216,14 +1217,14 @@ export async function registerRoutes(
       const { neon: neonClient } = await import("@neondatabase/serverless");
       const sql = neonClient(process.env.NEON_DATABASE_URL || "");
       const [ueRows, stRows, coRows, saRows, baRows, wdRows, prRows, srRows, wrRows] = await Promise.all([
-        sql`SELECT user_id::text AS uid, email FROM user_emails WHERE user_id IS NOT NULL`,
-        sql`SELECT user_id::text AS uid, email FROM settings WHERE user_id IS NOT NULL AND email IS NOT NULL`,
-        sql`SELECT DISTINCT owner_id::text AS uid FROM checkouts WHERE owner_id IS NOT NULL`,
-        sql`SELECT DISTINCT user_id::text AS uid FROM sales WHERE user_id IS NOT NULL`,
-        sql`SELECT DISTINCT user_id::text AS uid FROM bank_accounts WHERE user_id IS NOT NULL`,
+        sql`SELECT user_id::text AS uid, email FROM user_emails WHERE user_id IS NOT NULL`.catch(() => [] as any[]),
+        sql`SELECT user_id::text AS uid, email FROM settings WHERE user_id IS NOT NULL AND email IS NOT NULL`.catch(() => [] as any[]),
+        sql`SELECT DISTINCT owner_id::text AS uid FROM checkouts WHERE owner_id IS NOT NULL`.catch(() => [] as any[]),
+        sql`SELECT DISTINCT user_id::text AS uid FROM sales WHERE user_id IS NOT NULL`.catch(() => [] as any[]),
+        sql`SELECT DISTINCT user_id::text AS uid FROM bank_accounts WHERE user_id IS NOT NULL`.catch(() => [] as any[]),
         sql`SELECT DISTINCT user_id::text AS uid FROM withdrawals WHERE user_id IS NOT NULL`.catch(() => [] as any[]),
-        sql`SELECT owner_id::text AS uid, COUNT(*)::int AS n FROM products GROUP BY owner_id`,
-        sql`SELECT user_id::text AS uid, COUNT(*)::int AS n FROM sales GROUP BY user_id`,
+        sql`SELECT owner_id::text AS uid, COUNT(*)::int AS n FROM products GROUP BY owner_id`.catch(() => [] as any[]),
+        sql`SELECT user_id::text AS uid, COUNT(*)::int AS n FROM sales GROUP BY user_id`.catch(() => [] as any[]),
         sql`SELECT user_id::text AS uid, COUNT(*)::int AS n FROM withdrawals GROUP BY user_id`.catch(() => [] as any[]),
       ]);
 
