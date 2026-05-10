@@ -168,9 +168,9 @@ export default function PublicCheckout() {
   useEffect(() => {
     const root = document.documentElement;
     const had = root.classList.contains("light");
-    root.classList.remove("light");
+    root.classList.add("light");
     return () => {
-      if (had) root.classList.add("light");
+      if (!had) root.classList.remove("light");
     };
   }, []);
 
