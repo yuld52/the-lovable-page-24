@@ -75,19 +75,37 @@ async function resolveUserEmail(userId: string): Promise<string | null> {
   return storage.getUserEmail(userId).catch(() => null);
 }
 
-async function sendSaleEmails(sale: any, product: any, amountDisplay: string, paymentMethodLabel: string) {
+/** Build the public base URL from an Express request. */
+function getBaseUrl(req: any): string {
+  const domain = process.env.REPLIT_DEV_DOMAIN || process.env.PUBLIC_URL;
+  if (domain) return domain.startsWith("http") ? domain : `https://${domain}`;
+  const proto = (req.headers["x-forwarded-proto"] as string)?.split(",")[0]?.trim() || req.protocol || "https";
+  const host = (req.headers["x-forwarded-host"] as string) || req.headers.host || "localhost:5000";
+  return `${proto}://${host}`;
+}
+
+/** Turn a relative path like /uploads/file.pdf into an absolute URL. */
+function absoluteUrl(path: string | null | undefined, baseUrl: string): string | null {
+  if (!path) return null;
+  if (/^https?:\/\//i.test(path)) return path; // already absolute
+  return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
+async function sendSaleEmails(sale: any, product: any, amountDisplay: string, paymentMethodLabel: string, baseUrl: string) {
   const orderId = String(sale.id).slice(-8);
 
   // Email to buyer
   if (sale.customerEmail) {
+    const rawDeliveryUrl = product?.noEmailDelivery ? null : (product?.deliveryUrl ?? null);
+    const rawDeliveryFiles: string[] = product?.noEmailDelivery ? [] : (product?.deliveryFiles as string[] ?? []);
     sendBuyerConfirmation({
       to: sale.customerEmail,
       productName: product?.name || "Produto",
       amount: amountDisplay,
       orderId,
       paymentMethod: paymentMethodLabel,
-      deliveryUrl: product?.noEmailDelivery ? null : (product?.deliveryUrl ?? null),
-      deliveryFiles: product?.noEmailDelivery ? [] : (product?.deliveryFiles as string[] ?? []),
+      deliveryUrl: absoluteUrl(rawDeliveryUrl, baseUrl),
+      deliveryFiles: rawDeliveryFiles.map(f => absoluteUrl(f, baseUrl) as string),
     }).catch((e: any) => console.error("[EMAIL] buyer confirmation:", e?.message));
   }
 
@@ -718,8 +736,8 @@ export async function registerRoutes(
               amount: `${(row.amount / 100).toFixed(2)}`,
               orderId: String(saleId),
               paymentMethod: methodLabel(row.payment_method || ""),
-              deliveryUrl: row.no_email_delivery ? null : (row.delivery_url ?? null),
-              deliveryFiles: row.no_email_delivery ? [] : (row.delivery_files as string[] ?? []),
+              deliveryUrl: absoluteUrl(row.no_email_delivery ? null : (row.delivery_url ?? null), getBaseUrl(req)),
+              deliveryFiles: (row.no_email_delivery ? [] : (row.delivery_files as string[] ?? [])).map((f: string) => absoluteUrl(f, getBaseUrl(req)) as string),
             }).catch((e: any) => console.error("[E2PAY EMAIL]", e?.message));
           }
           if (row.owner_id) {
@@ -889,7 +907,7 @@ export async function registerRoutes(
               await storage.updateSaleStatus(sale.id, "paid").catch(() => {});
               // Emails to buyer + seller
               const amtDisplay = `${methodLabel(paymentMethod)} ${(amountMznMajor).toFixed(2)} MZN`;
-              sendSaleEmails({ ...sale, status: "paid" }, product, amtDisplay, methodLabel(paymentMethod))
+              sendSaleEmails({ ...sale, status: "paid" }, product, amtDisplay, methodLabel(paymentMethod), getBaseUrl(req))
                 .catch((e: any) => console.error("[EMAIL] e2pay sale emails:", e?.message));
               // UTMify — paid
               if (sellerSettings?.utmfyToken && sellerSettings?.utmfyEnabled !== false) {
@@ -961,7 +979,7 @@ export async function registerRoutes(
 
         // Emails to buyer + seller
         const fallbackAmt = `${methodLabel(paymentMethod)} ${(totalUsdCents / 100).toFixed(2)} MZN`;
-        sendSaleEmails(sale, product, fallbackAmt, methodLabel(paymentMethod))
+        sendSaleEmails(sale, product, fallbackAmt, methodLabel(paymentMethod), getBaseUrl(req))
           .catch((e: any) => console.error("[EMAIL] fallback sale emails:", e?.message));
 
         // UTMify — paid (fallback flow)
@@ -1154,8 +1172,8 @@ export async function registerRoutes(
           amount: emailAmount,
           orderId: emailOrderId,
           paymentMethod: "PayPal",
-          deliveryUrl: product?.noEmailDelivery ? null : (product?.deliveryUrl ?? null),
-          deliveryFiles: product?.noEmailDelivery ? [] : (product?.deliveryFiles as string[] ?? []),
+          deliveryUrl: absoluteUrl(product?.noEmailDelivery ? null : (product?.deliveryUrl ?? null), getBaseUrl(req)),
+          deliveryFiles: (product?.noEmailDelivery ? [] : (product?.deliveryFiles as string[] ?? [])).map((f: string) => absoluteUrl(f, getBaseUrl(req)) as string),
         }).catch((e: any) => console.error("[EMAIL] buyer confirmation:", e?.message));
       }
       if (sale.userId) {
