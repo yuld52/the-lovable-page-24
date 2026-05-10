@@ -317,7 +317,7 @@ export default function CheckoutEditor() {
 
   return (
     <div className="flex h-screen bg-[#09090b] overflow-hidden">
-      <div className="w-[420px] flex flex-col border-r border-zinc-800 bg-[#0c0c0e]">
+      <div className="w-[420px] flex flex-col border-r border-border bg-[#0c0c0e]">
         <div className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={() => setLocation("/checkouts")} className="h-8 w-8" data-testid="button-back">
@@ -332,7 +332,7 @@ export default function CheckoutEditor() {
 
         <Tabs defaultValue="geral" className="flex-1 flex flex-col overflow-hidden">
           <div className="px-4 pt-4">
-            <TabsList className="w-full bg-zinc-900/50 border border-zinc-800 p-1">
+            <TabsList className="w-full bg-muted/50 border border-border p-1">
               <TabsTrigger value="geral" className="flex-1 text-xs data-[state=active]:bg-zinc-800">Geral</TabsTrigger>
               <TabsTrigger value="testimonial" className="flex-1 text-xs data-[state=active]:bg-zinc-800">Depoimento</TabsTrigger>
               <TabsTrigger value="visual" className="flex-1 text-xs data-[state=active]:bg-zinc-800">Visual</TabsTrigger>
@@ -341,28 +341,28 @@ export default function CheckoutEditor() {
 
           <TabsContent value="geral" className="flex-1 overflow-y-auto p-4 space-y-4">
             <div className="space-y-2">
-              <Label className="text-xs text-zinc-400">Nome do Checkout *</Label>
+              <Label className="text-xs text-muted-foreground">Nome do Checkout *</Label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="bg-zinc-900/50 border-zinc-800 h-9 text-sm"
+                className="bg-muted/50 border-border h-9 text-sm"
                 data-testid="input-checkout-name"
               />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-zinc-400 font-bold uppercase">Opções de Exibição</Label>
+              <Label className="text-xs text-muted-foreground font-bold uppercase">Opções de Exibição</Label>
               <div className="flex flex-col gap-2">
-                <div className="space-y-2 mb-2 p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
-                  <Label className="text-xs text-zinc-400">Idioma Padrão</Label>
+                <div className="space-y-2 mb-2 p-3 bg-muted/50 border border-border rounded-lg">
+                  <Label className="text-xs text-muted-foreground">Idioma Padrão</Label>
                   <Select
                     value={config.checkoutLanguage || "AUTO"}
                     onValueChange={(value: any) => setConfig({ ...config, checkoutLanguage: value })}
                   >
-                    <SelectTrigger className="bg-zinc-950 border-zinc-800 h-9 text-sm" data-testid="select-checkout-language">
+                    <SelectTrigger className="bg-muted border-border h-9 text-sm" data-testid="select-checkout-language">
                       <SelectValue placeholder="Selecione um idioma" />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-800">
+                    <SelectContent className="bg-muted border-border">
                       <SelectItem value="AUTO">Automático (Detecção)</SelectItem>
                       <SelectItem value="pt">Português</SelectItem>
                       <SelectItem value="en">English</SelectItem>
@@ -371,15 +371,15 @@ export default function CheckoutEditor() {
                   </Select>
 
                   <div className="pt-3">
-                    <Label className="text-xs text-zinc-400">Moeda Padrão</Label>
+                    <Label className="text-xs text-muted-foreground">Moeda Padrão</Label>
                     <Select
                       value={(config.checkoutCurrency as any) || "USD"}
                       onValueChange={(value: any) => setConfig({ ...config, checkoutCurrency: value })}
                     >
-                      <SelectTrigger className="bg-zinc-950 border-zinc-800 h-9 text-sm" data-testid="select-checkout-currency">
+                      <SelectTrigger className="bg-muted border-border h-9 text-sm" data-testid="select-checkout-currency">
                         <SelectValue placeholder="USD" />
                       </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-zinc-800">
+                      <SelectContent className="bg-muted border-border">
                         <SelectItem value="AUTO">Automático (Detecção)</SelectItem>
                         <SelectItem value="AUD">AUD</SelectItem>
                         <SelectItem value="BRL">BRL</SelectItem>
@@ -410,7 +410,7 @@ export default function CheckoutEditor() {
                     </Select>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
+                <div className="flex items-center gap-2 p-3 bg-muted/50 border border-border rounded-lg">
                   <Checkbox
                     id="showChangeCountry"
                     checked={config.showChangeCountry}
@@ -419,7 +419,7 @@ export default function CheckoutEditor() {
                   />
                   <Label htmlFor="showChangeCountry" className="text-sm text-white cursor-pointer">Mostrar Seletor de Idioma</Label>
                 </div>
-                <div className="flex flex-col gap-2 p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
+                <div className="flex flex-col gap-2 p-3 bg-muted/50 border border-border rounded-lg">
                   <div className="flex items-center gap-2">
                     <Checkbox
                       id="showTimer"
@@ -432,23 +432,23 @@ export default function CheckoutEditor() {
                   {config.showTimer && (
                     <div className="mt-2 space-y-3 pl-6">
                       <div className="space-y-1">
-                        <Label className="text-[10px] text-zinc-500 uppercase">Tempo em Minutos</Label>
+                        <Label className="text-[10px] text-muted-foreground uppercase">Tempo em Minutos</Label>
                         <Input
                           type="number"
                           min="1"
                           max="60"
                           value={config.timerMinutes}
                           onChange={(e) => setConfig({ ...config, timerMinutes: parseInt(e.target.value) || 1 })}
-                          className="bg-zinc-950 border-zinc-800 h-8 text-xs"
+                          className="bg-muted border-border h-8 text-xs"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <Label className="text-[10px] text-zinc-500 uppercase">Texto do Timer</Label>
+                        <Label className="text-[10px] text-muted-foreground uppercase">Texto do Timer</Label>
                         <Input
                           value={config.timerText}
                           onChange={(e) => setConfig({ ...config, timerText: e.target.value })}
-                          className="bg-zinc-950 border-zinc-800 h-8 text-xs"
+                          className="bg-muted border-border h-8 text-xs"
                           placeholder="Ex: Oferta Especial por Tempo Limitado!"
                           data-testid="input-timer-text"
                         />
@@ -456,7 +456,7 @@ export default function CheckoutEditor() {
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-2 p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
+                <div className="flex items-center gap-2 p-3 bg-muted/50 border border-border rounded-lg">
                   <Checkbox
                     id="showPhone"
                     checked={config.showPhone}
@@ -465,7 +465,7 @@ export default function CheckoutEditor() {
                   />
                   <Label htmlFor="showPhone" className="text-sm text-white cursor-pointer">Mostrar Campo de Celular</Label>
                 </div>
-                <div className="flex items-center gap-2 p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
+                <div className="flex items-center gap-2 p-3 bg-muted/50 border border-border rounded-lg">
                   <Checkbox
                     id="showSurname"
                     checked={config.showSurname}
@@ -474,7 +474,7 @@ export default function CheckoutEditor() {
                   />
                   <Label htmlFor="showSurname" className="text-sm text-white cursor-pointer">Mostrar Campo de Sobrenome</Label>
                 </div>
-                <div className="flex items-center gap-2 p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
+                <div className="flex items-center gap-2 p-3 bg-muted/50 border border-border rounded-lg">
                   <Checkbox
                     id="showCpf"
                     checked={config.showCpf}
@@ -483,7 +483,7 @@ export default function CheckoutEditor() {
                   />
                   <Label htmlFor="showCpf" className="text-sm text-white cursor-pointer">Mostrar Campo de CPF</Label>
                 </div>
-                <div className="flex items-center gap-2 p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
+                <div className="flex items-center gap-2 p-3 bg-muted/50 border border-border rounded-lg">
                   <Checkbox
                     id="showCnpj"
                     checked={config.showCnpj}
@@ -492,7 +492,7 @@ export default function CheckoutEditor() {
                   />
                   <Label htmlFor="showCnpj" className="text-sm text-white cursor-pointer">Mostrar Campo de CNPJ</Label>
                 </div>
-                <div className="flex items-center gap-2 p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
+                <div className="flex items-center gap-2 p-3 bg-muted/50 border border-border rounded-lg">
                   <Checkbox
                     id="showAddress"
                     checked={config.showAddress}
@@ -505,12 +505,12 @@ export default function CheckoutEditor() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-zinc-400">Produto Principal *</Label>
+              <Label className="text-xs text-muted-foreground">Produto Principal *</Label>
               <Select value={productId} onValueChange={setProductId}>
-                <SelectTrigger className="bg-zinc-900/50 border-zinc-800 h-9 text-sm" data-testid="select-product">
+                <SelectTrigger className="bg-muted/50 border-border h-9 text-sm" data-testid="select-product">
                   <SelectValue placeholder="Selecione um produto" />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectContent className="bg-muted border-border">
                   {products?.filter(p => p.status === 'approved').map((p) => (
                     <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
                   ))}
@@ -519,8 +519,8 @@ export default function CheckoutEditor() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-zinc-400 font-bold uppercase">Upload de Banner (Hero)</Label>
-              <div className="p-4 border-2 border-dashed border-zinc-700 rounded-none bg-zinc-900/30 hover:bg-zinc-900/50 transition-colors">
+              <Label className="text-xs text-muted-foreground font-bold uppercase">Upload de Banner (Hero)</Label>
+              <div className="p-4 border-2 border-dashed border-border rounded-none bg-muted/30 hover:bg-muted/50 transition-colors">
                 <Input
                   type="file"
                   accept="image/*"
@@ -557,13 +557,13 @@ export default function CheckoutEditor() {
                       if (inputEl) inputEl.value = "";
                     }
                   }}
-                  className="bg-transparent border-0 h-9 text-sm p-0 file:bg-zinc-800 file:text-white file:border-0 file:rounded-md file:px-4 file:py-1 file:mr-4 cursor-pointer"
+                  className="bg-transparent border-0 h-9 text-sm p-0 file:bg-accent file:text-foreground file:border-0 file:rounded-md file:px-4 file:py-1 file:mr-4 cursor-pointer"
                   data-testid="input-hero-image-upload"
                 />
               </div>
               {isUploadingHero && (
                 <div className="mt-2 space-y-1">
-                  <div className="flex justify-between text-[10px] text-zinc-500">
+                  <div className="flex justify-between text-[10px] text-muted-foreground">
                     <span>Enviando...</span>
                     <span>{heroUploadProgress}%</span>
                   </div>
@@ -597,18 +597,18 @@ export default function CheckoutEditor() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-zinc-400 font-bold uppercase opacity-50">Selecione Upsell (manutenção)</Label>
+              <Label className="text-xs text-muted-foreground font-bold uppercase opacity-50">Selecione Upsell (manutenção)</Label>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-zinc-400 font-bold uppercase">Selecione Order Bump</Label>
+              <Label className="text-xs text-muted-foreground font-bold uppercase">Selecione Order Bump</Label>
               <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
                 {products?.filter(p => p.status === 'approved' && p.id.toString() !== productId).map(p => (
-                  <div key={p.id} className="flex items-center gap-3 p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
+                  <div key={p.id} className="flex items-center gap-3 p-3 bg-muted/50 border border-border rounded-lg">
                     <Checkbox checked={config.orderBumpProducts.includes(p.id)} onCheckedChange={() => toggleOrderBump(p.id)} />
                     <div className="flex-1">
                       <div className="text-sm font-medium text-white">{p.name}</div>
-                      <div className="text-xs text-zinc-500">{moneyFromUsdCents(p.price)}</div>
+                      <div className="text-xs text-muted-foreground">{moneyFromUsdCents(p.price)}</div>
                     </div>
                   </div>
                 ))}
@@ -622,22 +622,22 @@ export default function CheckoutEditor() {
             </Button>
             <div className="space-y-4 pb-20">
               {(config.testimonials || []).map((tItem, index) => (
-                <div key={tItem.id} className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl space-y-3">
+                <div key={tItem.id} className="p-4 bg-muted/50 border border-border rounded-xl space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-[10px] text-zinc-500 uppercase font-bold">Depoimento #{index + 1}</Label>
-                    <Button size="icon" variant="ghost" className="h-6 w-6 text-zinc-500 hover:text-red-500" onClick={() => setConfig({ ...config, testimonials: config.testimonials.filter(x => x.id !== tItem.id) })}>
+                    <Label className="text-[10px] text-muted-foreground uppercase font-bold">Depoimento #{index + 1}</Label>
+                    <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-red-500" onClick={() => setConfig({ ...config, testimonials: config.testimonials.filter(x => x.id !== tItem.id) })}>
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-[10px] text-zinc-500 uppercase font-bold">Foto do Cliente</Label>
+                    <Label className="text-[10px] text-muted-foreground uppercase font-bold">Foto do Cliente</Label>
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-zinc-950 border border-zinc-800 flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-muted border border-border flex-shrink-0">
                         {tItem.imageUrl ? (
                           <img src={tItem.imageUrl} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-zinc-700">
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                             <Plus className="h-4 w-4" />
                           </div>
                         )}
@@ -677,11 +677,11 @@ export default function CheckoutEditor() {
                               }
                             }
                           }}
-                          className="bg-zinc-950 border-zinc-800 h-8 text-[10px] p-0 file:bg-zinc-800 file:text-white file:border-0 file:rounded file:px-2 file:py-0 file:h-full file:mr-2 cursor-pointer"
+                          className="bg-muted border-border h-8 text-[10px] p-0 file:bg-accent file:text-foreground file:border-0 file:rounded file:px-2 file:py-0 file:h-full file:mr-2 cursor-pointer"
                         />
                       </div>
                       {tItem.imageUrl && (
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-zinc-500 hover:text-red-500" onClick={() => {
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-red-500" onClick={() => {
                           const newList = [...config.testimonials];
                           newList[index].imageUrl = "";
                           setConfig({ ...config, testimonials: newList });
@@ -694,29 +694,29 @@ export default function CheckoutEditor() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-[10px] text-zinc-500 uppercase font-bold">Nome</Label>
+                      <Label className="text-[10px] text-muted-foreground uppercase font-bold">Nome</Label>
                       <Input value={tItem.name} onChange={(e) => {
                         const newList = [...config.testimonials];
                         newList[index].name = e.target.value;
                         setConfig({ ...config, testimonials: newList });
-                      }} className="bg-zinc-950 border-zinc-800 h-8 text-xs" />
+                      }} className="bg-muted border-border h-8 text-xs" />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-[10px] text-zinc-500 uppercase font-bold">Estrelas</Label>
+                      <Label className="text-[10px] text-muted-foreground uppercase font-bold">Estrelas</Label>
                       <Input type="number" min="1" max="5" value={tItem.rating} onChange={(e) => {
                         const newList = [...config.testimonials];
                         newList[index].rating = parseInt(e.target.value) || 5;
                         setConfig({ ...config, testimonials: newList });
-                      }} className="bg-zinc-950 border-zinc-800 h-8 text-xs" />
+                      }} className="bg-muted border-border h-8 text-xs" />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] text-zinc-500 uppercase font-bold">Texto</Label>
+                    <Label className="text-[10px] text-muted-foreground uppercase font-bold">Texto</Label>
                     <Textarea value={tItem.text} onChange={(e) => {
                       const newList = [...config.testimonials];
                       newList[index].text = e.target.value;
                       setConfig({ ...config, testimonials: newList });
-                    }} className="bg-zinc-950 border-zinc-800 h-20 text-xs resize-none" />
+                    }} className="bg-muted border-border h-20 text-xs resize-none" />
                   </div>
                 </div>
               ))}
@@ -725,14 +725,14 @@ export default function CheckoutEditor() {
 
           <TabsContent value="visual" className="flex-1 overflow-y-auto p-4 space-y-6">
             <div className="space-y-4">
-              <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl space-y-4">
-                <Label className="text-xs text-zinc-400 font-bold uppercase">Cor Primária (Botões e Destaques)</Label>
+              <div className="p-4 bg-muted/50 border border-border rounded-xl space-y-4">
+                <Label className="text-xs text-muted-foreground font-bold uppercase">Cor Primária (Botões e Destaques)</Label>
                 <div className="flex justify-center py-2">
                   <ColorPicker value={config.primaryColor} onChange={(c) => setConfig({ ...config, primaryColor: c })} />
                 </div>
               </div>
-              <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl space-y-4">
-                <Label className="text-xs text-zinc-400 font-bold uppercase">Cor do Timer</Label>
+              <div className="p-4 bg-muted/50 border border-border rounded-xl space-y-4">
+                <Label className="text-xs text-muted-foreground font-bold uppercase">Cor do Timer</Label>
                 <div className="flex justify-center py-2">
                   <ColorPicker value={config.timerColor || "#000000"} onChange={(c) => setConfig({ ...config, timerColor: c })} />
                 </div>
@@ -741,12 +741,12 @@ export default function CheckoutEditor() {
           </TabsContent>
         </Tabs>
       </div>
-      <div className="flex-1 flex flex-col bg-zinc-900/20 relative">
-        <div className="h-14 border-b border-zinc-800/50 flex items-center justify-center gap-2">
-          <Button variant="ghost" size="icon" className={`h-8 w-8 ${device === 'desktop' ? 'bg-zinc-800 text-purple-500' : 'text-zinc-500'}`} onClick={() => setDevice('desktop')}>
+      <div className="flex-1 flex flex-col bg-muted/20 relative">
+        <div className="h-14 border-b border-border/50 flex items-center justify-center gap-2">
+          <Button variant="ghost" size="icon" className={`h-8 w-8 ${device === 'desktop' ? 'bg-zinc-800 text-purple-500' : 'text-muted-foreground'}`} onClick={() => setDevice('desktop')}>
             <Monitor className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className={`h-8 w-8 ${device === 'mobile' ? 'bg-zinc-800 text-purple-500' : 'text-zinc-500'}`} onClick={() => setDevice('mobile')}>
+          <Button variant="ghost" size="icon" className={`h-8 w-8 ${device === 'mobile' ? 'bg-zinc-800 text-purple-500' : 'text-muted-foreground'}`} onClick={() => setDevice('mobile')}>
             <Smartphone className="h-4 w-4" />
           </Button>
         </div>

@@ -69,9 +69,8 @@ export function AdminSidebar({ isOpen = false, onClose }: AdminSidebarProps) {
         <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center border border-red-500/20">
           <Shield className="w-5 h-5 text-red-500" />
         </div>
-        <h1 className="text-2xl font-extrabold tracking-tight">
-          <span className="bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">Admin</span>
-          <span className="text-foreground"> Panel</span>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
+          Admin<span> Panel</span>
         </h1>
       </div>
 

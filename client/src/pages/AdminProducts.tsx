@@ -43,12 +43,12 @@ function StatusBadge({ status }: { status: string }) {
 function DetailRow({ icon: Icon, label, value }: { icon: any; label: string; value: React.ReactNode }) {
   return (
     <div className="flex gap-3">
-      <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg bg-zinc-800 border border-zinc-700">
-        <Icon className="w-4 h-4 text-zinc-400" />
+      <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg bg-zinc-800 border border-border">
+        <Icon className="w-4 h-4 text-muted-foreground" />
       </div>
       <div className="min-w-0">
-        <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-0.5">{label}</p>
-        <div className="text-sm text-zinc-200 break-all">{value || <span className="text-zinc-600 italic">Não informado</span>}</div>
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">{label}</p>
+        <div className="text-sm text-zinc-200 break-all">{value || <span className="text-muted-foreground italic">Não informado</span>}</div>
       </div>
     </div>
   );
@@ -82,10 +82,10 @@ function ProductDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-card border-border text-foreground max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
-            <Package className="w-5 h-5 text-zinc-400" />
+          <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+            <Package className="w-5 h-5 text-muted-foreground" />
             Análise do Produto
           </DialogTitle>
         </DialogHeader>
@@ -98,7 +98,7 @@ function ProductDetailDialog({
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white h-8 gap-1.5"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-foreground h-8 gap-1.5"
                   onClick={() => onApprove(product.id)}
                   disabled={approving || rejecting}
                 >
@@ -124,13 +124,13 @@ function ProductDetailDialog({
           {/* Product Image */}
           {product.imageUrl && (
             <div>
-              <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <Image className="w-3.5 h-3.5" /> Imagem do Produto
               </p>
               <img
                 src={product.imageUrl}
                 alt={product.name}
-                className="w-full max-h-64 object-contain rounded-xl border border-zinc-800 bg-zinc-900"
+                className="w-full max-h-64 object-contain rounded-xl border border-border bg-muted"
               />
             </div>
           )}
@@ -143,7 +143,7 @@ function ProductDetailDialog({
               label="Descrição"
               value={
                 product.description ? (
-                  <p className="whitespace-pre-wrap text-zinc-300 leading-relaxed">{product.description}</p>
+                  <p className="whitespace-pre-wrap text-foreground/80 leading-relaxed">{product.description}</p>
                 ) : null
               }
             />
@@ -151,7 +151,7 @@ function ProductDetailDialog({
               icon={CreditCard}
               label="Preço"
               value={
-                <span className="text-lg font-bold text-white">
+                <span className="text-lg font-bold text-foreground">
                   {(() => {
                     const cur = (product.currency || "USD").toUpperCase();
                     try {
@@ -169,7 +169,7 @@ function ProductDetailDialog({
 
           {/* Delivery */}
           <div className="space-y-4">
-            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Entrega</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrega</p>
             <DetailRow icon={Link} label="URL de Entrega" value={
               product.deliveryUrl ? (
                 <a href={product.deliveryUrl} target="_blank" rel="noopener noreferrer"
@@ -193,8 +193,8 @@ function ProductDetailDialog({
                 deliveryFiles.length > 0 ? (
                   <ul className="space-y-1 mt-1">
                     {deliveryFiles.map((f: any, i: number) => (
-                      <li key={i} className="flex items-center gap-2 text-xs bg-zinc-900 rounded px-3 py-2 border border-zinc-800">
-                        <Download className="w-3 h-3 text-zinc-500 flex-shrink-0" />
+                      <li key={i} className="flex items-center gap-2 text-xs bg-muted rounded px-3 py-2 border border-border">
+                        <Download className="w-3 h-3 text-muted-foreground flex-shrink-0" />
                         <a href={f.url || f} target="_blank" rel="noopener noreferrer"
                            className="text-purple-400 hover:underline truncate">
                           {f.name || f.url || f}
@@ -211,11 +211,11 @@ function ProductDetailDialog({
 
           {/* Payment Methods */}
           <div className="space-y-3">
-            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Métodos de Pagamento</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Métodos de Pagamento</p>
             <div className="flex flex-wrap gap-2">
               {paymentMethods.map((m) => (
-                <span key={m} className="flex items-center gap-1.5 bg-zinc-800 border border-zinc-700 text-zinc-300 px-3 py-1.5 rounded-lg text-xs font-medium">
-                  <CreditCard className="w-3 h-3 text-zinc-500" />
+                <span key={m} className="flex items-center gap-1.5 bg-zinc-800 border border-border text-foreground/80 px-3 py-1.5 rounded-lg text-xs font-medium">
+                  <CreditCard className="w-3 h-3 text-muted-foreground" />
                   {PAYMENT_METHOD_LABELS[m] || m}
                 </span>
               ))}
@@ -228,7 +228,7 @@ function ProductDetailDialog({
               <Separator className="bg-zinc-800" />
               <div className="flex justify-end gap-2">
                 <Button
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white gap-1.5"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-foreground gap-1.5"
                   onClick={() => onApprove(product.id)}
                   disabled={approving || rejecting}
                 >
@@ -301,7 +301,7 @@ export default function AdminProducts() {
     { key: "pending", label: "Pendentes", color: "text-amber-400 border-amber-500" },
     { key: "approved", label: "Aprovados", color: "text-emerald-400 border-emerald-500" },
     { key: "rejected", label: "Rejeitados", color: "text-red-400 border-red-500" },
-    { key: "all", label: "Todos", color: "text-zinc-300 border-zinc-500" },
+    { key: "all", label: "Todos", color: "text-foreground/80 border-zinc-500" },
   ] as const;
 
   if (isLoading) {
@@ -321,21 +321,21 @@ export default function AdminProducts() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-white">Aprovação de Produtos</h1>
+              <h1 className="text-3xl font-bold text-foreground">Aprovação de Produtos</h1>
               <p className="text-sm text-muted-foreground">Analise e aprove ou rejeite os produtos enviados</p>
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={() => refetch()}
-              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 gap-1.5"
+              className="border-border text-foreground/80 hover:bg-accent gap-1.5"
             >
               <RefreshCw className="w-3.5 h-3.5" /> Atualizar
             </Button>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 mb-6 bg-zinc-900/50 p-1 rounded-xl border border-zinc-800/60 w-fit">
+          <div className="flex gap-1 mb-6 bg-muted/50 p-1 rounded-xl border border-border/60 w-fit">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
@@ -343,11 +343,11 @@ export default function AdminProducts() {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
                   activeTab === tab.key
                     ? "bg-zinc-800 text-white shadow"
-                    : "text-zinc-500 hover:text-zinc-300"
+                    : "text-muted-foreground hover:text-foreground/80"
                 }`}
               >
                 {tab.label}
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-zinc-900 ${activeTab === tab.key ? tab.color : "text-zinc-600"}`}>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-muted ${activeTab === tab.key ? tab.color : "text-muted-foreground"}`}>
                   {counts[tab.key]}
                 </span>
               </button>
@@ -355,47 +355,47 @@ export default function AdminProducts() {
           </div>
 
           {/* Table */}
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+          <Card className="bg-card border-border/60 shadow-lg">
             <CardContent className="p-0">
               {filtered.length === 0 ? (
                 <div className="text-center py-16">
-                  <CheckCircle2 className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
-                  <p className="text-zinc-500">Nenhum produto nesta categoria.</p>
+                  <CheckCircle2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Nenhum produto nesta categoria.</p>
                 </div>
               ) : (
                 <div className="rounded-xl overflow-hidden">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-zinc-950/50 border-b border-zinc-800/50">
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Produto</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Preço</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Entrega</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-right">Ações</th>
+                      <tr className="bg-muted/80 border-b border-border/50">
+                        <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Produto</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Preço</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Entrega</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider text-right">Ações</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-800/30">
+                    <tbody className="divide-y divide-border/30">
                       {filtered.map((p: any) => (
-                        <tr key={p.id} className="hover:bg-zinc-800/20 transition-colors">
+                        <tr key={p.id} className="hover:bg-accent/20 transition-colors">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center overflow-hidden flex-shrink-0">
+                              <div className="w-10 h-10 rounded-lg bg-muted border border-border flex items-center justify-center overflow-hidden flex-shrink-0">
                                 {p.imageUrl ? (
                                   <img src={p.imageUrl} alt="" className="w-full h-full object-cover" />
                                 ) : (
-                                  <Package className="w-5 h-5 text-zinc-600" />
+                                  <Package className="w-5 h-5 text-muted-foreground" />
                                 )}
                               </div>
                               <div>
                                 <p className="text-sm font-medium text-zinc-200">{p.name}</p>
                                 {p.description && (
-                                  <p className="text-xs text-zinc-500 truncate max-w-[200px]">{p.description}</p>
+                                  <p className="text-xs text-muted-foreground truncate max-w-[200px]">{p.description}</p>
                                 )}
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <span className="text-sm font-semibold text-white">
+                            <span className="text-sm font-semibold text-foreground">
                               {(() => {
                                 const cur = (p.currency || "USD").toUpperCase();
                                 try {
@@ -419,7 +419,7 @@ export default function AdminProducts() {
                                 </span>
                               )}
                               {!p.deliveryUrl && (!p.deliveryFiles || p.deliveryFiles.length === 0) && (
-                                <span className="text-xs text-zinc-600 italic">Nenhuma</span>
+                                <span className="text-xs text-muted-foreground italic">Nenhuma</span>
                               )}
                             </div>
                           </td>
@@ -431,7 +431,7 @@ export default function AdminProducts() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 h-8 gap-1.5"
+                                className="border-border text-foreground/80 hover:bg-accent h-8 gap-1.5"
                                 onClick={() => setSelectedProduct(p)}
                               >
                                 <Eye className="w-3.5 h-3.5" />
@@ -441,7 +441,7 @@ export default function AdminProducts() {
                                 <>
                                   <Button
                                     size="sm"
-                                    className="bg-emerald-600 hover:bg-emerald-500 text-white h-8"
+                                    className="bg-emerald-600 hover:bg-emerald-500 text-foreground h-8"
                                     onClick={() => handleApprove(p.id)}
                                     disabled={approveProduct.isPending}
                                   >

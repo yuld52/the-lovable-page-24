@@ -192,7 +192,21 @@ export class NeonStorage {
     try {
       const client = await getPool().connect();
       try {
+        await client.query('BEGIN');
+        // 1. Delete associated checkouts first (Foreign Key constraint)
+        await client.query(`DELETE FROM checkouts WHERE product_id = $1`, [id]);
+        
+        // 2. Try to nullify product reference in sales (if exists and allows null)
+        // This prevents blocking deletion if sales exist, while preserving financial records
+        await client.query(`UPDATE sales SET product_id = NULL WHERE product_id = $1`).catch(() => {});
+        
+        // 3. Finally delete the product
         await client.query(`DELETE FROM products WHERE id = $1`, [id]);
+        
+        await client.query('COMMIT');
+      } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
       } finally {
         client.release();
       }
@@ -272,6 +286,22 @@ export class NeonStorage {
       }
     } catch (error) {
       console.error("Error getting public checkout:", error);
+      return undefined;
+    }
+  }
+
+  async getCheckoutByProductId(productId: number): Promise<any | undefined> {
+    try {
+      const client = await getPool().connect();
+      try {
+        const result = await client.query(`SELECT * FROM checkouts WHERE product_id = $1 LIMIT 1`, [productId]);
+        if (result.rows.length === 0) return undefined;
+        return toCamelCase(result.rows[0]);
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error("Error getting checkout by product ID:", error);
       return undefined;
     }
   }
@@ -754,15 +784,19 @@ export class NeonStorage {
     try {
       const client = await getPool().connect();
       try {
-        let query = `SELECT * FROM withdrawals`;
+        let query = `
+          SELECT w.*, s.email as user_email, s.email as username
+          FROM withdrawals w
+          LEFT JOIN settings s ON s.user_id = w.user_id
+        `;
         const params: any[] = [];
         
         if (userId) {
-          query += ` WHERE user_id = $1`;
+          query += ` WHERE w.user_id = $1`;
           params.push(userId);
         }
         
-        query += ` ORDER BY requested_at DESC`;
+        query += ` ORDER BY w.requested_at DESC`;
         
         const result = await client.query(query, params);
         return result.rows.map(row => toCamelCase(row));

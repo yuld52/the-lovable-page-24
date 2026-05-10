@@ -69,11 +69,11 @@ export function InstallPrompt() {
 
     return (
         <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-zinc-900/95 backdrop-blur-md border border-zinc-700/50 p-4 rounded-2xl shadow-2xl max-w-sm relative">
+            <div className="bg-muted/95 backdrop-blur-md border border-border/50 p-4 rounded-2xl shadow-2xl max-w-sm relative">
                 {/* Close button */}
                 <button
                     onClick={() => setDismissed(true)}
-                    className="absolute top-2 right-2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                    className="absolute top-2 right-2 text-muted-foreground hover:text-foreground/80 transition-colors"
                 >
                     <X size={16} />
                 </button>
@@ -85,8 +85,8 @@ export function InstallPrompt() {
                             <Download size={22} className="text-purple-400" />
                         </div>
                         <div className="flex-1 pr-4">
-                            <p className="text-sm font-bold text-white mb-0.5">Instalar Meteorfy</p>
-                            <p className="text-xs text-zinc-400 mb-2">Acesse direto da sua área de trabalho</p>
+                            <p className="text-sm font-bold text-foreground mb-0.5">Instalar Meteorfy</p>
+                            <p className="text-xs text-muted-foreground mb-2">Acesse direto da sua área de trabalho</p>
                             <Button
                                 onClick={handleInstallClick}
                                 size="sm"
@@ -104,10 +104,10 @@ export function InstallPrompt() {
                             <Smartphone size={22} className="text-blue-400" />
                         </div>
                         <div>
-                            <p className="text-sm font-bold text-white mb-1">Instalar Meteorfy</p>
-                            <p className="text-xs text-zinc-400">
-                                Toque em <span className="font-bold text-zinc-200">Compartilhar</span>{" "}
-                                e depois em <span className="font-bold text-zinc-200">Adicionar à Tela de Início</span>.
+                            <p className="text-sm font-bold text-foreground mb-1">Instalar Meteorfy</p>
+                            <p className="text-xs text-muted-foreground">
+                                Toque em <span className="font-bold text-foreground/90">Compartilhar</span>{" "}
+                                e depois em <span className="font-bold text-foreground/90">Adicionar à Tela de Início</span>.
                             </p>
                         </div>
                     </div>
@@ -118,12 +118,12 @@ export function InstallPrompt() {
                             <Monitor size={22} className="text-emerald-400" />
                         </div>
                         <div>
-                            <p className="text-sm font-bold text-white mb-1">Instalar Meteorfy</p>
-                            <p className="text-xs text-zinc-400">
+                            <p className="text-sm font-bold text-foreground mb-1">Instalar Meteorfy</p>
+                            <p className="text-xs text-muted-foreground">
                                 Clique no menu do navegador{" "}
-                                <span className="font-bold text-zinc-200">⋮</span> →{" "}
-                                <span className="font-bold text-zinc-200">Instalar Meteorfy</span>{" "}
-                                ou procure o ícone <span className="font-bold text-zinc-200">⊕</span> na barra de endereços.
+                                <span className="font-bold text-foreground/90">⋮</span> →{" "}
+                                <span className="font-bold text-foreground/90">Instalar Meteorfy</span>{" "}
+                                ou procure o ícone <span className="font-bold text-foreground/90">⊕</span> na barra de endereços.
                             </p>
                         </div>
                     </div>

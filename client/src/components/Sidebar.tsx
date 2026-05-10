@@ -111,9 +111,8 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           </button>
         )}
         <img src="https://www.image2url.com/r2/default/images/1777403007715-3125c2b9-991d-4cf5-ae03-744bfabf9b11.png" alt="Meteorfy" className="w-16 h-16 rounded-xl" />
-        <h1 className="text-3xl font-extrabold tracking-tight">
-          <span className="bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent">Meteor</span>
-          <span className="text-foreground">fy</span>
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+          Meteor<span>fy</span>
         </h1>
       </div>
 
@@ -126,7 +125,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                 <img src="/favicon.png" alt="Meteorfy" className="w-10 h-10 object-contain" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="text-[10px] font-normal text-white block">Faturamento</span>
+                <span className="text-[10px] font-normal text-foreground block">Faturamento</span>
                 <div className="flex items-center gap-1 mb-1">
                   <span className="text-xs font-bold text-foreground whitespace-nowrap">
                     {mznRate > 0
@@ -136,13 +135,13 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                   <span className="text-xs font-bold text-foreground whitespace-nowrap">/ MT {currentGoal.label}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-zinc-700/60 rounded-full h-1.5 overflow-hidden relative">
+                  <div className="flex-1 bg-muted-foreground/30 rounded-full h-1.5 overflow-hidden relative">
                     <div 
                       className="h-full rounded-full bg-purple-500 transition-all duration-1000 ease-out"
                       style={{ width: `${Math.max(progress, 1)}%` }}
                     />
                   </div>
-                  <span className="text-[10px] font-bold text-white tabular-nums">{Math.floor(progress)}%</span>
+                  <span className="text-[10px] font-bold text-foreground tabular-nums">{Math.floor(progress)}%</span>
                 </div>
               </div>
             </div>

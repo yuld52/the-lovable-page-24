@@ -128,6 +128,32 @@ export async function registerRoutes(
   registerTrackingRoutes(app, storage as any);
   registerChatRoutes(app);
 
+  // --- ENSURE ALL PRODUCTS HAVE CHECKOUTS ---
+  (async () => {
+    try {
+      const allProducts = await storage.getProducts();
+      for (const p of allProducts) {
+        const existing = await storage.getCheckoutByProductId(p.id);
+        if (!existing) {
+          const slug = `produto-${p.id}`;
+          const baseUrl = process.env.PUBLIC_URL || "http://localhost:5000";
+          await storage.createCheckout({
+            productId: p.id,
+            ownerId: p.ownerId,
+            name: p.name,
+            slug,
+            publicUrl: `${baseUrl}/checkout/${slug}`,
+            active: true,
+            config: {},
+          });
+          console.log(`[INIT] Auto-created checkout for product ${p.id}`);
+        }
+      }
+    } catch (err: any) {
+      console.warn("[INIT] Failed to ensure checkouts:", err?.message);
+    }
+  })();
+
   // Pasta de uploads — usa /tmp no Vercel (serverless), pasta local no Replit
   const uploadsDir = process.env.VERCEL
     ? "/tmp/uploads"
@@ -759,9 +785,26 @@ export async function registerRoutes(
         });
 
         const reference = makeReference(sale.id);
-        // For MZN products totalUsdCents IS the MZN minor amount (same currency).
-        // Divide by 100 to get MZN major units for the e2payments API.
-        const amountMajor = Math.round((totalUsdCents || 0) / 100);
+
+        // --- IMPROVED CURRENCY HANDLING FOR E2PAYMENTS ---
+        // If the checkout is already in MZN, use totalMinor directly.
+        // Otherwise, convert totalUsdCents to MZN using a fetched/fallback rate.
+        let amountMznMajor: number;
+        if (currency === "MZN") {
+          amountMznMajor = Math.round((totalMinor || 0) / 100);
+        } else {
+          // If not MZN (e.g. USD), we need the conversion rate.
+          // We'll use a dynamic fetch with a fallback.
+          let rate = 63.8; // default fallback
+          try {
+            const rateRes = await fetch("https://open.er-api.com/v6/latest/USD").then(r => r.json());
+            if (rateRes?.rates?.MZN) rate = rateRes.rates.MZN;
+          } catch (e) {
+            console.warn("[E2PAY] Failed to fetch live MZN rate, using fallback 63.8", e);
+          }
+          amountMznMajor = Math.round(((totalUsdCents || 0) / 100) * rate);
+        }
+
         const walletId = paymentMethod === "mpesa"
           ? sellerSettings.e2paymentsMpesaWalletId
           : sellerSettings.e2paymentsEmolaWalletId;
@@ -774,7 +817,6 @@ export async function registerRoutes(
         const phoneLocal = normalizeMzPhone(mobilePhone);
 
         // Fire e2payments call asynchronously — respond to client immediately
-        // so the browser doesn't timeout waiting for the STK push
         setImmediate(async () => {
           try {
             const e2res = await initiateE2Payment(paymentMethod as "mpesa" | "emola", {
@@ -782,23 +824,21 @@ export async function registerRoutes(
               clientSecret: sellerSettings.e2paymentsClientSecret,
               walletId,
               phone: phoneLocal,
-              amount: amountMajor,
+              amount: amountMznMajor,
               reference,
               callbackUrl,
             });
-            console.log(`[E2PAY] ${paymentMethod.toUpperCase()} response — saleId=${sale.id}, ref=${reference}, amount=${amountMajor} MZN`, JSON.stringify(e2res));
-            // e2payments waits for the user's PIN before returning — a success response
-            // means the payment is already confirmed. Mark the sale as paid immediately.
+            console.log(`[E2PAY] ${paymentMethod.toUpperCase()} response — saleId=${sale.id}, ref=${reference}, amount=${amountMznMajor} MZN`, JSON.stringify(e2res));
+            
             const isConfirmed = e2res?.success || e2res?.status === "success" || e2res?.status === "COMPLETED"
               || String(e2res?.message || "").toLowerCase().includes("sucesso")
               || String(e2res?.success || "").toLowerCase().includes("sucesso");
+
             if (isConfirmed) {
               await storage.updateSaleStatus(sale.id, "paid").catch(() => {});
-              console.log(`[E2PAY] sale ${sale.id} marked PAID (sync confirmation)`);
               // Emails to buyer + seller
-              const paidSale = { ...sale, userId: checkout.ownerId, status: "paid" };
-              const amtDisplay = `${methodLabel(paymentMethod)} ${(amountMajor).toFixed(2)} MZN`;
-              sendSaleEmails(paidSale, product, amtDisplay, methodLabel(paymentMethod))
+              const amtDisplay = `${methodLabel(paymentMethod)} ${(amountMznMajor).toFixed(2)} MZN`;
+              sendSaleEmails({ ...sale, status: "paid" }, product, amtDisplay, methodLabel(paymentMethod))
                 .catch((e: any) => console.error("[EMAIL] e2pay sale emails:", e?.message));
               // Push notification to seller
               if (checkout.ownerId) {

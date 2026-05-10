@@ -150,7 +150,7 @@ export default function FAQ() {
                   </div>
                   
                   <div className="flex flex-1 flex-col gap-1.5">
-                    <h2 className="text-base font-semibold text-white/80 transition-colors duration-200 group-hover:text-white">{collection.title}</h2>
+                    <h2 className="text-base font-semibold text-foreground/80 transition-colors duration-200 group-hover:text-foreground">{collection.title}</h2>
                     <p className="text-sm leading-relaxed text-white/40">{collection.description}</p>
                   </div>
                   
@@ -169,7 +169,7 @@ export default function FAQ() {
         <section className="mt-20 border-t border-white/10 pt-12">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-2xl font-bold text-white md:text-3xl">Não encontrou o que procurava?</h2>
-            <p className="mt-2 text-sm text-white/50 md:text-base">Fale direto com nosso time de suporte.</p>
+            <p className="mt-2 text-sm text-foreground/50 md:text-base">Fale direto com nosso time de suporte.</p>
             
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <Button className="bg-[#25D366] hover:bg-[#1FBF56] text-white font-semibold h-12 px-6 gap-2">
@@ -181,7 +181,7 @@ export default function FAQ() {
                 Enviar email
               </Button>
             </div>
-            <p className="mt-4 text-xs text-white/30">suporte@meteorfy.com</p>
+            <p className="mt-4 text-xs text-foreground/30">suporte@meteorfy.com</p>
           </div>
         </section>
       </main>

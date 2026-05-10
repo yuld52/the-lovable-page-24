@@ -66,7 +66,10 @@ export function useCreateProduct() {
       }
       return response.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["checkouts"] });
+    },
   });
 }
 
@@ -109,7 +112,10 @@ export function useDeleteProduct() {
 
       if (!response.ok) throw new Error("Erro ao excluir produto");
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["checkouts"] });
+    },
   });
 }
 

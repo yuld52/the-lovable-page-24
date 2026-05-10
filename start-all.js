@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -5,9 +6,12 @@ import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 console.log('Starting Meteorfy server...');
-const server = spawn('./node_modules/.bin/tsx', ['--watch', 'server/index.ts'], {
+const isWindows = process.platform === 'win32';
+const tsxBin = isWindows ? 'node_modules\\.bin\\tsx.cmd' : './node_modules/.bin/tsx';
+
+const server = spawn(tsxBin, ['--watch', 'server/index.ts'], {
     stdio: 'inherit',
-    shell: false,
+    shell: isWindows,
     cwd: __dirname,
     env: { ...process.env, PORT: '5000' }
 });

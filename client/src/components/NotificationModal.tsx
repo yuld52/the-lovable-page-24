@@ -65,38 +65,38 @@ export function NotificationModal({ isOpen, onClose }: NotificationModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="bg-[#0c0c0e] border-zinc-800 p-0 overflow-hidden max-w-[400px] rounded-3xl">
+      <DialogContent className="bg-card border-border p-0 overflow-hidden max-w-[400px] rounded-3xl">
         <div className="relative p-8 flex flex-col items-center text-center">
           {/* Close Button */}
           <button 
             onClick={onClose}
-            className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
+            className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
           >
             <X size={20} />
           </button>
 
           {/* Large Bell Icon */}
-          <div className="w-20 h-20 rounded-full bg-zinc-900 flex items-center justify-center mb-6 border border-zinc-800/50">
-            <Bell className="w-10 h-10 text-white" />
+          <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6 border border-border/50">
+            <Bell className="w-10 h-10 text-foreground" />
           </div>
 
-          <h2 className="text-2xl font-bold text-white mb-2">Notificações de Vendas</h2>
-          <p className="text-zinc-400 text-sm leading-relaxed mb-8 max-w-[280px]">
+          <h2 className="text-2xl font-bold text-foreground mb-2">Notificações de Vendas</h2>
+          <p className="text-muted-foreground text-sm leading-relaxed mb-8 max-w-[280px]">
             Receba alertas em tempo real quando uma venda for realizada.
           </p>
 
           {/* Toggle Card */}
-          <div className="w-full bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-4 flex items-center justify-between">
+          <div className="w-full bg-muted/50 border border-border/50 rounded-2xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={cn(
                 "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
-                isActive ? "bg-emerald-500/10 text-emerald-500" : "bg-zinc-800 text-zinc-500"
+                isActive ? "bg-emerald-500/10 text-emerald-500" : "bg-accent text-muted-foreground"
               )}>
                 <Bell size={20} />
               </div>
               <div className="text-left">
-                <p className="text-sm font-bold text-white">Notificações ativas</p>
-                <p className="text-[11px] text-zinc-500">Você receberá alertas de vendas</p>
+                <p className="text-sm font-bold text-foreground">Notificações ativas</p>
+                <p className="text-[11px] text-muted-foreground">Você receberá alertas de vendas</p>
               </div>
             </div>
 

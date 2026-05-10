@@ -69,7 +69,7 @@ export default function AdminSettings() {
               variant="ghost"
               size="icon"
               onClick={() => setLocation("/admin")}
-              className="text-zinc-400 hover:text-white"
+              className="text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="w-4 h-4" />
             </Button>
@@ -80,7 +80,7 @@ export default function AdminSettings() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+            <Card className="bg-card border-border/60 shadow-lg">
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
@@ -88,34 +88,34 @@ export default function AdminSettings() {
                   </div>
                   <div>
                     <CardTitle className="text-base text-white">PayPal (Sistema)</CardTitle>
-                    <CardDescription className="text-xs text-zinc-500">Configuração global de PayPal</CardDescription>
+                    <CardDescription className="text-xs text-muted-foreground">Configuração global de PayPal</CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase">Client ID</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase">Client ID</label>
                   <Input 
                     value={paypalClientId}
                     onChange={(e) => setPaypalClientId(e.target.value)}
                     placeholder="PayPal Client ID" 
-                    className="bg-zinc-900 border-zinc-800" 
+                    className="bg-muted border-border" 
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase">Client Secret</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase">Client Secret</label>
                   <Input 
                     type="password"
                     value={paypalClientSecret}
                     onChange={(e) => setPaypalClientSecret(e.target.value)}
                     placeholder="PayPal Client Secret" 
-                    className="bg-zinc-900 border-zinc-800" 
+                    className="bg-muted border-border" 
                   />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+            <Card className="bg-card border-border/60 shadow-lg">
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
@@ -123,15 +123,15 @@ export default function AdminSettings() {
                   </div>
                   <div>
                     <CardTitle className="text-base text-white">Informações do Sistema</CardTitle>
-                    <CardDescription className="text-xs text-zinc-500">Status e informações gerais</CardDescription>
+                    <CardDescription className="text-xs text-muted-foreground">Status e informações gerais</CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <p className="text-sm text-zinc-300">Versão: 1.0.0</p>
-                  <p className="text-sm text-zinc-300">Ambiente: {process.env.NODE_ENV || "development"}</p>
-                  <p className="text-sm text-zinc-300">Banco de Dados: Firebase Firestore</p>
+                  <p className="text-sm text-foreground/80">Versão: 1.0.0</p>
+                  <p className="text-sm text-foreground/80">Ambiente: {process.env.NODE_ENV || "development"}</p>
+                  <p className="text-sm text-foreground/80">Banco de Dados: Firebase Firestore</p>
                 </div>
               </CardContent>
             </Card>

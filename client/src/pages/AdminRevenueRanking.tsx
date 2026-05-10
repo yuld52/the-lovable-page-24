@@ -25,7 +25,7 @@ function RankBadge({ rank }: { rank: number }) {
   if (rank === 2)
     return (
       <div className="flex items-center justify-center w-9 h-9 rounded-full bg-zinc-400/20 border border-zinc-400/40">
-        <Medal className="w-4 h-4 text-zinc-300" />
+        <Medal className="w-4 h-4 text-foreground/80" />
       </div>
     );
   if (rank === 3)
@@ -35,8 +35,8 @@ function RankBadge({ rank }: { rank: number }) {
       </div>
     );
   return (
-    <div className="flex items-center justify-center w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700">
-      <span className="text-xs font-bold text-zinc-400">#{rank}</span>
+    <div className="flex items-center justify-center w-9 h-9 rounded-full bg-zinc-800 border border-border">
+      <span className="text-xs font-bold text-muted-foreground">#{rank}</span>
     </div>
   );
 }
@@ -55,11 +55,11 @@ function PodiumCard({
   return (
     <div className={`flex flex-col items-center gap-2 ${height}`}>
       <div className="text-center px-2">
-        <p className="text-xs text-zinc-400 truncate max-w-[120px]" title={item.email}>
+        <p className="text-xs text-muted-foreground truncate max-w-[120px]" title={item.email}>
           {item.email.length > 18 ? item.email.slice(0, 15) + "…" : item.email}
         </p>
         <p className={`text-sm font-bold ${accentColor}`}>{formatCurrency(item.totalRevenue)}</p>
-        <p className="text-[10px] text-zinc-500">{item.totalSales} vendas</p>
+        <p className="text-[10px] text-muted-foreground">{item.totalSales} vendas</p>
       </div>
       <div
         className={`w-24 rounded-t-xl flex items-start justify-center pt-3 border-t border-l border-r ${height}`}
@@ -119,7 +119,7 @@ export default function AdminRevenueRanking() {
               variant="outline"
               size="sm"
               onClick={() => refetch()}
-              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 gap-1.5"
+              className="border-border text-foreground/80 hover:bg-accent gap-1.5"
             >
               <RefreshCw className="w-3.5 h-3.5" /> Atualizar
             </Button>
@@ -127,7 +127,7 @@ export default function AdminRevenueRanking() {
 
           {/* Summary cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-            <Card className="bg-[#18181b] border-zinc-800/60">
+            <Card className="bg-card border-border/60">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">
                   USUÁRIOS NO RANKING
@@ -136,11 +136,11 @@ export default function AdminRevenueRanking() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-white">{ranking?.length || 0}</div>
-                <p className="text-xs text-zinc-500 mt-1">Com ao menos 1 venda</p>
+                <p className="text-xs text-muted-foreground mt-1">Com ao menos 1 venda</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-[#18181b] border-zinc-800/60">
+            <Card className="bg-card border-border/60">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">
                   FATURAMENTO TOTAL
@@ -149,11 +149,11 @@ export default function AdminRevenueRanking() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-white">{formatCurrency(totalRevenue)}</div>
-                <p className="text-xs text-zinc-500 mt-1">Soma de todos os usuários</p>
+                <p className="text-xs text-muted-foreground mt-1">Soma de todos os usuários</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-[#18181b] border-zinc-800/60">
+            <Card className="bg-card border-border/60">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">
                   TOTAL DE VENDAS
@@ -162,23 +162,23 @@ export default function AdminRevenueRanking() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-white">{totalSales}</div>
-                <p className="text-xs text-zinc-500 mt-1">Vendas na plataforma</p>
+                <p className="text-xs text-muted-foreground mt-1">Vendas na plataforma</p>
               </CardContent>
             </Card>
           </div>
 
           {ranking?.length === 0 ? (
             <div className="text-center py-20">
-              <Trophy className="w-16 h-16 text-zinc-700 mx-auto mb-4" />
-              <p className="text-zinc-400 text-lg font-medium">Nenhuma venda ainda</p>
-              <p className="text-zinc-600 text-sm mt-1">O ranking aparecerá quando houver vendas.</p>
+              <Trophy className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground text-lg font-medium">Nenhuma venda ainda</p>
+              <p className="text-muted-foreground text-sm mt-1">O ranking aparecerá quando houver vendas.</p>
             </div>
           ) : (
             <>
               {/* Podium — top 3 */}
               {top3.length >= 1 && (
                 <div className="mb-10">
-                  <p className="text-xs text-zinc-500 uppercase tracking-widest mb-6 text-center">
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest mb-6 text-center">
                     Top 3 — Pódio
                   </p>
                   <div className="flex items-end justify-center gap-4 h-52">
@@ -187,7 +187,7 @@ export default function AdminRevenueRanking() {
                       <PodiumCard
                         item={top3[1]}
                         height="h-36"
-                        accentColor="text-zinc-300"
+                        accentColor="text-foreground/80"
                         label="2º"
                       />
                     )}
@@ -214,7 +214,7 @@ export default function AdminRevenueRanking() {
               )}
 
               {/* Full ranking table */}
-              <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+              <Card className="bg-card border-border/60 shadow-lg">
                 <CardHeader className="pb-0">
                   <CardTitle className="text-base text-white flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-emerald-400" />
@@ -225,25 +225,25 @@ export default function AdminRevenueRanking() {
                   <div className="rounded-b-xl overflow-hidden">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-zinc-950/50 border-y border-zinc-800/50">
-                          <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider w-16">
+                        <tr className="bg-muted/80 border-y border-border/50">
+                          <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider w-16">
                             #
                           </th>
-                          <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                          <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                             Usuário
                           </th>
-                          <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-center">
+                          <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider text-center">
                             Vendas
                           </th>
-                          <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-right">
+                          <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider text-right">
                             Faturamento
                           </th>
-                          <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-right hidden md:table-cell">
+                          <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider text-right hidden md:table-cell">
                             Última Venda
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-zinc-800/30">
+                      <tbody className="divide-y divide-border/30">
                         {ranking?.map((item) => {
                           const isTop3 = item.rank <= 3;
                           const sharePercent =
@@ -251,7 +251,7 @@ export default function AdminRevenueRanking() {
                           return (
                             <tr
                               key={item.ownerId}
-                              className={`hover:bg-zinc-800/20 transition-colors ${
+                              className={`hover:bg-accent/20 transition-colors ${
                                 item.rank === 1
                                   ? "bg-yellow-500/5"
                                   : item.rank === 2
@@ -269,13 +269,13 @@ export default function AdminRevenueRanking() {
                                   <p className="text-sm text-zinc-200 font-medium truncate max-w-[200px]">
                                     {item.email}
                                   </p>
-                                  <p className="text-[10px] text-zinc-600 font-mono truncate max-w-[180px]">
+                                  <p className="text-[10px] text-muted-foreground font-mono truncate max-w-[180px]">
                                     {item.ownerId}
                                   </p>
                                 </div>
                               </td>
                               <td className="px-6 py-4 text-center">
-                                <span className="text-sm text-zinc-300 font-semibold">
+                                <span className="text-sm text-foreground/80 font-semibold">
                                   {item.totalSales}
                                 </span>
                               </td>
@@ -286,7 +286,7 @@ export default function AdminRevenueRanking() {
                                       item.rank === 1
                                         ? "text-yellow-400"
                                         : item.rank === 2
-                                        ? "text-zinc-300"
+                                        ? "text-foreground/80"
                                         : item.rank === 3
                                         ? "text-amber-600"
                                         : "text-emerald-400"
@@ -294,11 +294,11 @@ export default function AdminRevenueRanking() {
                                   >
                                     {formatCurrency(item.totalRevenue)}
                                   </p>
-                                  <p className="text-[10px] text-zinc-600">{sharePercent}% do total</p>
+                                  <p className="text-[10px] text-muted-foreground">{sharePercent}% do total</p>
                                 </div>
                               </td>
                               <td className="px-6 py-4 text-right hidden md:table-cell">
-                                <span className="text-xs text-zinc-500">
+                                <span className="text-xs text-muted-foreground">
                                   {item.lastSaleAt
                                     ? format(new Date(item.lastSaleAt), "dd/MM/yyyy HH:mm", { locale: ptBR })
                                     : "—"}

@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root, .dark {
   --background: 240 10% 3.9%;
   /* #09090b */
   --foreground: 0 0% 98%;
@@ -82,7 +82,7 @@
   }
 }
 
-/* Custom Scrollbar for dark theme */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -92,20 +92,20 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-zinc-800 rounded-full hover:bg-zinc-700 transition-colors;
+  @apply bg-border rounded-full hover:bg-muted-foreground/40 transition-colors;
 }
 
 /* Custom Utilities */
 @layer utilities {
   .glass-card {
-    @apply bg-card border border-white/5 shadow-xl;
+    @apply bg-card border border-border/20 shadow-xl;
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70;
   }
 
   .input-dark {
-    @apply bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-500 focus:ring-primary focus:border-primary transition-all duration-200;
+    @apply bg-muted border-border text-foreground placeholder:text-muted-foreground focus:ring-primary focus:border-primary transition-all duration-200;
   }
 }

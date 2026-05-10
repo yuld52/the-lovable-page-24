@@ -278,16 +278,16 @@ export default function CreateProduct() {
       {steps.map((s, i) => (
         <div key={s.id} className="flex items-center flex-1 last:flex-none">
           <div className={`flex flex-col items-center gap-1 md:gap-2`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${step >= s.id ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${step >= s.id ? 'bg-purple-600 text-white' : 'bg-accent text-muted-foreground border border-border'
               }`}>
               {step > s.id ? <Check className="w-4 h-4" /> : s.id}
             </div>
-            <span className={`text-[9px] md:text-[10px] font-medium text-center leading-tight max-w-[64px] ${step >= s.id ? 'text-zinc-300' : 'text-zinc-500'}`}>
+            <span className={`text-[9px] md:text-[10px] font-medium text-center leading-tight max-w-[64px] ${step >= s.id ? 'text-foreground/80' : 'text-muted-foreground'}`}>
               {s.title}
             </span>
           </div>
           {i < steps.length - 1 && (
-            <div className={`h-[1px] flex-1 mx-2 md:mx-4 ${step > s.id ? 'bg-purple-600' : 'bg-zinc-800'}`} />
+            <div className={`h-[1px] flex-1 mx-2 md:mx-4 ${step > s.id ? 'bg-purple-600' : 'bg-accent'}`} />
           )}
         </div>
       ))}
@@ -312,7 +312,7 @@ export default function CreateProduct() {
       <div className="mb-6">
         <Button
           variant="ghost"
-          className="text-zinc-400 hover:text-white -ml-2"
+          className="text-muted-foreground hover:text-foreground -ml-2"
           onClick={() => setLocation("/products")}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -321,21 +321,21 @@ export default function CreateProduct() {
       </div>
 
       <div className="max-w-2xl mx-auto">
-        <div className="bg-[#18181b] border border-zinc-800/60 rounded-2xl p-4 md:p-8 shadow-xl">
+        <div className="bg-card border border-border/60 rounded-2xl p-4 md:p-8 shadow-xl">
           {renderStepIndicator()}
 
           <div className="space-y-6 mt-4 md:mt-8">
             {step === 1 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="flex items-center gap-2 text-zinc-300 font-medium pb-2 border-b border-zinc-800/50">
+                <div className="flex items-center gap-2 text-foreground/80 font-medium pb-2 border-b border-border/50">
                   <LayoutIcon className="w-4 h-4 text-purple-500" />
                   Informações básicas
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-zinc-200">Capa do Produto</label>
+                  <label className="text-sm font-bold text-foreground/90">Capa do Produto</label>
                   <div
-                    className={`border-2 border-dashed border-zinc-800 rounded-2xl p-0 flex flex-col items-center justify-center transition-colors cursor-pointer group relative overflow-hidden w-[200px] h-[200px] mx-auto ${imagePreview ? 'bg-transparent' : 'bg-zinc-900/40 hover:bg-zinc-900/60'} ${isUploadingImage ? 'pointer-events-none opacity-70' : ''}`}
+                    className={`border-2 border-dashed border-border rounded-2xl p-0 flex flex-col items-center justify-center transition-colors cursor-pointer group relative overflow-hidden w-[200px] h-[200px] mx-auto ${imagePreview ? 'bg-transparent' : 'bg-muted/40 hover:bg-muted/60'} ${isUploadingImage ? 'pointer-events-none opacity-70' : ''}`}
                     onClick={() => !isUploadingImage && document.getElementById('image-upload')?.click()}
                   >
                     {isUploadingImage && (
@@ -353,12 +353,12 @@ export default function CreateProduct() {
                       </>
                     ) : (
                       <>
-                        <div className="p-3 bg-zinc-800/50 rounded-2xl group-hover:scale-110 transition-transform">
-                          <Plus className="w-6 h-6 text-zinc-500" />
+                        <div className="p-3 bg-accent/50 rounded-2xl group-hover:scale-110 transition-transform">
+                          <Plus className="w-6 h-6 text-muted-foreground" />
                         </div>
                         <div className="text-center space-y-1 p-4">
-                          <p className="text-xs font-bold text-zinc-300">Capa Quadrada</p>
-                          <p className="text-[10px] text-zinc-500">500x500px</p>
+                          <p className="text-xs font-bold text-foreground/80">Capa Quadrada</p>
+                          <p className="text-[10px] text-muted-foreground">500x500px</p>
                         </div>
                       </>
                     )}
@@ -378,19 +378,19 @@ export default function CreateProduct() {
                   </div>
                 </div>
 
-                <div className="bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/50 space-y-4">
+                <div className="bg-muted/40 p-4 rounded-xl border border-border/50 space-y-4">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 mb-1">
-                      <div className="p-1.5 bg-zinc-800 rounded-lg">
-                        <PackageOpen className="w-3.5 h-3.5 text-zinc-400" />
+                      <div className="p-1.5 bg-muted border border-border">
+                        <PackageOpen className="w-3.5 h-3.5 text-muted-foreground" />
                       </div>
-                      <label className="text-sm font-bold text-zinc-200">Nome do produto</label>
+                      <label className="text-sm font-bold text-foreground/90">Nome do produto</label>
                     </div>
                     <Input
                       className={`bg-black/40 h-11 focus-visible:ring-purple-500 ${
                         newProduct.name.length > 0 && newProduct.name.trim().length < 3
                           ? 'border-red-500 focus-visible:ring-red-500'
-                          : 'border-zinc-800'
+                          : 'border-border'
                       }`}
                       value={newProduct.name}
                       onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
@@ -399,25 +399,25 @@ export default function CreateProduct() {
                     {newProduct.name.length > 0 && newProduct.name.trim().length < 3 ? (
                       <p className="text-[10px] text-red-500 font-medium ml-1">Nome deve ter no mínimo 3 caracteres</p>
                     ) : (
-                      <p className="text-[11px] text-zinc-500 ml-1">Este é o nome que aparecerá na página de checkout e no email</p>
+                      <p className="text-[11px] text-muted-foreground ml-1">Este é o nome que aparecerá na página de checkout e no email</p>
                     )}
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        <div className="p-1.5 bg-zinc-800 rounded-lg">
-                          <FileText className="w-3.5 h-3.5 text-zinc-400" />
+                        <div className="p-1.5 bg-muted border border-border">
+                          <FileText className="w-3.5 h-3.5 text-muted-foreground" />
                         </div>
-                        <label className="text-sm font-bold text-zinc-200">Descrição <span className="text-red-400">*</span></label>
+                        <label className="text-sm font-bold text-foreground/90">Descrição <span className="text-red-400">*</span></label>
                       </div>
-                      <span className={`text-[11px] font-medium ${newProduct.description.length >= 200 ? "text-emerald-400" : "text-zinc-500"}`}>
+                      <span className={`text-[11px] font-medium ${newProduct.description.length >= 200 ? "text-emerald-400" : "text-muted-foreground"}`}>
                         {newProduct.description.length}/200
                       </span>
                     </div>
                     <textarea
-                      className={`w-full bg-black/40 border rounded-md min-h-[150px] p-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-zinc-600 resize-none ${
-                        showErrors && newProduct.description.trim().length < 200 ? "border-red-500" : "border-zinc-800"
+                      className={`w-full bg-black/40 border rounded-md min-h-[150px] p-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-muted-foreground resize-none ${
+                        showErrors && newProduct.description.trim().length < 200 ? "border-red-500" : "border-border"
                       }`}
                       value={newProduct.description}
                       onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
@@ -429,21 +429,21 @@ export default function CreateProduct() {
                   </div>
                 </div>
 
-                <div className="bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/50 space-y-4">
+                <div className="bg-muted/40 p-4 rounded-xl border border-border/50 space-y-4">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="p-1.5 bg-zinc-800 rounded-lg">
-                      <span className="text-sm font-bold text-zinc-400">$</span>
+                      <span className="text-sm font-bold text-muted-foreground">$</span>
                     </div>
-                    <label className="text-sm font-bold text-zinc-200">Preço e Moeda</label>
+                    <label className="text-sm font-bold text-foreground/90">Preço e Moeda</label>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-zinc-500">Moeda do produto</label>
+                    <label className="text-xs font-medium text-muted-foreground">Moeda do produto</label>
                     <Select value={newProduct.currency} onValueChange={(val) => setNewProduct({ ...newProduct, currency: val })}>
-                      <SelectTrigger className="bg-black/40 border-zinc-800 h-11">
+                      <SelectTrigger className="bg-black/40 border-border h-11">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
+                      <SelectContent className="bg-muted border-border text-foreground">
                         <SelectItem value="AUD">AUD - Dólar Australiano</SelectItem>
                         <SelectItem value="BRL">BRL - Real Brasileiro</SelectItem>
                         <SelectItem value="CAD">CAD - Dólar Canadense</SelectItem>
@@ -473,17 +473,17 @@ export default function CreateProduct() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-zinc-500">Valor ({newProduct.currency})</label>
+                    <label className="text-xs font-medium text-muted-foreground">Valor ({newProduct.currency})</label>
                     <Input
                       type="number"
                       min="0"
                       step="0.01"
                       className={`bg-black/40 h-11 focus-visible:ring-purple-500 ${
                         !newProduct.price
-                          ? 'border-zinc-800'
+                          ? 'border-border'
                           : (isPriceBelowMin() || isPriceAboveMax())
                             ? 'border-red-500 focus-visible:ring-red-500'
-                            : 'border-zinc-800'
+                            : 'border-border'
                       }`}
                       value={newProduct.price}
                       onChange={(e) => {
@@ -503,7 +503,7 @@ export default function CreateProduct() {
                         Preço mínimo: {newProduct.currency === "MZN" ? "50 MT" : `3,90 ${newProduct.currency}`}
                       </p>
                     ) : (
-                      <p className="text-[11px] text-zinc-500 ml-1">
+                      <p className="text-[11px] text-muted-foreground ml-1">
                         Mínimo: {newProduct.currency === "MZN" ? "50 MT" : `3,90 ${newProduct.currency}`}
                       </p>
                     )}
@@ -514,12 +514,12 @@ export default function CreateProduct() {
 
             {step === 2 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="flex items-center gap-2 text-zinc-300 font-medium pb-2 border-b border-zinc-800/50">
+                <div className="flex items-center gap-2 text-foreground/80 font-medium pb-2 border-b border-border/50">
                   <CreditCard className="w-4 h-4 text-purple-500" />
                   Métodos de Pagamento
                 </div>
 
-                <p className="text-sm text-zinc-400">Selecione os métodos de pagamento que estarão disponíveis para este produto:</p>
+                <p className="text-sm text-muted-foreground">Selecione os métodos de pagamento que estarão disponíveis para este produto:</p>
 
                 <div className="space-y-3">
                   {/* M-Pesa — selectable */}
@@ -527,7 +527,7 @@ export default function CreateProduct() {
                     className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
                       newProduct.paymentMethods.includes('mpesa')
                         ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60'
+                        : 'border-border bg-muted/40 hover:bg-muted/60'
                     }`}
                     onClick={() => togglePaymentMethod('mpesa')}
                   >
@@ -535,15 +535,15 @@ export default function CreateProduct() {
                       <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                         newProduct.paymentMethods.includes('mpesa')
                           ? 'bg-purple-600 border-purple-600'
-                          : 'border-zinc-600'
+                          : 'border-border'
                       }`}>
                         {newProduct.paymentMethods.includes('mpesa') && (
                           <Check className="w-3 h-3 text-white" />
                         )}
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-bold text-white">M-Pesa</p>
-                        <p className="text-xs text-zinc-500">Pagamentos via M-Pesa</p>
+                        <p className="text-sm font-bold text-foreground">M-Pesa</p>
+                        <p className="text-xs text-muted-foreground">Pagamentos via M-Pesa</p>
                       </div>
                       <div className="text-xs text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded">Disponível</div>
                     </div>
@@ -554,7 +554,7 @@ export default function CreateProduct() {
                     className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
                       newProduct.paymentMethods.includes('emola')
                         ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60'
+                        : 'border-border bg-muted/40 hover:bg-muted/60'
                     }`}
                     onClick={() => togglePaymentMethod('emola')}
                   >
@@ -562,63 +562,63 @@ export default function CreateProduct() {
                       <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                         newProduct.paymentMethods.includes('emola')
                           ? 'bg-purple-600 border-purple-600'
-                          : 'border-zinc-600'
+                          : 'border-border'
                       }`}>
                         {newProduct.paymentMethods.includes('emola') && (
                           <Check className="w-3 h-3 text-white" />
                         )}
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-bold text-white">e-Mola</p>
-                        <p className="text-xs text-zinc-500">Pagamentos via e-Mola</p>
+                        <p className="text-sm font-bold text-foreground">e-Mola</p>
+                        <p className="text-xs text-muted-foreground">Pagamentos via e-Mola</p>
                       </div>
                       <div className="text-xs text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded">Disponível</div>
                     </div>
                   </div>
 
                   {/* PayPal — locked */}
-                  <div className="p-4 rounded-xl border-2 border-zinc-800 bg-zinc-900/20 opacity-50 cursor-not-allowed">
+                  <div className="p-4 rounded-xl border-2 border-border bg-muted/20 opacity-50 cursor-not-allowed">
                     <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded border-2 border-zinc-700 flex items-center justify-center" />
+                      <div className="w-5 h-5 rounded border-2 border-border flex items-center justify-center" />
                       <div className="flex-1">
-                        <p className="text-sm font-bold text-zinc-400">PayPal</p>
-                        <p className="text-xs text-zinc-600">Pagamentos via PayPal e Cartão de Crédito</p>
+                        <p className="text-sm font-bold text-muted-foreground">PayPal</p>
+                        <p className="text-xs text-muted-foreground">Pagamentos via PayPal e Cartão de Crédito</p>
                       </div>
                       <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
                     </div>
                   </div>
 
                   {/* Stripe — locked */}
-                  <div className="p-4 rounded-xl border-2 border-zinc-800 bg-zinc-900/20 opacity-50 cursor-not-allowed">
+                  <div className="p-4 rounded-xl border-2 border-border bg-muted/20 opacity-50 cursor-not-allowed">
                     <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded border-2 border-zinc-700 flex items-center justify-center" />
+                      <div className="w-5 h-5 rounded border-2 border-border flex items-center justify-center" />
                       <div className="flex-1">
-                        <p className="text-sm font-bold text-zinc-400">Stripe</p>
-                        <p className="text-xs text-zinc-600">Pagamentos via Cartão de Crédito e Pix</p>
+                        <p className="text-sm font-bold text-muted-foreground">Stripe</p>
+                        <p className="text-xs text-muted-foreground">Pagamentos via Cartão de Crédito e Pix</p>
                       </div>
                       <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
                     </div>
                   </div>
 
                   {/* Pix — locked */}
-                  <div className="p-4 rounded-xl border-2 border-zinc-800 bg-zinc-900/20 opacity-50 cursor-not-allowed">
+                  <div className="p-4 rounded-xl border-2 border-border bg-muted/20 opacity-50 cursor-not-allowed">
                     <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded border-2 border-zinc-700 flex items-center justify-center" />
+                      <div className="w-5 h-5 rounded border-2 border-border flex items-center justify-center" />
                       <div className="flex-1">
-                        <p className="text-sm font-bold text-zinc-400">Pix</p>
-                        <p className="text-xs text-zinc-600">Pagamento instantâneo via Pix</p>
+                        <p className="text-sm font-bold text-muted-foreground">Pix</p>
+                        <p className="text-xs text-muted-foreground">Pagamento instantâneo via Pix</p>
                       </div>
                       <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
                     </div>
                   </div>
 
                   {/* Google Pay — locked */}
-                  <div className="p-4 rounded-xl border-2 border-zinc-800 bg-zinc-900/20 opacity-50 cursor-not-allowed">
+                  <div className="p-4 rounded-xl border-2 border-border bg-muted/20 opacity-50 cursor-not-allowed">
                     <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded border-2 border-zinc-700 flex items-center justify-center" />
+                      <div className="w-5 h-5 rounded border-2 border-border flex items-center justify-center" />
                       <div className="flex-1">
-                        <p className="text-sm font-bold text-zinc-400">Google Pay</p>
-                        <p className="text-xs text-zinc-600">Pagamentos rápidos via Google Pay</p>
+                        <p className="text-sm font-bold text-muted-foreground">Google Pay</p>
+                        <p className="text-xs text-muted-foreground">Pagamentos rápidos via Google Pay</p>
                       </div>
                       <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
                     </div>
@@ -633,7 +633,7 @@ export default function CreateProduct() {
 
             {step === 3 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="flex items-center gap-2 text-zinc-300 font-medium pb-2 border-b border-zinc-800/50">
+                <div className="flex items-center gap-2 text-foreground/80 font-medium pb-2 border-b border-border/50">
                   <Send className="w-4 h-4 text-purple-500" />
                   Entrega do Produto
                 </div>
@@ -641,13 +641,13 @@ export default function CreateProduct() {
                 <div className="space-y-6 animate-in fade-in duration-300">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 mb-1">
-                      <div className="p-1.5 bg-zinc-800 rounded-lg">
-                        <Globe className="w-3.5 h-3.5 text-zinc-400" />
+                      <div className="p-1.5 bg-muted border border-border">
+                        <Globe className="w-3.5 h-3.5 text-muted-foreground" />
                       </div>
-                      <label className="text-sm font-bold text-zinc-200">Link de Acesso (Opcional se houver arquivos)</label>
+                      <label className="text-sm font-bold text-foreground/90">Link de Acesso (Opcional se houver arquivos)</label>
                     </div>
                     <Input
-                      className={`bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500 ${showErrors && newProduct.deliveryUrl && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(newProduct.deliveryUrl.trim())
+                      className={`bg-black/40 border-border h-11 focus-visible:ring-purple-500 ${showErrors && newProduct.deliveryUrl && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(newProduct.deliveryUrl.trim())
                         ? 'border-red-500/50 focus-visible:ring-red-500'
                         : ''
                         }`}
@@ -658,15 +658,15 @@ export default function CreateProduct() {
                     {showErrors && newProduct.deliveryUrl && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(newProduct.deliveryUrl.trim()) && (
                       <p className="text-[10px] text-red-500 font-medium ml-1">Insira um link válido com domínio (ex: google.com)</p>
                     )}
-                    <p className="text-[11px] text-zinc-500 ml-1 font-medium text-purple-400/80">O cliente receberá este link automaticamente por e-mail.</p>
+                    <p className="text-[11px] text-muted-foreground ml-1 font-medium text-purple-400/80">O cliente receberá este link automaticamente por e-mail.</p>
                   </div>
 
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                      <div className="w-full border-t border-zinc-800"></div>
+                      <div className="w-full border-t border-border"></div>
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-[#18181b] px-2 text-zinc-500 font-bold">Ou envie arquivos</span>
+                      <span className="bg-card px-2 text-muted-foreground font-bold">Ou envie arquivos</span>
                     </div>
                   </div>
 
@@ -674,16 +674,16 @@ export default function CreateProduct() {
                     <div
                       className={`border-2 border-dashed rounded-2xl p-4 md:p-8 flex flex-col items-center justify-center gap-3 md:gap-4 transition-colors cursor-pointer group ${showErrors && !newProduct.deliveryUrl && deliveryFiles.length === 0
                         ? 'border-red-500/50 bg-red-500/5'
-                        : 'border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60'
+                        : 'border-border bg-muted/40 hover:bg-muted/60'
                         }`}
                       onClick={() => document.getElementById('file-delivery-upload')?.click()}
                     >
-                      <div className="p-4 bg-zinc-800/50 rounded-2xl group-hover:scale-110 transition-transform">
-                        <Plus className="w-8 h-8 text-zinc-500" />
+                      <div className="p-4 bg-accent/50 rounded-2xl group-hover:scale-110 transition-transform">
+                        <Plus className="w-8 h-8 text-muted-foreground" />
                       </div>
                       <div className="text-center space-y-1">
-                        <p className="text-sm md:text-base font-bold text-zinc-300">Arraste arquivos ou clique para selecionar</p>
-                        <p className="text-xs md:text-sm text-zinc-500">Tamanho máximo: 64MB • Limite: 20 arquivos</p>
+                        <p className="text-sm md:text-base font-bold text-foreground/80">Arraste arquivos ou clique para selecionar</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">Tamanho máximo: 64MB • Limite: 20 arquivos</p>
                       </div>
                       <input
                         id="file-delivery-upload"
@@ -702,9 +702,9 @@ export default function CreateProduct() {
                     </div>
 
                     {deliveryFiles.length > 0 && (
-                      <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-xl p-4 space-y-3">
-                        <div className="flex items-center justify-between border-b border-zinc-800/50 pb-2">
-                          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Arquivos ({deliveryFiles.length}/20)</p>
+                      <div className="bg-muted/40 border border-border/50 rounded-xl p-4 space-y-3">
+                        <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Arquivos ({deliveryFiles.length}/20)</p>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -718,7 +718,7 @@ export default function CreateProduct() {
 
                         {isUploadingDeliveryFiles && deliveryUpload.total > 0 && (
                           <div className="space-y-2">
-                            <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                               <span className="truncate">Enviando: {deliveryUpload.currentName ?? "..."}</span>
                               <span className="tabular-nums">{deliveryUpload.done}/{deliveryUpload.total}</span>
                             </div>
@@ -729,14 +729,14 @@ export default function CreateProduct() {
                         <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
                           {deliveryFiles.map((file, idx) => (
                             <div key={idx} className="flex items-center justify-between bg-black/20 p-2 rounded-lg">
-                              <span className="text-xs text-zinc-300 truncate">{file.name}</span>
+                              <span className="text-xs text-foreground/80 truncate">{file.name}</span>
                               <button
                                 onClick={() =>
                                   setDeliveryFiles((prev) => prev.filter((_, i) => i !== idx))
                                 }
                                 disabled={isUploadingDeliveryFiles}
                               >
-                                <Plus className="w-3.5 h-3.5 text-zinc-500 rotate-45" />
+                                <Plus className="w-3.5 h-3.5 text-muted-foreground rotate-45" />
                               </button>
                             </div>
                           ))}
@@ -747,18 +747,18 @@ export default function CreateProduct() {
                 </div>
               </div>
             )}
-            <div className="flex items-center gap-3 pt-6 mt-6 border-t border-zinc-800/50">
+            <div className="flex items-center gap-3 pt-6 mt-6 border-t border-border/50">
               {step > 1 && (
                 <Button
                   variant="ghost"
-                  className="flex-1 h-12 text-zinc-400 hover:text-white"
+                  className="flex-1 h-12 text-muted-foreground hover:text-foreground"
                   onClick={() => setStep(step - 1)}
                 >
                   Voltar
                 </Button>
               )}
               <Button
-                className="flex-[2] h-12 bg-purple-600 hover:bg-purple-500 text-white font-bold border-0 shadow-none"
+                className="flex-[2] h-12 bg-purple-600 hover:bg-purple-500 text-primary-foreground font-bold border-0 shadow-none"
                 onClick={() => (step === 3 ? handleCreate() : handleNext())}
                 disabled={createProduct.isPending || isUploadingDeliveryFiles || isUploadingImage || !isStepValid()}
               >

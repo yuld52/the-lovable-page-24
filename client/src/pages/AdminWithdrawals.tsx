@@ -70,8 +70,8 @@ export default function AdminWithdrawals() {
   const filtered = (withdrawals || []).filter((w) => {
     const search = searchTerm.toLowerCase();
     const matchSearch =
-      (w.username || w.user_email || "").toLowerCase().includes(search) ||
-      (w.pix_key || w.pixKey || "").toLowerCase().includes(search);
+      (w.username || w.userEmail || "").toLowerCase().includes(search) ||
+      (w.pixKey || "").toLowerCase().includes(search);
     const matchTab = activeTab === "all" || w.status === "pending";
     return matchSearch && matchTab;
   });
@@ -106,19 +106,19 @@ export default function AdminWithdrawals() {
             </div>
             <div className="flex items-center gap-3">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Pesquisar por e-mail ou número..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-zinc-900/50 border-zinc-800 h-10 w-72 text-sm"
+                  className="pl-10 bg-muted/50 border-border h-10 w-72 text-sm"
                 />
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => refetch()}
-                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 gap-1.5"
+                className="border-border text-foreground/80 hover:bg-accent gap-1.5"
               >
                 <RefreshCw className="w-3.5 h-3.5" /> Atualizar
               </Button>
@@ -126,7 +126,7 @@ export default function AdminWithdrawals() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 mb-6 bg-zinc-900/50 p-1 rounded-xl border border-zinc-800/60 w-fit">
+          <div className="flex gap-1 mb-6 bg-muted/50 p-1 rounded-xl border border-border/60 w-fit">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
@@ -134,12 +134,12 @@ export default function AdminWithdrawals() {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
                   activeTab === tab.key
                     ? "bg-zinc-800 text-white shadow"
-                    : "text-zinc-500 hover:text-zinc-300"
+                    : "text-muted-foreground hover:text-foreground/80"
                 }`}
               >
                 {tab.label}
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-zinc-900 ${
-                  activeTab === tab.key && tab.key === "pending" ? "text-amber-400" : "text-zinc-600"
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-muted ${
+                  activeTab === tab.key && tab.key === "pending" ? "text-amber-400" : "text-muted-foreground"
                 }`}>
                   {tab.count}
                 </span>
@@ -148,12 +148,12 @@ export default function AdminWithdrawals() {
           </div>
 
           {/* Table */}
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+          <Card className="bg-card border-border/60 shadow-lg">
             <CardContent className="p-0">
               {filtered.length === 0 ? (
                 <div className="text-center py-16">
-                  <CheckCircle2 className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
-                  <p className="text-zinc-500">
+                  <CheckCircle2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
                     {activeTab === "pending" ? "Nenhum saque pendente!" : "Nenhum saque encontrado."}
                   </p>
                 </div>
@@ -161,24 +161,24 @@ export default function AdminWithdrawals() {
                 <div className="rounded-xl overflow-hidden">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-zinc-950/50 border-b border-zinc-800/50">
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Usuário</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Valor</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Conta</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Data</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-right">Ações</th>
+                      <tr className="bg-muted/80 border-b border-border/50">
+                        <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Usuário</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Valor</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Conta</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Data</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider text-right">Ações</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-800/30">
+                    <tbody className="divide-y divide-border/30">
                       {filtered.map((w) => (
-                        <tr key={w.id} className="hover:bg-zinc-800/20 transition-colors">
+                        <tr key={w.id} className="hover:bg-accent/20 transition-colors">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center flex-shrink-0">
-                                <ArrowDownToLine className="w-4 h-4 text-zinc-500" />
+                              <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center flex-shrink-0">
+                                <ArrowDownToLine className="w-4 h-4 text-muted-foreground" />
                               </div>
-                              <span className="text-sm text-zinc-300">{w.username || w.user_email || "Usuário"}</span>
+                              <span className="text-sm text-foreground/80">{w.username || w.userEmail || "Usuário"}</span>
                             </div>
                           </td>
                           <td className="px-6 py-4">
@@ -189,12 +189,12 @@ export default function AdminWithdrawals() {
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <span className="text-sm text-zinc-400 font-mono">{w.pix_key || w.pixKey || "—"}</span>
+                            <span className="text-sm text-muted-foreground font-mono">{w.pixKey || "—"}</span>
                           </td>
                           <td className="px-6 py-4">
-                            <span className="text-xs text-zinc-500">
-                              {w.requested_at
-                                ? format(new Date(w.requested_at), "dd/MM/yyyy HH:mm", { locale: ptBR })
+                            <span className="text-xs text-muted-foreground">
+                              {w.requestedAt
+                                ? format(new Date(w.requestedAt), "dd/MM/yyyy HH:mm", { locale: ptBR })
                                 : "—"}
                             </span>
                           </td>
@@ -236,9 +236,9 @@ export default function AdminWithdrawals() {
                               </div>
                             )}
                             {w.status !== "pending" && (
-                              <span className="text-xs text-zinc-600 italic">
-                                {w.processed_at
-                                  ? format(new Date(w.processed_at), "dd/MM/yyyy HH:mm", { locale: ptBR })
+                              <span className="text-xs text-muted-foreground italic">
+                                {w.processedAt
+                                  ? format(new Date(w.processedAt), "dd/MM/yyyy HH:mm", { locale: ptBR })
                                   : "—"}
                               </span>
                             )}

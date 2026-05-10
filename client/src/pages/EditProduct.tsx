@@ -174,32 +174,32 @@ export default function EditProduct() {
   return (
     <Layout title="Editar Produto" subtitle={`Editando: ${formData.name}`}>
       <div className="mb-6 flex justify-between items-center">
-        <Button variant="ghost" onClick={() => setLocation("/products")} className="text-zinc-400">
+        <Button variant="ghost" onClick={() => setLocation("/products")} className="text-muted-foreground">
           <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
         </Button>
       </div>
 
       <div className="max-w-2xl mx-auto">
-        <div className="bg-[#18181b] border border-zinc-800/60 shadow-lg rounded-2xl p-4 md:p-8">
+        <div className="bg-card border border-border/60 shadow-lg rounded-2xl p-4 md:p-8">
           {/* Step Indicator */}
           <div className="flex items-center justify-between mb-4 md:mb-8 px-2">
             {steps.map((s, i) => (
               <div key={s.id} className="flex items-center flex-1 last:flex-none">
                 <div className="flex flex-col items-center gap-1 md:gap-2">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                    step >= s.id ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
+                    step >= s.id ? 'bg-purple-600 text-white' : 'bg-accent text-muted-foreground border border-border'
                   }`}>
                     {step > s.id ? <Check className="w-4 h-4" /> : s.id}
                   </div>
                   <span className={`text-[9px] md:text-[10px] font-medium text-center leading-tight max-w-[64px] ${
-                    step >= s.id ? 'text-zinc-300' : 'text-zinc-500'
+                    step >= s.id ? 'text-foreground/80' : 'text-muted-foreground'
                   }`}>
                     {s.title}
                   </span>
                 </div>
                 {i < steps.length - 1 && (
                   <div className={`h-[1px] flex-1 mx-2 md:mx-4 ${
-                    step > s.id ? 'bg-purple-600' : 'bg-zinc-800'
+                    step > s.id ? 'bg-purple-600' : 'bg-accent'
                   }`} />
                 )}
               </div>
@@ -210,9 +210,9 @@ export default function EditProduct() {
             {step === 1 ? (
               <div className="space-y-6 animate-in fade-in">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-zinc-200">Capa do Produto</label>
+                  <label className="text-sm font-bold text-foreground/90">Capa do Produto</label>
                   <div
-                    className={`border-2 border-dashed border-zinc-800 rounded-2xl w-[200px] h-[200px] mx-auto overflow-hidden cursor-pointer relative group ${
+                    className={`border-2 border-dashed border-border rounded-2xl w-[200px] h-[200px] mx-auto overflow-hidden cursor-pointer relative group ${
                       isUploadingImage ? 'pointer-events-none opacity-70' : ''
                     }`}
                     onClick={() => !isUploadingImage && document.getElementById('edit-image')?.click()}
@@ -231,7 +231,7 @@ export default function EditProduct() {
                         </div>
                       </>
                     ) : (
-                      <div className="flex flex-col items-center justify-center h-full text-zinc-500"><Plus /></div>
+                      <div className="flex flex-col items-center justify-center h-full text-muted-foreground"><Plus /></div>
                     )}
                     <input
                       id="edit-image"
@@ -247,16 +247,16 @@ export default function EditProduct() {
                   </div>
                 </div>
 
-                <div className="bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/50 space-y-4">
+                <div className="bg-muted/40 p-4 rounded-xl border border-border/50 space-y-4">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 mb-1">
-                      <div className="p-1.5 bg-zinc-800 rounded-lg">
-                        <LayoutIcon className="w-3.5 h-3.5 text-zinc-400" />
+                      <div className="p-1.5 bg-muted border border-border">
+                        <LayoutIcon className="w-3.5 h-3.5 text-muted-foreground" />
                       </div>
-                      <label className="text-sm font-bold text-zinc-200">Nome</label>
+                      <label className="text-sm font-bold text-foreground/90">Nome</label>
                     </div>
                     <Input
-                      className="bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500"
+                      className="bg-black/40 border-border h-11 focus-visible:ring-purple-500"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     />
@@ -264,38 +264,38 @@ export default function EditProduct() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        <div className="p-1.5 bg-zinc-800 rounded-lg">
-                          <FileText className="w-3.5 h-3.5 text-zinc-400" />
+                        <div className="p-1.5 bg-muted border border-border">
+                          <FileText className="w-3.5 h-3.5 text-muted-foreground" />
                         </div>
-                        <label className="text-sm font-bold text-zinc-200">Descrição <span className="text-red-400">*</span></label>
+                        <label className="text-sm font-bold text-foreground/90">Descrição <span className="text-red-400">*</span></label>
                       </div>
-                      <span className={`text-[11px] font-medium ${(formData.description?.length ?? 0) >= 200 ? "text-emerald-400" : "text-zinc-500"}`}>
+                      <span className={`text-[11px] font-medium ${(formData.description?.length ?? 0) >= 200 ? "text-emerald-400" : "text-muted-foreground"}`}>
                         {formData.description?.length ?? 0}/200
                       </span>
                     </div>
                     <textarea
-                      className="w-full bg-black/40 border border-zinc-800 rounded-md p-3 min-h-[120px] text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-zinc-600 resize-none"
+                      className="w-full bg-black/40 border border-border rounded-md p-3 min-h-[120px] text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-muted-foreground resize-none"
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       placeholder="Descreva detalhadamente o que seu cliente receberá ao comprar este produto..."
                     />
                     {(formData.description?.trim().length ?? 0) < 200 && (
-                      <p className="text-[11px] text-zinc-500">{200 - (formData.description?.trim().length ?? 0)} caracteres restantes para o mínimo.</p>
+                      <p className="text-[11px] text-muted-foreground">{200 - (formData.description?.trim().length ?? 0)} caracteres restantes para o mínimo.</p>
                     )}
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 mb-1">
-                      <div className="p-1.5 bg-zinc-800 rounded-lg">
-                        <span className="text-sm font-bold text-zinc-400">$</span>
+                      <div className="p-1.5 bg-muted border border-border">
+                        <span className="text-sm font-bold text-muted-foreground">$</span>
                       </div>
-                      <label className="text-sm font-bold text-zinc-200">Preço e Moeda</label>
+                      <label className="text-sm font-bold text-foreground/90">Preço e Moeda</label>
                     </div>
-                    <label className="text-xs font-medium text-zinc-500">Moeda do produto</label>
+                    <label className="text-xs font-medium text-muted-foreground">Moeda do produto</label>
                     <Select value={formData.currency} onValueChange={(val) => setFormData({ ...formData, currency: val })}>
-                      <SelectTrigger className="bg-black/40 border-zinc-800 h-11">
+                      <SelectTrigger className="bg-black/40 border-border h-11">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
+                      <SelectContent className="bg-muted border-border text-foreground">
                         <SelectItem value="AUD">AUD - Dólar Australiano</SelectItem>
                         <SelectItem value="BRL">BRL - Real Brasileiro</SelectItem>
                         <SelectItem value="CAD">CAD - Dólar Canadense</SelectItem>
@@ -322,11 +322,11 @@ export default function EditProduct() {
                         <SelectItem value="USD">USD - Dólar Americano</SelectItem>
                       </SelectContent>
                     </Select>
-                    <label className="text-xs font-medium text-zinc-500">Valor ({formData.currency})</label>
+                    <label className="text-xs font-medium text-muted-foreground">Valor ({formData.currency})</label>
                     <Input
                       type="number"
                       step="0.01"
-                      className="bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500"
+                      className="bg-black/40 border-border h-11 focus-visible:ring-purple-500"
                       value={formData.price}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -336,7 +336,7 @@ export default function EditProduct() {
                       }}
                       placeholder="Ex: 19.90"
                     />
-                    <p className="text-[11px] text-zinc-500 ml-1">
+                    <p className="text-[11px] text-muted-foreground ml-1">
                       Mínimo: {formData.currency === "MZN" ? "50 MT" : `3,90 ${formData.currency}`}
                     </p>
                   </div>
@@ -344,12 +344,12 @@ export default function EditProduct() {
               </div>
             ) : step === 2 ? (
               <div className="space-y-6 animate-in fade-in duration-300">
-                <div className="flex items-center gap-2 text-zinc-300 font-medium pb-2 border-b border-zinc-800/50">
+                <div className="flex items-center gap-2 text-foreground/80 font-medium pb-2 border-b border-border/50">
                   <CreditCard className="w-4 h-4 text-purple-500" />
                   Métodos de Pagamento
                 </div>
 
-                <p className="text-sm text-zinc-400">Selecione os métodos de pagamento que estarão disponíveis para este produto:</p>
+                <p className="text-sm text-muted-foreground">Selecione os métodos de pagamento que estarão disponíveis para este produto:</p>
 
                 <div className="space-y-3">
                   {/* M-Pesa — selectable */}
@@ -357,7 +357,7 @@ export default function EditProduct() {
                     className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
                       formData.paymentMethods.includes('mpesa')
                         ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60'
+                        : 'border-border bg-muted/40 hover:bg-muted/60'
                     }`}
                     onClick={() => togglePaymentMethod('mpesa')}
                   >
@@ -365,15 +365,15 @@ export default function EditProduct() {
                       <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                         formData.paymentMethods.includes('mpesa')
                           ? 'bg-purple-600 border-purple-600'
-                          : 'border-zinc-600'
+                          : 'border-border'
                       }`}>
                         {formData.paymentMethods.includes('mpesa') && (
                           <Check className="w-3 h-3 text-white" />
                         )}
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-bold text-white">M-Pesa</p>
-                        <p className="text-xs text-zinc-500">Pagamentos via M-Pesa</p>
+                        <p className="text-sm font-bold text-foreground">M-Pesa</p>
+                        <p className="text-xs text-muted-foreground">Pagamentos via M-Pesa</p>
                       </div>
                       <div className="text-xs text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded">Disponível</div>
                     </div>
@@ -384,7 +384,7 @@ export default function EditProduct() {
                     className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
                       formData.paymentMethods.includes('emola')
                         ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60'
+                        : 'border-border bg-muted/40 hover:bg-muted/60'
                     }`}
                     onClick={() => togglePaymentMethod('emola')}
                   >
@@ -392,63 +392,63 @@ export default function EditProduct() {
                       <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                         formData.paymentMethods.includes('emola')
                           ? 'bg-purple-600 border-purple-600'
-                          : 'border-zinc-600'
+                          : 'border-border'
                       }`}>
                         {formData.paymentMethods.includes('emola') && (
                           <Check className="w-3 h-3 text-white" />
                         )}
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-bold text-white">e-Mola</p>
-                        <p className="text-xs text-zinc-500">Pagamentos via e-Mola</p>
+                        <p className="text-sm font-bold text-foreground">e-Mola</p>
+                        <p className="text-xs text-muted-foreground">Pagamentos via e-Mola</p>
                       </div>
                       <div className="text-xs text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded">Disponível</div>
                     </div>
                   </div>
 
                   {/* PayPal — locked */}
-                  <div className="p-4 rounded-xl border-2 border-zinc-800 bg-zinc-900/20 opacity-50 cursor-not-allowed">
+                  <div className="p-4 rounded-xl border-2 border-border bg-muted/20 opacity-50 cursor-not-allowed">
                     <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded border-2 border-zinc-700 flex items-center justify-center" />
+                      <div className="w-5 h-5 rounded border-2 border-border flex items-center justify-center" />
                       <div className="flex-1">
-                        <p className="text-sm font-bold text-zinc-400">PayPal</p>
-                        <p className="text-xs text-zinc-600">Pagamentos via PayPal e Cartão de Crédito</p>
+                        <p className="text-sm font-bold text-muted-foreground">PayPal</p>
+                        <p className="text-xs text-muted-foreground">Pagamentos via PayPal e Cartão de Crédito</p>
                       </div>
                       <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
                     </div>
                   </div>
 
                   {/* Stripe — locked */}
-                  <div className="p-4 rounded-xl border-2 border-zinc-800 bg-zinc-900/20 opacity-50 cursor-not-allowed">
+                  <div className="p-4 rounded-xl border-2 border-border bg-muted/20 opacity-50 cursor-not-allowed">
                     <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded border-2 border-zinc-700 flex items-center justify-center" />
+                      <div className="w-5 h-5 rounded border-2 border-border flex items-center justify-center" />
                       <div className="flex-1">
-                        <p className="text-sm font-bold text-zinc-400">Stripe</p>
-                        <p className="text-xs text-zinc-600">Pagamentos via Cartão de Crédito e Pix</p>
+                        <p className="text-sm font-bold text-muted-foreground">Stripe</p>
+                        <p className="text-xs text-muted-foreground">Pagamentos via Cartão de Crédito e Pix</p>
                       </div>
                       <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
                     </div>
                   </div>
 
                   {/* Pix — locked */}
-                  <div className="p-4 rounded-xl border-2 border-zinc-800 bg-zinc-900/20 opacity-50 cursor-not-allowed">
+                  <div className="p-4 rounded-xl border-2 border-border bg-muted/20 opacity-50 cursor-not-allowed">
                     <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded border-2 border-zinc-700 flex items-center justify-center" />
+                      <div className="w-5 h-5 rounded border-2 border-border flex items-center justify-center" />
                       <div className="flex-1">
-                        <p className="text-sm font-bold text-zinc-400">Pix</p>
-                        <p className="text-xs text-zinc-600">Pagamento instantâneo via Pix</p>
+                        <p className="text-sm font-bold text-muted-foreground">Pix</p>
+                        <p className="text-xs text-muted-foreground">Pagamento instantâneo via Pix</p>
                       </div>
                       <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
                     </div>
                   </div>
 
                   {/* Google Pay — locked */}
-                  <div className="p-4 rounded-xl border-2 border-zinc-800 bg-zinc-900/20 opacity-50 cursor-not-allowed">
+                  <div className="p-4 rounded-xl border-2 border-border bg-muted/20 opacity-50 cursor-not-allowed">
                     <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded border-2 border-zinc-700 flex items-center justify-center" />
+                      <div className="w-5 h-5 rounded border-2 border-border flex items-center justify-center" />
                       <div className="flex-1">
-                        <p className="text-sm font-bold text-zinc-400">Google Pay</p>
-                        <p className="text-xs text-zinc-600">Pagamentos rápidos via Google Pay</p>
+                        <p className="text-sm font-bold text-muted-foreground">Google Pay</p>
+                        <p className="text-xs text-muted-foreground">Pagamentos rápidos via Google Pay</p>
                       </div>
                       <div className="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Em breve</div>
                     </div>
@@ -465,35 +465,35 @@ export default function EditProduct() {
                   <div className="space-y-6 animate-in fade-in duration-300">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 mb-1">
-                        <div className="p-1.5 bg-zinc-800 rounded-lg">
-                          <Globe className="w-3.5 h-3.5 text-zinc-400" />
+                        <div className="p-1.5 bg-muted border border-border">
+                          <Globe className="w-3.5 h-3.5 text-muted-foreground" />
                         </div>
-                        <label className="text-sm font-bold text-zinc-200">Link de Acesso</label>
+                        <label className="text-sm font-bold text-foreground/90">Link de Acesso</label>
                       </div>
                       <Input
-                        className="bg-black/40 border-zinc-800 h-11 focus-visible:ring-purple-500"
+                        className="bg-black/40 border-border h-11 focus-visible:ring-purple-500"
                         placeholder="https://exemplo.com/acesso"
                         value={formData.deliveryUrl}
                         onChange={(e) => setFormData({ ...formData, deliveryUrl: e.target.value })}
                       />
-                      <p className="text-[11px] text-zinc-500 ml-1 font-medium text-purple-400/80">Este é o link que o cliente receberá automaticamente no e-mail de entrega assim que o pagamento for aprovado.</p>
+                      <p className="text-[11px] text-muted-foreground ml-1 font-medium text-purple-400/80">Este é o link que o cliente receberá automaticamente no e-mail de entrega assim que o pagamento for aprovado.</p>
                     </div>
                   </div>
                 )}
                 {deliveryMethod === "file" && (
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-zinc-200 uppercase tracking-wider">Arquivos de entrega</label>
-                      <div className="bg-black/40 border border-zinc-800 rounded-xl p-4 min-h-[100px] flex flex-col items-center justify-center gap-3">
-                        <FileText className="w-8 h-8 text-zinc-600" />
-                        <p className="text-sm text-zinc-500">O upload de novos arquivos não está disponível na edição. Os arquivos atuais serão enviados no e-mail de entrega após a compra.</p>
+                      <label className="text-sm font-bold text-foreground/90 uppercase tracking-wider">Arquivos de entrega</label>
+                      <div className="bg-black/40 border border-border rounded-xl p-4 min-h-[100px] flex flex-col items-center justify-center gap-3">
+                        <FileText className="w-8 h-8 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">O upload de novos arquivos não está disponível na edição. Os arquivos atuais serão enviados no e-mail de entrega após a compra.</p>
                       </div>
                       {formData.deliveryFiles.length > 0 && (
                         <div className="mt-4 space-y-2">
-                          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Arquivos atuais ({formData.deliveryFiles.length})</p>
+                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Arquivos atuais ({formData.deliveryFiles.length})</p>
                           <div className="grid grid-cols-1 gap-2">
                             {formData.deliveryFiles.map((file, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-3 bg-zinc-900/60 border border-zinc-800 rounded-lg group">
+                              <div key={idx} className="flex items-center justify-between p-3 bg-muted/60 border border-border rounded-lg group">
                                 <div className="flex items-center gap-3 overflow-hidden">
                                   <div className="w-8 h-8 rounded bg-purple-500/10 flex items-center justify-center text-purple-400 flex-shrink-0">
                                     <FileText className="w-4 h-4" />
@@ -502,7 +502,7 @@ export default function EditProduct() {
                                     href={file}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-sm text-zinc-300 hover:text-purple-400 truncate underline decoration-zinc-700 hover:decoration-purple-400 transition-colors"
+                                    className="text-sm text-foreground/80 hover:text-purple-400 truncate underline decoration-border hover:decoration-purple-400 transition-colors"
                                   >
                                     {(() => {
                                       try {
@@ -518,7 +518,7 @@ export default function EditProduct() {
                                     })()}
                                   </a>
                                 </div>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-red-400" onClick={() => {
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-400" onClick={() => {
                                   setFormData({
                                     ...formData,
                                     deliveryFiles: formData.deliveryFiles.filter((_, i) => i !== idx)
@@ -537,7 +537,7 @@ export default function EditProduct() {
               </div>
             )}
 
-            <div className="flex gap-3 pt-6 border-t border-zinc-800/50">
+            <div className="flex gap-3 pt-6 border-t border-border/50">
               {step > 1 && <Button variant="ghost" className="flex-1" onClick={() => setStep(step - 1)}>Voltar</Button>}
               <Button className="flex-[2] bg-purple-600 hover:bg-purple-500 h-12" onClick={() => step === 3 ? handleUpdate() : setStep(step + 1)}>
                 {updateProduct.isPending ? <Loader2 className="animate-spin" /> : step === 3 ? "Salvar Alterações" : "Próximo"}

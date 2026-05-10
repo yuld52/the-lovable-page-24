@@ -273,15 +273,26 @@ export default function PublicCheckout() {
   }, [autoCurrency, config]);
   const usdToCurrencyRate = usdRates?.[currency] ?? 1;
 
-  // If the product's own currency matches the checkout display currency,
-  // prices are already stored in checkout-currency minor units — no conversion needed.
-  const productCurrency = product?.currency as SupportedCurrencyCode | undefined;
-  const isSameCurrency = !!productCurrency && productCurrency === currency;
+  // Use the product's defined currency as the base for conversion if it differs from USD.
+  const productCurrency = (product?.currency || "USD") as SupportedCurrencyCode;
+  const isSameCurrency = productCurrency === currency;
 
-  const moneyFromUsdCents = (usdCents: number) =>
-    isSameCurrency
-      ? formatMoney({ currency, minor: usdCents })
-      : formatMoney({ currency, minor: convertUsdCentsToCurrencyMinor(usdCents, currency, usdToCurrencyRate) });
+  const moneyFromUsdCents = (minorAmount: number) => {
+    if (isSameCurrency) {
+      return formatMoney({ currency, minor: minorAmount });
+    }
+
+    // 1. Convert from product currency minor units to USD cents
+    let usdCents = minorAmount;
+    if (productCurrency !== "USD") {
+      const rateToUsd = 1 / (usdRates?.[productCurrency] || 1);
+      usdCents = Math.round(minorAmount * rateToUsd);
+    }
+
+    // 2. Convert from USD cents to target checkout currency minor units
+    const convertedMinor = convertUsdCentsToCurrencyMinor(usdCents, currency, usdToCurrencyRate);
+    return formatMoney({ currency, minor: convertedMinor });
+  };
 
   const [formData, setFormData] = useState({ email: "", confirmEmail: "", name: "", surname: "", cpf: "", phone: "", cnpj: "", zip: "", street: "", streetNumber: "" });
   const [showErrors, setShowErrors] = useState(false);
@@ -398,8 +409,16 @@ export default function PublicCheckout() {
     setShowMobileModal(true);
     setMobileSubmitting(true);
     try {
-      const totalUsdCents = calculateTotal();
-      const totalMinor = convertUsdCentsToCurrencyMinor(totalUsdCents, currency, usdToCurrencyRate);
+      const totalRaw = calculateTotal();
+      let totalUsdCents = totalRaw;
+      if (productCurrency !== "USD") {
+        const rateToUsd = 1 / (usdRates?.[productCurrency] || 1);
+        totalUsdCents = Math.round(totalRaw * rateToUsd);
+      }
+      const totalMinor = isSameCurrency
+        ? totalRaw
+        : convertUsdCentsToCurrencyMinor(totalUsdCents, currency, usdToCurrencyRate);
+
       const res = await fetch("/api/sales/mobile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -475,8 +494,15 @@ export default function PublicCheckout() {
       throw new Error("Email mismatch");
     }
 
-    const totalUsdCents = calculateTotal();
-    const totalMinor = convertUsdCentsToCurrencyMinor(totalUsdCents, currency, usdToCurrencyRate);
+    const totalRaw = calculateTotal();
+    let totalUsdCents = totalRaw;
+    if (productCurrency !== "USD") {
+      const rateToUsd = 1 / (usdRates?.[productCurrency] || 1);
+      totalUsdCents = Math.round(totalRaw * rateToUsd);
+    }
+    const totalMinor = isSameCurrency
+      ? totalRaw
+      : convertUsdCentsToCurrencyMinor(totalUsdCents, currency, usdToCurrencyRate);
 
     // Meta Pixel — InitiateCheckout (browser-side)
     if (trackingConfig?.pixelId && trackingConfig?.metaEnabled && trackingConfig?.trackCheckout) {

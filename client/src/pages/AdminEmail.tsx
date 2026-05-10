@@ -242,7 +242,7 @@ export default function AdminEmail() {
               <Mail className="w-7 h-7 text-purple-400" />
               Enviar Email
             </h1>
-            <p className="text-sm text-zinc-500 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Envie uma mensagem personalizada para qualquer utilizador da plataforma
             </p>
           </div>
@@ -250,8 +250,8 @@ export default function AdminEmail() {
           <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 items-start">
 
             {/* Left — Templates */}
-            <div className="bg-[#18181b] border border-zinc-800/60 rounded-xl overflow-hidden">
-              <div className="px-5 py-4 border-b border-zinc-800/60 flex items-center gap-2">
+            <div className="bg-card border border-border/60 rounded-xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-border/60 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-purple-400" />
                 <span className="text-sm font-semibold text-white">Templates</span>
               </div>
@@ -263,7 +263,7 @@ export default function AdminEmail() {
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-left transition-all ${
                       selectedTemplate === tpl.id
                         ? "bg-purple-600/20 border border-purple-500/40 text-white"
-                        : "text-zinc-400 hover:bg-zinc-800/60 hover:text-white border border-transparent"
+                        : "text-muted-foreground hover:bg-accent/60 hover:text-foreground border border-transparent"
                     }`}
                   >
                     <span className="text-base leading-none">{tpl.emoji}</span>
@@ -275,7 +275,7 @@ export default function AdminEmail() {
                 ))}
               </div>
               {selectedTemplate && (
-                <div className="px-5 py-3 border-t border-zinc-800/60">
+                <div className="px-5 py-3 border-t border-border/60">
                   <p className="text-xs text-purple-400">
                     Template aplicado. Pode editar antes de enviar.
                   </p>
@@ -284,8 +284,8 @@ export default function AdminEmail() {
             </div>
 
             {/* Right — Composition */}
-            <div className="bg-[#18181b] border border-zinc-800/60 rounded-xl overflow-hidden">
-              <div className="px-6 py-4 border-b border-zinc-800/60 flex items-center gap-2">
+            <div className="bg-card border border-border/60 rounded-xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-border/60 flex items-center gap-2">
                 <Mail className="w-4 h-4 text-purple-400" />
                 <span className="text-sm font-semibold text-white">Composição</span>
               </div>
@@ -294,7 +294,7 @@ export default function AdminEmail() {
                 {/* To */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                       Para (email)
                     </Label>
                     {knownEmails.length > 0 && (
@@ -310,7 +310,7 @@ export default function AdminEmail() {
 
                   {/* Selected recipient chips */}
                   {to.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 p-2.5 bg-zinc-900/50 border border-zinc-700 rounded-lg min-h-[42px]">
+                    <div className="flex flex-wrap gap-1.5 p-2.5 bg-muted/50 border border-border rounded-lg min-h-[42px]">
                       {to.map((email: string) => (
                         <span
                           key={email}
@@ -320,7 +320,7 @@ export default function AdminEmail() {
                           <button
                             type="button"
                             onClick={() => removeEmail(email)}
-                            className="text-purple-400 hover:text-white ml-0.5 leading-none"
+                            className="text-purple-400 hover:text-foreground ml-0.5 leading-none"
                           >
                             ×
                           </button>
@@ -337,7 +337,7 @@ export default function AdminEmail() {
                     onKeyDown={handleToInputKeyDown}
                     onBlur={() => { if (toInput.trim()) addEmail(toInput); }}
                     list="known-emails"
-                    className="bg-zinc-900/50 border-zinc-700 focus:border-purple-500/60 h-10"
+                    className="bg-muted/50 border-border focus:border-purple-500/60 h-10"
                   />
                   <datalist id="known-emails">
                     {knownEmails.map((email: string) => (
@@ -356,7 +356,7 @@ export default function AdminEmail() {
                           className={`text-xs px-2.5 py-1 rounded-full border transition-all ${
                             to.includes(email)
                               ? "bg-purple-600/30 border-purple-500/60 text-purple-300"
-                              : "bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-purple-500/40 hover:text-zinc-200"
+                              : "bg-muted border-border text-muted-foreground hover:border-purple-500/40 hover:text-zinc-200"
                           }`}
                         >
                           {email}
@@ -368,20 +368,20 @@ export default function AdminEmail() {
 
                 {/* Subject */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     Assunto
                   </Label>
                   <Input
                     placeholder="Assunto do email"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    className="bg-zinc-900/50 border-zinc-700 focus:border-purple-500/60 h-10"
+                    className="bg-muted/50 border-border focus:border-purple-500/60 h-10"
                   />
                 </div>
 
                 {/* Body */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     Mensagem
                   </Label>
                   <Textarea
@@ -389,10 +389,10 @@ export default function AdminEmail() {
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
                     rows={14}
-                    className="bg-zinc-900/50 border-zinc-700 focus:border-purple-500/60 resize-none font-mono text-sm"
+                    className="bg-muted/50 border-border focus:border-purple-500/60 resize-none font-mono text-sm"
                   />
                   {body && (
-                    <p className="text-xs text-zinc-600 text-right">
+                    <p className="text-xs text-muted-foreground text-right">
                       {body.length} caracteres
                     </p>
                   )}

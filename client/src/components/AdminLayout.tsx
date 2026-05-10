@@ -11,7 +11,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="h-screen bg-[#09090b] text-foreground flex overflow-hidden">
+    <div className="h-screen bg-background text-foreground flex overflow-hidden dark">
       <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {sidebarOpen && (
@@ -23,10 +23,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Mobile top bar */}
-        <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-zinc-800 bg-[#09090b] shrink-0">
+        <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-background shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -34,7 +34,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <div className="w-6 h-6 rounded bg-red-500/10 flex items-center justify-center border border-red-500/20">
               <Shield className="w-3 h-3 text-red-500" />
             </div>
-            <span className="font-bold text-white text-sm">Admin Panel</span>
+            <span className="font-bold text-foreground text-sm">Admin Panel</span>
           </div>
         </div>
 

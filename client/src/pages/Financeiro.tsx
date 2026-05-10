@@ -259,12 +259,12 @@ export default function Financeiro() {
   return (
     <Layout title="Financeiro" subtitle="Gerencie seus saques e saldo">
       {/* Sub-navigation */}
-      <div className="flex gap-1 p-1 rounded-xl bg-zinc-900/50 border border-zinc-800 mb-6 w-full sm:w-fit">
+      <div className="flex gap-1 p-1 rounded-xl bg-muted/50 border border-border mb-6 w-full sm:w-fit">
         <button 
           className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all font-medium flex-1 min-w-0 ${
             activeTab === 'visao' 
               ? 'bg-purple-600 text-white shadow-lg scale-105' 
-              : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
           }`}
           onClick={() => setActiveTab('visao')}
         >
@@ -276,7 +276,7 @@ export default function Financeiro() {
           className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all font-medium flex-1 min-w-0 ${
             activeTab === 'historico' 
               ? 'bg-purple-600 text-white shadow-lg scale-105' 
-              : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
           }`}
           onClick={() => setActiveTab('historico')}
         >
@@ -288,7 +288,7 @@ export default function Financeiro() {
           className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all font-medium flex-1 min-w-0 ${
             activeTab === 'contas' 
               ? 'bg-purple-600 text-white shadow-lg scale-105' 
-              : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
           }`}
           onClick={() => setActiveTab('contas')}
         >
@@ -300,7 +300,7 @@ export default function Financeiro() {
           className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all font-medium flex-1 min-w-0 ${
             activeTab === 'regras' 
               ? 'bg-purple-600 text-white shadow-lg scale-105' 
-              : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
           }`}
           onClick={() => setActiveTab('regras')}
         >
@@ -315,7 +315,7 @@ export default function Financeiro() {
           <div className="flex justify-end mb-4">
             <Button
               onClick={() => setShowWithdrawForm(true)}
-              className="bg-purple-600 hover:bg-purple-500 text-white gap-2"
+              className="bg-purple-600 hover:bg-purple-500 text-foreground gap-2"
             >
               <ArrowDownToLine className="w-4 h-4" />
               Solicitar Saque
@@ -323,76 +323,76 @@ export default function Financeiro() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+            <Card className="bg-card border-border/60 shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">SALDO DISPONÍVEL</CardTitle>
                 <DollarSign className="w-4 h-4 text-green-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-white">
+                <div className="text-3xl font-bold text-foreground">
                   {mznRate > 0 ? formatMoney({ currency: "MZN", minor: availableBalanceMznMinor }) : "—"}
                 </div>
-                <p className="text-xs text-zinc-500 mt-1">Disponível para saque</p>
+                <p className="text-xs text-muted-foreground mt-1">Disponível para saque</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+            <Card className="bg-card border-border/60 shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">TOTAL GANHO</CardTitle>
-                <History className="w-4 h-4 text-zinc-500" />
+                <History className="w-4 h-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-white">
+                <div className="text-3xl font-bold text-foreground">
                   {mznRate > 0 ? formatMoney({ currency: "MZN", minor: totalEarningsMznMinor }) : "—"}
                 </div>
-                <p className="text-xs text-zinc-500 mt-1">Histórico de vendas</p>
+                <p className="text-xs text-muted-foreground mt-1">Histórico de vendas</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+            <Card className="bg-card border-border/60 shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">SAQUES PENDENTES</CardTitle>
                 <ArrowDownToLine className="w-4 h-4 text-amber-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-white">
+                <div className="text-3xl font-bold text-foreground">
                   {formatMoney({ currency: "MZN", minor: pendingWithdrawalsMznMinor })}
                 </div>
-                <p className="text-xs text-zinc-500 mt-1">Aguardando processamento</p>
+                <p className="text-xs text-muted-foreground mt-1">Aguardando processamento</p>
               </CardContent>
             </Card>
           </div>
 
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+          <Card className="bg-card border-border/60 shadow-lg">
             <CardHeader>
-              <CardTitle className="text-base font-bold text-white">Histórico de Saques</CardTitle>
+              <CardTitle className="text-base font-bold text-foreground">Histórico de Saques</CardTitle>
             </CardHeader>
             <CardContent>
               {!userWithdrawals || userWithdrawals.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
-                    <ArrowDownToLine className="w-8 h-8 text-zinc-500" />
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                    <ArrowDownToLine className="w-8 h-8 text-muted-foreground" />
                   </div>
-                  <h3 className="text-lg font-medium text-white mb-2">Nenhum saque realizado</h3>
-                  <p className="text-sm text-zinc-500 max-w-sm">
+                  <h3 className="text-lg font-medium text-foreground mb-2">Nenhum saque realizado</h3>
+                  <p className="text-sm text-muted-foreground max-w-sm">
                     Quando você realizar saques, eles aparecerão aqui. O processamento leva até 3 dias úteis.
                   </p>
                 </div>
               ) : (
-                <div className="rounded-xl border border-zinc-800/50 overflow-hidden">
+                <div className="rounded-xl border border-border/50 overflow-hidden">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-zinc-950/50 border-b border-zinc-800/50">
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Método</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Conta</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Valor</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Data</th>
+                      <tr className="bg-muted/80 border-b border-border/50">
+                        <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Método</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Conta</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Valor</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Data</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-800/30">
+                    <tbody className="divide-y divide-border/30">
                       {userWithdrawals.map((w) => (
-                        <tr key={w.id} className="hover:bg-zinc-800/20 transition-colors">
+                        <tr key={w.id} className="hover:bg-accent/20 transition-colors">
                           <td className="px-6 py-4">
                             {w.pixKeyType === 'mpesa' || w.pixKeyType === 'emola' ? (
                               <img
@@ -401,14 +401,14 @@ export default function Financeiro() {
                                 className="h-6 w-6 object-contain rounded"
                               />
                             ) : (
-                              <span className="text-xs font-bold text-zinc-400">{w.pixKeyType || '—'}</span>
+                              <span className="text-xs font-bold text-muted-foreground">{w.pixKeyType || '—'}</span>
                             )}
                           </td>
                           <td className="px-6 py-4">
-                            <span className="text-sm text-zinc-300">{w.pixKey || '—'}</span>
+                            <span className="text-sm text-foreground/80">{w.pixKey || '—'}</span>
                           </td>
                           <td className="px-6 py-4">
-                            <span className="text-sm font-bold text-white">
+                            <span className="text-sm font-bold text-foreground">
                               {formatMoney({ currency: "MZN", minor: w.amount || 0 })}
                             </span>
                           </td>
@@ -431,7 +431,7 @@ export default function Financeiro() {
                             )}
                           </td>
                           <td className="px-6 py-4">
-                            <span className="text-xs font-medium text-zinc-400">
+                            <span className="text-xs font-medium text-muted-foreground">
                               {(w.requestedAt || w.createdAt) ? format(new Date(w.requestedAt || w.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "—"}
                             </span>
                           </td>
@@ -447,49 +447,49 @@ export default function Financeiro() {
       )}
 
       {activeTab === 'historico' && (
-        <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+        <Card className="bg-card border-border/60 shadow-lg">
           <CardHeader>
-            <CardTitle className="text-base font-bold text-white">Histórico de Saques</CardTitle>
-            <CardDescription className="text-xs text-zinc-500">
+            <CardTitle className="text-base font-bold text-foreground">Histórico de Saques</CardTitle>
+            <CardDescription className="text-xs text-muted-foreground">
               {userWithdrawals?.length || 0} saque(s) encontrado(s)
             </CardDescription>
           </CardHeader>
           <CardContent>
             {!userWithdrawals || userWithdrawals.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
-                  <ArrowDownToLine className="w-8 h-8 text-zinc-500" />
+                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                  <ArrowDownToLine className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-medium text-white mb-2">Nenhum saque realizado</h3>
-                <p className="text-sm text-zinc-500 max-w-sm">
+                <h3 className="text-lg font-medium text-foreground mb-2">Nenhum saque realizado</h3>
+                <p className="text-sm text-muted-foreground max-w-sm">
                   Quando você realizar saques, eles aparecerão aqui. O processamento leva até 3 dias úteis.
                 </p>
               </div>
             ) : (
-              <div className="rounded-xl border border-zinc-800/50 overflow-hidden">
+              <div className="rounded-xl border border-border/50 overflow-hidden">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-zinc-950/50 border-b border-zinc-800/50">
-                      <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">ID</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Conta</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Valor</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Data</th>
+                    <tr className="bg-muted/80 border-b border-border/50">
+                      <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">ID</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Conta</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Valor</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Data</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-800/30">
+                  <tbody className="divide-y divide-border/30">
                     {userWithdrawals.map((w) => (
-                      <tr key={w.id} className="hover:bg-zinc-800/20 transition-colors">
+                      <tr key={w.id} className="hover:bg-accent/20 transition-colors">
                         <td className="px-6 py-4">
-                          <span className="text-xs font-medium text-zinc-500">
+                          <span className="text-xs font-medium text-muted-foreground">
                             #{String(w.id).padStart(8, '0')}
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-sm text-zinc-300">{w.pixKey || '—'}</span>
+                          <span className="text-sm text-foreground/80">{w.pixKey || '—'}</span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-sm font-bold text-white">
+                          <span className="text-sm font-bold text-foreground">
                             {formatMoney({ currency: "MZN", minor: w.amount || 0 })}
                           </span>
                         </td>
@@ -505,14 +505,14 @@ export default function Financeiro() {
                               <span className="text-[10px] font-bold uppercase tracking-wider">Pendente</span>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-1.5 bg-zinc-500/10 text-zinc-500 border border-zinc-500/20 px-3 py-1 rounded-full w-fit">
+                            <div className="flex items-center gap-1.5 bg-zinc-500/10 text-muted-foreground border border-zinc-500/20 px-3 py-1 rounded-full w-fit">
                               <AlertCircle className="w-3 h-3" />
                               <span className="text-[10px] font-bold uppercase tracking-wider">{w.status}</span>
                             </div>
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-xs font-medium text-zinc-400">
+                          <span className="text-xs font-medium text-muted-foreground">
                             {(w.requestedAt || w.createdAt) ? format(new Date(w.requestedAt || w.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "—"}
                           </span>
                         </td>
@@ -527,17 +527,17 @@ export default function Financeiro() {
       )}
 
       {activeTab === 'contas' && (
-        <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+        <Card className="bg-card border-border/60 shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-base font-bold text-white">Contas de Pagamento</CardTitle>
-              <CardDescription className="text-xs text-zinc-500">
+              <CardTitle className="text-base font-bold text-foreground">Contas de Pagamento</CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
                 Cadastre M-Pesa ou e-Mola para receber os seus saques.
               </CardDescription>
             </div>
             <Button
               onClick={() => setShowAddAccount(true)}
-              className="bg-purple-600 hover:bg-purple-500 text-white"
+              className="bg-purple-600 hover:bg-purple-500 text-foreground"
               size="sm"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -551,28 +551,28 @@ export default function Financeiro() {
               </div>
             ) : !bankAccounts || bankAccounts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
-                  <CreditCard className="w-8 h-8 text-zinc-500" />
+                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                  <CreditCard className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-medium text-white mb-2">Nenhuma conta cadastrada</h3>
-                <p className="text-sm text-zinc-500 max-w-sm">
+                <h3 className="text-lg font-medium text-foreground mb-2">Nenhuma conta cadastrada</h3>
+                <p className="text-sm text-muted-foreground max-w-sm">
                   Cadastre suas contas para receber saques via M-Pesa ou e-Mola.
                 </p>
               </div>
             ) : (
               <div className="flex flex-col gap-3">
                 {bankAccounts.map((acc) => (
-                  <div key={acc.id} className="flex items-center justify-between bg-zinc-900/50 border border-zinc-800/50 rounded-xl px-4 py-3">
+                  <div key={acc.id} className="flex items-center justify-between bg-muted/50 border border-border/50 rounded-xl px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center bg-zinc-800 shrink-0">
                         {acc.type === 'mpesa' || acc.type === 'emola'
                           ? <img src={acc.type === 'mpesa' ? 'https://yt3.googleusercontent.com/ytc/AIdro_k9S-mKWfmtSx85sbylUgINsr7-ErWacXBh0R39hZ_2rg=s900-c-k-c0x00ffffff-no-rj' : 'https://play-lh.googleusercontent.com/2TGAhJ55tiyhCwW0ZM43deGv4lUTFTBMoq83mnAO6-bU5hi2NPyKX8BN8iKt13irK7Y'} alt={acc.type} className="w-full h-full object-cover" />
-                          : <span className="text-white text-xs font-bold">P</span>}
+                          : <span className="text-foreground text-xs font-bold">P</span>}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-white">{METHOD_LABELS[acc.type]}</p>
-                        {acc.name && <p className="text-[11px] text-zinc-300 font-medium">{acc.name}</p>}
-                        <p className="text-xs text-zinc-400">{acc.phone}</p>
+                        <p className="text-sm font-semibold text-foreground">{METHOD_LABELS[acc.type]}</p>
+                        {acc.name && <p className="text-[11px] text-foreground/80 font-medium">{acc.name}</p>}
+                        <p className="text-xs text-muted-foreground">{acc.phone}</p>
                       </div>
                     </div>
                     <Button
@@ -595,39 +595,39 @@ export default function Financeiro() {
 
       {activeTab === 'regras' && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+          <Card className="bg-card border-border/60 shadow-lg">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-purple-600/15 rounded-xl flex items-center justify-center">
                   <ShieldCheck className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
-                  <CardTitle className="text-base font-bold text-white">Informações sobre Saques</CardTitle>
-                  <CardDescription className="text-xs text-zinc-500">Leia com atenção antes de solicitar um saque.</CardDescription>
+                  <CardTitle className="text-base font-bold text-foreground">Informações sobre Saques</CardTitle>
+                  <CardDescription className="text-xs text-muted-foreground">Leia com atenção antes de solicitar um saque.</CardDescription>
                 </div>
               </div>
             </CardHeader>
           </Card>
 
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+          <Card className="bg-card border-border/60 shadow-lg">
             <CardContent className="pt-5">
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
                   <Clock className="w-4 h-4 text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-white mb-1">Processamento</p>
-                  <p className="text-sm text-zinc-400">1–2 dias úteis, das <span className="text-white font-medium">9:30h</span> até <span className="text-white font-medium">15:30h</span></p>
+                  <p className="text-sm font-semibold text-foreground mb-1">Processamento</p>
+                  <p className="text-sm text-muted-foreground">1–2 dias úteis, das <span className="text-foreground font-medium">9:30h</span> até <span className="text-foreground font-medium">15:30h</span></p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+          <Card className="bg-card border-border/60 shadow-lg">
             <CardHeader className="pb-2 pt-5">
               <div className="flex items-center gap-2">
                 <Banknote className="w-4 h-4 text-emerald-400" />
-                <p className="text-sm font-semibold text-white">Taxas de Saque</p>
+                <p className="text-sm font-semibold text-foreground">Taxas de Saque</p>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -635,10 +635,10 @@ export default function Financeiro() {
                 { label: "M-Pesa", rate: "10%", logo: "https://yt3.googleusercontent.com/ytc/AIdro_k9S-mKWfmtSx85sbylUgINsr7-ErWacXBh0R39hZ_2rg=s900-c-k-c0x00ffffff-no-rj" },
                 { label: "e-Mola", rate: "10%", logo: "https://play-lh.googleusercontent.com/2TGAhJ55tiyhCwW0ZM43deGv4lUTFTBMoq83mnAO6-bU5hi2NPyKX8BN8iKt13irK7Y" },
               ].map((m) => (
-                <div key={m.label} className="flex items-center justify-between bg-zinc-900/50 border border-zinc-800/50 rounded-xl px-4 py-3">
+                <div key={m.label} className="flex items-center justify-between bg-muted/50 border border-border/50 rounded-xl px-4 py-3">
                   <div className="flex items-center gap-3">
                     <img src={m.logo} alt={m.label} className="h-7 w-auto object-contain rounded" />
-                    <span className="text-sm text-white font-medium">{m.label}</span>
+                    <span className="text-sm text-foreground font-medium">{m.label}</span>
                   </div>
                   <span className="text-sm font-bold text-purple-400">{m.rate}</span>
                 </div>
@@ -646,11 +646,11 @@ export default function Financeiro() {
             </CardContent>
           </Card>
 
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+          <Card className="bg-card border-border/60 shadow-lg">
             <CardHeader className="pb-2 pt-5">
               <div className="flex items-center gap-2">
                 <DollarSign className="w-4 h-4 text-yellow-400" />
-                <p className="text-sm font-semibold text-white">Valor Mínimo para Saque</p>
+                <p className="text-sm font-semibold text-foreground">Valor Mínimo para Saque</p>
               </div>
             </CardHeader>
             <CardContent>
@@ -660,21 +660,21 @@ export default function Financeiro() {
                   { currency: "MZN", amount: "600", flag: "🇲🇿" },
                   { currency: "BRL", amount: "250", flag: "🇧🇷" },
                 ].map((v) => (
-                  <div key={v.currency} className="flex flex-col items-center justify-center bg-zinc-900/50 border border-zinc-800/50 rounded-xl py-4 gap-1">
+                  <div key={v.currency} className="flex flex-col items-center justify-center bg-muted/50 border border-border/50 rounded-xl py-4 gap-1">
                     <span className="text-xl">{v.flag}</span>
-                    <span className="text-xs text-zinc-400 font-medium">{v.currency}</span>
-                    <span className="text-base font-bold text-white">{v.amount}</span>
+                    <span className="text-xs text-muted-foreground font-medium">{v.currency}</span>
+                    <span className="text-base font-bold text-foreground">{v.amount}</span>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+          <Card className="bg-card border-border/60 shadow-lg">
             <CardHeader className="pb-2 pt-5">
               <div className="flex items-center gap-2">
                 <Info className="w-4 h-4 text-amber-400" />
-                <p className="text-sm font-semibold text-white">Regras Importantes</p>
+                <p className="text-sm font-semibold text-foreground">Regras Importantes</p>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -683,11 +683,11 @@ export default function Financeiro() {
                 "Não nos responsabilizamos por informações incorretas fornecidas pelo usuário.",
                 "É responsabilidade do usuário manter seus dados atualizados e verificar todas as informações antes de confirmar transações.",
               ].map((rule, i) => (
-                <div key={i} className="flex items-start gap-3 bg-zinc-900/40 border border-zinc-800/40 rounded-xl px-4 py-3">
+                <div key={i} className="flex items-start gap-3 bg-muted/40 border border-border/40 rounded-xl px-4 py-3">
                   <div className="w-5 h-5 bg-amber-500/10 rounded-full flex items-center justify-center shrink-0 mt-0.5">
                     <span className="text-amber-400 text-[10px] font-bold">{i + 1}</span>
                   </div>
-                  <p className="text-sm text-zinc-300 leading-relaxed">{rule}</p>
+                  <p className="text-sm text-foreground/80 leading-relaxed">{rule}</p>
                 </div>
               ))}
             </CardContent>
@@ -699,11 +699,11 @@ export default function Financeiro() {
       <Dialog open={showWithdrawForm} onOpenChange={(v) => {
         if (!v) { setShowWithdrawForm(false); setAmount(""); setPixKey(""); setSelectedAccountId(null); setWithdrawStep(1); }
       }}>
-        <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm">
+        <DialogContent className="bg-card border-border text-foreground max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-white flex items-center justify-between">
+            <DialogTitle className="text-base font-bold text-foreground flex items-center justify-between">
               <span>Solicitar Saque</span>
-              <span className="text-xs font-normal text-zinc-500">
+              <span className="text-xs font-normal text-muted-foreground">
                 Passo {hasSubmittedDocsBefore ? (withdrawStep === 1 ? 1 : 2) : withdrawStep} de {hasSubmittedDocsBefore ? 2 : 3}
               </span>
             </DialogTitle>
@@ -723,7 +723,7 @@ export default function Financeiro() {
             {withdrawStep === 1 && (
               <>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Método</label>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Método</label>
                   <div className="grid grid-cols-2 gap-2">
                     {(["mpesa", "emola"] as const).map((m) => (
                       <button
@@ -734,7 +734,7 @@ export default function Financeiro() {
                             ? m === "mpesa"
                               ? "bg-red-600/20 border-red-500 text-white shadow"
                               : "bg-orange-500/20 border-orange-400 text-white shadow"
-                            : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
+                            : "bg-muted border-border text-muted-foreground hover:border-border hover:text-foreground"
                         }`}
                       >
                         <img src={m === "mpesa" ? "https://yt3.googleusercontent.com/ytc/AIdro_k9S-mKWfmtSx85sbylUgINsr7-ErWacXBh0R39hZ_2rg=s900-c-k-c0x00ffffff-no-rj" : "https://play-lh.googleusercontent.com/2TGAhJ55tiyhCwW0ZM43deGv4lUTFTBMoq83mnAO6-bU5hi2NPyKX8BN8iKt13irK7Y"} alt={METHOD_LABELS[m]} className="h-6 w-6 object-contain rounded" />
@@ -744,26 +744,26 @@ export default function Financeiro() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Valor (MZN)</label>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Valor (MZN)</label>
                   <Input
                     type="number"
                     placeholder="0,00"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
+                    className="bg-muted/50 border-border h-11 text-foreground"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                     Conta {METHOD_LABELS[withdrawMethod]}
                   </label>
                   {(() => {
                     const matching = (bankAccounts || []).filter((a) => a.type === withdrawMethod);
                     if (accountsLoading) return <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-purple-500" /></div>;
                     if (matching.length === 0) return (
-                      <div className="flex flex-col items-center gap-2 py-4 px-3 rounded-xl border border-dashed border-zinc-700 text-center">
-                        <p className="text-xs text-zinc-400">Nenhuma conta {METHOD_LABELS[withdrawMethod]} registada.</p>
+                      <div className="flex flex-col items-center gap-2 py-4 px-3 rounded-xl border border-dashed border-border text-center">
+                        <p className="text-xs text-muted-foreground">Nenhuma conta {METHOD_LABELS[withdrawMethod]} registada.</p>
                         <button className="text-xs text-purple-400 hover:text-purple-300 underline underline-offset-2"
                           onClick={() => { setShowWithdrawForm(false); setActiveTab("contas"); }}>
                           Adicionar conta agora →
@@ -779,14 +779,14 @@ export default function Financeiro() {
                           return (
                             <button key={acc.id}
                               onClick={() => { setSelectedAccountId(acc.id); setPixKey(acc.phone); }}
-                              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${isSelected ? color : "border-zinc-800 hover:border-zinc-600"}`}
+                              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${isSelected ? color : "border-border hover:border-border"}`}
                             >
                               <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 bg-zinc-800 flex items-center justify-center">
                                 <img src={acc.type === "mpesa" ? "https://yt3.googleusercontent.com/ytc/AIdro_k9S-mKWfmtSx85sbylUgINsr7-ErWacXBh0R39hZ_2rg=s900-c-k-c0x00ffffff-no-rj" : "https://play-lh.googleusercontent.com/2TGAhJ55tiyhCwW0ZM43deGv4lUTFTBMoq83mnAO6-bU5hi2NPyKX8BN8iKt13irK7Y"} alt={acc.type} className="w-full h-full object-cover" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-white leading-tight">{METHOD_LABELS[acc.type]}</p>
-                                <p className="text-xs text-zinc-400">{acc.phone}</p>
+                                <p className="text-sm font-semibold text-foreground leading-tight">{METHOD_LABELS[acc.type]}</p>
+                                <p className="text-xs text-muted-foreground">{acc.phone}</p>
                               </div>
                               {isSelected && <Check className={`w-4 h-4 shrink-0 ${acc.type === "mpesa" ? "text-red-400" : "text-orange-400"}`} />}
                             </button>
@@ -819,50 +819,50 @@ export default function Financeiro() {
                 </div>
 
                 {/* Documentos de Identidade */}
-                <div className="rounded-xl border border-zinc-800 overflow-hidden">
+                <div className="rounded-xl border border-border overflow-hidden">
                   <button onClick={() => setDocsOpen(!docsOpen)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-zinc-900/50 hover:bg-zinc-900 transition-colors">
+                    className="w-full flex items-center justify-between px-4 py-3 bg-muted/50 hover:bg-muted transition-colors">
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-purple-400" />
                       <div className="text-left">
-                        <p className="text-sm font-semibold text-white">Documentos de Identidade <span className="text-red-400">*</span></p>
-                        <p className="text-[11px] text-zinc-500">{[idFront, idBack, selfieFile].filter(Boolean).length}/3 enviados</p>
+                        <p className="text-sm font-semibold text-foreground">Documentos de Identidade <span className="text-red-400">*</span></p>
+                        <p className="text-[11px] text-muted-foreground">{[idFront, idBack, selfieFile].filter(Boolean).length}/3 enviados</p>
                       </div>
                     </div>
-                    {docsOpen ? <ChevronUp className="w-4 h-4 text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-zinc-400" />}
+                    {docsOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                   </button>
                   {docsOpen && (
-                    <div className="px-4 py-3 space-y-3 bg-zinc-950/30">
+                    <div className="px-4 py-3 space-y-3 bg-muted/30">
                       <div>
-                        <p className="text-xs font-medium text-zinc-300 mb-2">Frente e Verso do BI / Passaporte <span className="text-red-400">*</span></p>
+                        <p className="text-xs font-medium text-foreground/80 mb-2">Frente e Verso do BI / Passaporte <span className="text-red-400">*</span></p>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <p className="text-[10px] text-zinc-500 mb-1">Frente</p>
+                            <p className="text-[10px] text-muted-foreground mb-1">Frente</p>
                             <input ref={idFrontRef} type="file" accept="image/jpg,image/jpeg,image/png" className="hidden" onChange={e => setIdFront(e.target.files?.[0] || null)} />
                             <button onClick={() => idFrontRef.current?.click()}
-                              className={`w-full border-2 border-dashed rounded-lg py-4 flex flex-col items-center gap-1 transition-colors ${idFront ? "border-purple-500/50 bg-purple-500/5" : "border-zinc-700 hover:border-zinc-500"}`}>
-                              {idFront ? <Check className="w-5 h-5 text-purple-400" /> : <FileText className="w-5 h-5 text-zinc-500" />}
-                              <p className="text-[10px] text-zinc-400 text-center">{idFront ? idFront.name.slice(0, 12) + "…" : "Clique para enviar"}</p>
+                              className={`w-full border-2 border-dashed rounded-lg py-4 flex flex-col items-center gap-1 transition-colors ${idFront ? "border-purple-500/50 bg-purple-500/5" : "border-border hover:border-zinc-500"}`}>
+                              {idFront ? <Check className="w-5 h-5 text-purple-400" /> : <FileText className="w-5 h-5 text-muted-foreground" />}
+                              <p className="text-[10px] text-muted-foreground text-center">{idFront ? idFront.name.slice(0, 12) + "…" : "Clique para enviar"}</p>
                             </button>
                           </div>
                           <div>
-                            <p className="text-[10px] text-zinc-500 mb-1">Verso</p>
+                            <p className="text-[10px] text-muted-foreground mb-1">Verso</p>
                             <input ref={idBackRef} type="file" accept="image/jpg,image/jpeg,image/png" className="hidden" onChange={e => setIdBack(e.target.files?.[0] || null)} />
                             <button onClick={() => idBackRef.current?.click()}
-                              className={`w-full border-2 border-dashed rounded-lg py-4 flex flex-col items-center gap-1 transition-colors ${idBack ? "border-purple-500/50 bg-purple-500/5" : "border-zinc-700 hover:border-zinc-500"}`}>
-                              {idBack ? <Check className="w-5 h-5 text-purple-400" /> : <FileText className="w-5 h-5 text-zinc-500" />}
-                              <p className="text-[10px] text-zinc-400 text-center">{idBack ? idBack.name.slice(0, 12) + "…" : "Clique para enviar"}</p>
+                              className={`w-full border-2 border-dashed rounded-lg py-4 flex flex-col items-center gap-1 transition-colors ${idBack ? "border-purple-500/50 bg-purple-500/5" : "border-border hover:border-zinc-500"}`}>
+                              {idBack ? <Check className="w-5 h-5 text-purple-400" /> : <FileText className="w-5 h-5 text-muted-foreground" />}
+                              <p className="text-[10px] text-muted-foreground text-center">{idBack ? idBack.name.slice(0, 12) + "…" : "Clique para enviar"}</p>
                             </button>
                           </div>
                         </div>
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-zinc-300 mb-2">Selfie com o Documento <span className="text-red-400">*</span></p>
+                        <p className="text-xs font-medium text-foreground/80 mb-2">Selfie com o Documento <span className="text-red-400">*</span></p>
                         <input ref={selfieRef} type="file" accept="image/jpg,image/jpeg,image/png" className="hidden" onChange={e => setSelfieFile(e.target.files?.[0] || null)} />
                         <button onClick={() => selfieRef.current?.click()}
-                          className={`w-full border-2 border-dashed rounded-lg py-4 flex flex-col items-center gap-1.5 transition-colors ${selfieFile ? "border-purple-500/50 bg-purple-500/5" : "border-zinc-700 hover:border-zinc-500"}`}>
-                          {selfieFile ? <Check className="w-5 h-5 text-purple-400" /> : <User className="w-5 h-5 text-zinc-500" />}
-                          <p className="text-[10px] text-zinc-400">{selfieFile ? selfieFile.name.slice(0, 18) + "…" : "Clique para enviar selfie"}</p>
+                          className={`w-full border-2 border-dashed rounded-lg py-4 flex flex-col items-center gap-1.5 transition-colors ${selfieFile ? "border-purple-500/50 bg-purple-500/5" : "border-border hover:border-zinc-500"}`}>
+                          {selfieFile ? <Check className="w-5 h-5 text-purple-400" /> : <User className="w-5 h-5 text-muted-foreground" />}
+                          <p className="text-[10px] text-muted-foreground">{selfieFile ? selfieFile.name.slice(0, 18) + "…" : "Clique para enviar selfie"}</p>
                         </button>
                       </div>
                     </div>
@@ -870,25 +870,25 @@ export default function Financeiro() {
                 </div>
 
                 {/* Comprovativo de Residência */}
-                <div className="rounded-xl border border-zinc-800 overflow-hidden">
+                <div className="rounded-xl border border-border overflow-hidden">
                   <button onClick={() => setResidenceOpen(!residenceOpen)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-zinc-900/50 hover:bg-zinc-900 transition-colors">
+                    className="w-full flex items-center justify-between px-4 py-3 bg-muted/50 hover:bg-muted transition-colors">
                     <div className="flex items-center gap-2">
                       <Home className="w-4 h-4 text-purple-400" />
                       <div className="text-left">
-                        <p className="text-sm font-semibold text-white">Comprovativo de Residência <span className="text-red-400">*</span></p>
-                        <p className="text-[11px] text-zinc-500">{proofOfAddress ? "1/1 enviado" : "0/1 enviado"}</p>
+                        <p className="text-sm font-semibold text-foreground">Comprovativo de Residência <span className="text-red-400">*</span></p>
+                        <p className="text-[11px] text-muted-foreground">{proofOfAddress ? "1/1 enviado" : "0/1 enviado"}</p>
                       </div>
                     </div>
-                    {residenceOpen ? <ChevronUp className="w-4 h-4 text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-zinc-400" />}
+                    {residenceOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                   </button>
                   {residenceOpen && (
-                    <div className="px-4 py-3 bg-zinc-950/30">
+                    <div className="px-4 py-3 bg-muted/30">
                       <input ref={proofRef} type="file" accept="image/jpg,image/jpeg,image/png" className="hidden" onChange={e => setProofOfAddress(e.target.files?.[0] || null)} />
                       <button onClick={() => proofRef.current?.click()}
-                        className={`w-full border-2 border-dashed rounded-lg py-4 flex flex-col items-center gap-1.5 transition-colors ${proofOfAddress ? "border-purple-500/50 bg-purple-500/5" : "border-zinc-700 hover:border-zinc-500"}`}>
-                        {proofOfAddress ? <Check className="w-5 h-5 text-purple-400" /> : <Upload className="w-5 h-5 text-zinc-500" />}
-                        <p className="text-[10px] text-zinc-400">{proofOfAddress ? proofOfAddress.name.slice(0, 18) + "…" : "Clique para enviar"}</p>
+                        className={`w-full border-2 border-dashed rounded-lg py-4 flex flex-col items-center gap-1.5 transition-colors ${proofOfAddress ? "border-purple-500/50 bg-purple-500/5" : "border-border hover:border-zinc-500"}`}>
+                        {proofOfAddress ? <Check className="w-5 h-5 text-purple-400" /> : <Upload className="w-5 h-5 text-muted-foreground" />}
+                        <p className="text-[10px] text-muted-foreground">{proofOfAddress ? proofOfAddress.name.slice(0, 18) + "…" : "Clique para enviar"}</p>
                       </button>
                     </div>
                   )}
@@ -902,7 +902,7 @@ export default function Financeiro() {
 
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="outline" onClick={() => setWithdrawStep(1)}
-                    className="h-11 border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-500 bg-transparent">
+                    className="h-11 border-border text-foreground/80 hover:text-foreground hover:border-zinc-500 bg-transparent">
                     ← Voltar
                   </Button>
                   <Button onClick={() => setWithdrawStep(3)}
@@ -916,29 +916,29 @@ export default function Financeiro() {
             {/* ── STEP 3: Revisão e Confirmação ── */}
             {withdrawStep === 3 && (
               <>
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 divide-y divide-zinc-800">
+                <div className="rounded-xl border border-border bg-muted/40 divide-y divide-zinc-800">
                   <div className="px-4 py-3 flex justify-between items-center">
-                    <span className="text-xs text-zinc-400">Método</span>
-                    <span className="text-sm font-semibold text-white">{METHOD_LABELS[withdrawMethod]}</span>
+                    <span className="text-xs text-muted-foreground">Método</span>
+                    <span className="text-sm font-semibold text-foreground">{METHOD_LABELS[withdrawMethod]}</span>
                   </div>
                   <div className="px-4 py-3 flex justify-between items-center">
-                    <span className="text-xs text-zinc-400">Conta</span>
-                    <span className="text-sm font-semibold text-white">{pixKey}</span>
+                    <span className="text-xs text-muted-foreground">Conta</span>
+                    <span className="text-sm font-semibold text-foreground">{pixKey}</span>
                   </div>
                   <div className="px-4 py-3 flex justify-between items-center">
-                    <span className="text-xs text-zinc-400">Valor solicitado</span>
-                    <span className="text-sm font-semibold text-white">
+                    <span className="text-xs text-muted-foreground">Valor solicitado</span>
+                    <span className="text-sm font-semibold text-foreground">
                       {amount ? new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2 }).format(parseFloat(amount)) + " MZN" : "—"}
                     </span>
                   </div>
                   <div className="px-4 py-3 flex justify-between items-center">
-                    <span className="text-xs text-zinc-400">Taxa (10%)</span>
+                    <span className="text-xs text-muted-foreground">Taxa (10%)</span>
                     <span className="text-sm font-semibold text-red-400">
                       − {amount ? new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2 }).format(parseFloat(amount) * 0.1) + " MZN" : "—"}
                     </span>
                   </div>
-                  <div className="px-4 py-3 flex justify-between items-center bg-zinc-900/60 rounded-b-xl">
-                    <span className="text-xs font-bold text-zinc-300">Você receberá</span>
+                  <div className="px-4 py-3 flex justify-between items-center bg-muted/60 rounded-b-xl">
+                    <span className="text-xs font-bold text-foreground/80">Você receberá</span>
                     <span className="text-base font-bold text-emerald-400">
                       {amount ? new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2 }).format(parseFloat(amount) * 0.9) + " MZN" : "—"}
                     </span>
@@ -956,8 +956,8 @@ export default function Financeiro() {
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3 space-y-1.5">
-                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">Documentos</p>
+                  <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 space-y-1.5">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Documentos</p>
                     {[
                       { label: "BI / Passaporte (Frente)", file: idFront },
                       { label: "BI / Passaporte (Verso)", file: idBack },
@@ -965,10 +965,10 @@ export default function Financeiro() {
                       { label: "Comprovativo de Residência", file: proofOfAddress },
                     ].map(({ label, file }) => (
                       <div key={label} className="flex items-center justify-between">
-                        <span className="text-[11px] text-zinc-400">{label}</span>
+                        <span className="text-[11px] text-muted-foreground">{label}</span>
                         {file
                           ? <span className="flex items-center gap-1 text-[11px] text-emerald-400"><Check className="w-3 h-3" /> Enviado</span>
-                          : <span className="text-[11px] text-zinc-600">Não enviado</span>}
+                          : <span className="text-[11px] text-muted-foreground">Não enviado</span>}
                       </div>
                     ))}
                   </div>
@@ -976,7 +976,7 @@ export default function Financeiro() {
 
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="outline" onClick={() => setWithdrawStep(hasSubmittedDocsBefore ? 1 : 2)}
-                    className="h-11 border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-500 bg-transparent">
+                    className="h-11 border-border text-foreground/80 hover:text-foreground hover:border-zinc-500 bg-transparent">
                     ← Voltar
                   </Button>
                   <Button
@@ -996,7 +996,7 @@ export default function Financeiro() {
 
       {/* Withdrawal Confirmation Dialog */}
       <Dialog open={showWithdrawDialog} onOpenChange={(open) => { setShowWithdrawDialog(open); if (!open) resetWithdrawCodeState(); }}>
-        <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm">
+        <DialogContent className="bg-card border-border text-foreground max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {withdrawCodeStep === "confirm" ? (
@@ -1005,7 +1005,7 @@ export default function Financeiro() {
                 <><Mail className="w-5 h-5 text-amber-400" />Código de Autorização</>
               )}
             </DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogDescription className="text-muted-foreground">
               {withdrawCodeStep === "confirm"
                 ? "Revise os dados e confirme para receber o código de autorização."
                 : `Introduza o código de 6 dígitos enviado para ${withdrawMaskedEmail || "o seu email"}.`}
@@ -1015,19 +1015,19 @@ export default function Financeiro() {
           {withdrawCodeStep === "confirm" && (
             <>
               <div className="space-y-4 py-4">
-                <div className="bg-zinc-900/50 rounded-lg p-4 space-y-3">
+                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-sm text-zinc-400">Valor:</span>
-                    <span className="text-lg font-bold text-white">
+                    <span className="text-sm text-muted-foreground">Valor:</span>
+                    <span className="text-lg font-bold text-foreground">
                       {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(parseFloat(amount) || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-zinc-400">{KEY_LABELS[withdrawMethod]}:</span>
-                    <span className="text-sm font-medium text-white">{pixKey}</span>
+                    <span className="text-sm text-muted-foreground">{KEY_LABELS[withdrawMethod]}:</span>
+                    <span className="text-sm font-medium text-foreground">{pixKey}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-zinc-400">Método:</span>
+                    <span className="text-sm text-muted-foreground">Método:</span>
                     <span className={`text-sm font-bold ${withdrawMethod === 'mpesa' ? 'text-red-400' : withdrawMethod === 'emola' ? 'text-orange-400' : 'text-purple-400'}`}>
                       {METHOD_LABELS[withdrawMethod]}
                     </span>
@@ -1046,7 +1046,7 @@ export default function Financeiro() {
                 <Button
                   variant="outline"
                   onClick={() => { setShowWithdrawDialog(false); resetWithdrawCodeState(); setShowWithdrawForm(true); }}
-                  className="border-zinc-700 text-zinc-300"
+                  className="border-border text-foreground/80"
                   disabled={withdrawCodeSending}
                 >
                   Voltar
@@ -1071,8 +1071,8 @@ export default function Financeiro() {
                   <div className="w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
                     <Mail className="w-6 h-6 text-amber-400" />
                   </div>
-                  <p className="text-xs text-zinc-500 text-center">
-                    Código enviado para <span className="text-white font-semibold">{withdrawMaskedEmail}</span>.<br/>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Código enviado para <span className="text-foreground font-semibold">{withdrawMaskedEmail}</span>.<br/>
                     Válido durante <span className="text-amber-400 font-semibold">10 minutos</span>.
                   </p>
                 </div>
@@ -1110,7 +1110,7 @@ export default function Financeiro() {
                         const nextIdx = Math.min(pasted.length, 5);
                         document.getElementById(`wc-${nextIdx}`)?.focus();
                       }}
-                      className="w-11 h-13 text-center text-xl font-bold bg-zinc-900 border-2 border-zinc-700 rounded-xl text-white focus:outline-none focus:border-amber-500 transition-colors"
+                      className="w-11 h-13 text-center text-xl font-bold bg-muted border-2 border-border rounded-xl text-foreground focus:outline-none focus:border-amber-500 transition-colors"
                       style={{ height: "52px" }}
                     />
                   ))}
@@ -1126,7 +1126,7 @@ export default function Financeiro() {
                 <button
                   onClick={() => { setWithdrawEmailCode(""); setWithdrawCodeError(""); sendWithdrawConfirmCode(); }}
                   disabled={withdrawCodeSending}
-                  className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors mx-auto disabled:opacity-50"
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground/80 transition-colors mx-auto disabled:opacity-50"
                 >
                   <RefreshCw className={`w-3 h-3 ${withdrawCodeSending ? "animate-spin" : ""}`} />
                   {withdrawCodeSending ? "A reenviar..." : "Reenviar código"}
@@ -1137,7 +1137,7 @@ export default function Financeiro() {
                 <Button
                   variant="outline"
                   onClick={() => { setWithdrawCodeStep("confirm"); setWithdrawEmailCode(""); setWithdrawCodeError(""); }}
-                  className="border-zinc-700 text-zinc-300"
+                  className="border-border text-foreground/80"
                   disabled={withdrawCodeVerifying}
                 >
                   Voltar
@@ -1159,31 +1159,31 @@ export default function Financeiro() {
 
       {/* Success Dialog */}
       <Dialog open={withdrawSuccess} onOpenChange={setWithdrawSuccess}>
-        <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm">
+        <DialogContent className="bg-card border-border text-foreground max-w-sm">
           <div className="flex flex-col items-center text-center p-6">
             <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6">
               <Check className="w-10 h-10 text-emerald-500" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Saque Solicitado!</h2>
-            <p className="text-zinc-400 mb-6">
-              Seu saque via <span className="font-bold text-white">{METHOD_LABELS[withdrawMethod]}</span> foi solicitado com sucesso.
+            <h2 className="text-2xl font-bold text-foreground mb-2">Saque Solicitado!</h2>
+            <p className="text-muted-foreground mb-6">
+              Seu saque via <span className="font-bold text-foreground">{METHOD_LABELS[withdrawMethod]}</span> foi solicitado com sucesso.
             </p>
-            <div className="bg-zinc-900/50 rounded-lg p-4 w-full mb-6 space-y-2">
+            <div className="bg-muted/50 rounded-lg p-4 w-full mb-6 space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-zinc-400">{KEY_LABELS[withdrawMethod]}:</span>
-                <span className="text-sm font-medium text-white">{pixKey}</span>
+                <span className="text-sm text-muted-foreground">{KEY_LABELS[withdrawMethod]}:</span>
+                <span className="text-sm font-medium text-foreground">{pixKey}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-zinc-400">Status:</span>
+                <span className="text-sm text-muted-foreground">Status:</span>
                 <span className="text-sm font-medium text-amber-400">Pendente</span>
               </div>
             </div>
-            <p className="text-xs text-zinc-500 mb-6">
+            <p className="text-xs text-muted-foreground mb-6">
               O processamento leva até 3 dias úteis. Você receberá uma notificação quando o valor for enviado.
             </p>
             <Button
               onClick={() => setWithdrawSuccess(false)}
-              className="w-full bg-purple-600 hover:bg-purple-500 text-white"
+              className="w-full bg-purple-600 hover:bg-purple-500 text-foreground"
             >
               Entendi
             </Button>
@@ -1193,19 +1193,19 @@ export default function Financeiro() {
 
       {/* Add Account Dialog — 3-step flow */}
       <Dialog open={showAddAccount} onOpenChange={(v) => { if (!v) { setShowAddAccount(false); setAddAccountStep(1); setNewAccount({ type: "mpesa", phone: "", name: "" }); } }}>
-        <DialogContent className="bg-[#18181b] border-zinc-800 text-white max-w-sm p-0 overflow-hidden">
+        <DialogContent className="bg-card border-border text-foreground max-w-sm p-0 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-6 pt-6 pb-4">
             <div className="flex items-center gap-2">
               {addAccountStep > 1 && (
                 <button
                   onClick={() => setAddAccountStep((s) => Math.max(1, s - 1) as 1 | 2 | 3)}
-                  className="p-1 hover:bg-zinc-800 rounded-lg transition-colors"
+                  className="p-1 hover:bg-accent rounded-lg transition-colors"
                 >
-                  <ArrowLeft className="w-4 h-4 text-zinc-400" />
+                  <ArrowLeft className="w-4 h-4 text-muted-foreground" />
                 </button>
               )}
-              <h3 className="text-lg font-bold text-white">
+              <h3 className="text-lg font-bold text-foreground">
                 {addAccountStep === 1 ? "Escolher Método" : addAccountStep === 2 ? "Dados da Conta" : "Verificação"}
               </h3>
             </div>
@@ -1217,7 +1217,7 @@ export default function Financeiro() {
               <div key={s} className="flex items-center gap-2">
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                   addAccountStep > s ? "bg-purple-500/20 text-purple-400" :
-                  addAccountStep === s ? "bg-purple-600 text-white" : "bg-zinc-800 text-zinc-500"
+                  addAccountStep === s ? "bg-purple-600 text-white" : "bg-zinc-800 text-muted-foreground"
                 }`}>{s}</div>
                 {i < 2 && <div className={`w-8 h-0.5 transition-all ${addAccountStep > s ? "bg-purple-500" : "bg-zinc-800"}`} />}
               </div>
@@ -1228,7 +1228,7 @@ export default function Financeiro() {
             {/* Step 1 — Choose method */}
             {addAccountStep === 1 && (
               <div className="space-y-3">
-                <p className="text-sm text-zinc-400">Selecione o tipo de conta que deseja adicionar:</p>
+                <p className="text-sm text-muted-foreground">Selecione o tipo de conta que deseja adicionar:</p>
                 {([
                   { type: "mpesa" as const, label: "M-Pesa", sub: "Carteira móvel Moçambique", logo: "https://yt3.googleusercontent.com/ytc/AIdro_k9S-mKWfmtSx85sbylUgINsr7-ErWacXBh0R39hZ_2rg=s900-c-k-c0x00ffffff-no-rj", border: "hover:border-red-500/50" },
                   { type: "emola" as const, label: "e-Mola", sub: "Carteira móvel Moçambique", logo: "https://play-lh.googleusercontent.com/2TGAhJ55tiyhCwW0ZM43deGv4lUTFTBMoq83mnAO6-bU5hi2NPyKX8BN8iKt13irK7Y", border: "hover:border-orange-500/50" },
@@ -1236,16 +1236,16 @@ export default function Financeiro() {
                   <button
                     key={m.type}
                     onClick={() => { setNewAccount({ type: m.type, phone: "", name: "" }); setAddAccountStep(2); }}
-                    className={`w-full flex items-center gap-4 p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl transition-all ${m.border} hover:bg-zinc-900 text-left`}
+                    className={`w-full flex items-center gap-4 p-4 bg-muted/50 border border-border rounded-xl transition-all ${m.border} hover:bg-muted text-left`}
                   >
                     <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-zinc-800">
                       <img src={m.logo} alt={m.label} className="w-full h-full object-cover" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-white">{m.label}</p>
-                      <p className="text-xs text-zinc-500">{m.sub}</p>
+                      <p className="text-sm font-semibold text-foreground">{m.label}</p>
+                      <p className="text-xs text-muted-foreground">{m.sub}</p>
                     </div>
-                    <ArrowLeft className="w-4 h-4 text-zinc-600 rotate-180 ml-auto" />
+                    <ArrowLeft className="w-4 h-4 text-muted-foreground rotate-180 ml-auto" />
                   </button>
                 ))}
               </div>
@@ -1254,30 +1254,30 @@ export default function Financeiro() {
             {/* Step 2 — Account details */}
             {addAccountStep === 2 && (
               <div className="space-y-4">
-                <p className="text-sm text-zinc-400">Preencha os dados para sua conta {METHOD_LABELS[newAccount.type]}:</p>
+                <p className="text-sm text-muted-foreground">Preencha os dados para sua conta {METHOD_LABELS[newAccount.type]}:</p>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-300">Nome do Titular</label>
+                  <label className="text-xs font-medium text-foreground/80">Nome do Titular</label>
                   <Input
                     placeholder="Ex: João Silva"
                     value={newAccount.name}
                     onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
-                    className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
+                    className="bg-muted/50 border-border h-11 text-foreground"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-300">{KEY_LABELS[newAccount.type]}</label>
+                  <label className="text-xs font-medium text-foreground/80">{KEY_LABELS[newAccount.type]}</label>
                   <Input
                     placeholder={KEY_PLACEHOLDERS[newAccount.type]}
                     value={newAccount.phone}
                     onChange={(e) => setNewAccount({ ...newAccount, phone: e.target.value })}
-                    className="bg-zinc-900/50 border-zinc-800 h-11 text-white"
+                    className="bg-muted/50 border-border h-11 text-foreground"
                     type="tel"
                   />
                 </div>
                 <Button
                   onClick={() => { if (newAccount.name.trim() && newAccount.phone.trim()) setAddAccountStep(3); }}
                   disabled={!newAccount.name.trim() || !newAccount.phone.trim()}
-                  className="w-full bg-purple-600 hover:bg-purple-500 text-white h-11 mt-2"
+                  className="w-full bg-purple-600 hover:bg-purple-500 text-foreground h-11 mt-2"
                 >
                   Continuar
                 </Button>
@@ -1291,30 +1291,30 @@ export default function Financeiro() {
                   <div className="w-14 h-14 bg-purple-600/10 rounded-full flex items-center justify-center mx-auto mb-3">
                     <ShieldCheck className="w-7 h-7 text-purple-400" />
                   </div>
-                  <p className="text-sm text-zinc-400">Revise os dados antes de confirmar</p>
+                  <p className="text-sm text-muted-foreground">Revise os dados antes de confirmar</p>
                 </div>
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 space-y-3">
+                <div className="bg-muted/50 border border-border rounded-xl p-4 space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-zinc-500">Método</span>
-                    <span className="text-sm font-semibold text-white">{METHOD_LABELS[newAccount.type]}</span>
+                    <span className="text-xs text-muted-foreground">Método</span>
+                    <span className="text-sm font-semibold text-foreground">{METHOD_LABELS[newAccount.type]}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-zinc-500">Titular</span>
-                    <span className="text-sm font-medium text-white">{newAccount.name}</span>
+                    <span className="text-xs text-muted-foreground">Titular</span>
+                    <span className="text-sm font-medium text-foreground">{newAccount.name}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-zinc-500">{KEY_LABELS[newAccount.type]}</span>
-                    <span className="text-sm font-medium text-white">{newAccount.phone}</span>
+                    <span className="text-xs text-muted-foreground">{KEY_LABELS[newAccount.type]}</span>
+                    <span className="text-sm font-medium text-foreground">{newAccount.phone}</span>
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setAddAccountStep(2)} className="flex-1 border-zinc-700 text-zinc-300">
+                  <Button variant="outline" onClick={() => setAddAccountStep(2)} className="flex-1 border-border text-foreground/80">
                     Voltar
                   </Button>
                   <Button
                     onClick={() => addAccountMutation.mutate(newAccount)}
                     disabled={addAccountMutation.isPending}
-                    className="flex-1 bg-purple-600 hover:bg-purple-500 text-white"
+                    className="flex-1 bg-purple-600 hover:bg-purple-500 text-foreground"
                   >
                     {addAccountMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar"}
                   </Button>

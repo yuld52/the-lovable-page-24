@@ -114,7 +114,7 @@ export function ChatSupport() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-0 left-0 right-0 h-[85vh] sm:bottom-6 sm:left-auto sm:right-6 sm:w-96 sm:h-[500px] bg-[#18181b] border border-zinc-800 sm:rounded-2xl rounded-t-2xl shadow-2xl z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-0 left-0 right-0 h-[85vh] sm:bottom-6 sm:left-auto sm:right-6 sm:w-96 sm:h-[500px] bg-card border border-border sm:rounded-2xl rounded-t-2xl shadow-2xl z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
           {/* Header */}
           <div className="p-4 bg-gradient-to-r from-purple-600 to-purple-500 text-white flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -148,7 +148,7 @@ export function ChatSupport() {
                     className={`max-w-[80%] p-3 rounded-2xl ${
                       message.role === "user"
                         ? "bg-purple-600 text-white"
-                        : "bg-zinc-800 text-zinc-200"
+                        : "bg-accent text-foreground/90"
                     }`}
                   >
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -163,9 +163,9 @@ export function ChatSupport() {
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-zinc-800 p-3 rounded-2xl flex items-center gap-2">
+                  <div className="bg-accent p-3 rounded-2xl flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin text-purple-500" />
-                    <span className="text-sm text-zinc-400">Digitando...</span>
+                    <span className="text-sm text-muted-foreground">Digitando...</span>
                   </div>
                 </div>
               )}
@@ -173,14 +173,14 @@ export function ChatSupport() {
           </ScrollArea>
 
           {/* Input */}
-          <div className="p-4 border-t border-zinc-800 bg-[#18181b]">
+          <div className="p-4 border-t border-border bg-card">
             <div className="flex gap-2">
               <Input
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Digite sua mensagem..."
-                className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-purple-500"
+                className="bg-muted border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-purple-500"
                 disabled={isLoading}
               />
               <Button

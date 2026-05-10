@@ -1,14 +1,14 @@
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useStats } from "@/hooks/use-stats";
-import { Loader2, PackageX, Eye, EyeOff, CalendarIcon, TrendingUp } from "lucide-react";
+import { Loader2, PackageX, Eye, EyeOff, CalendarIcon, TrendingUp, Info } from "lucide-react";
 import {
   AreaChart,
   Area,
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as ChartTooltip,
   ResponsiveContainer,
 } from "recharts";
 import { useLocation } from "wouter";
@@ -35,6 +35,12 @@ import { cn } from "@/lib/utils";
 import { useAutoCurrency, useUsdRates } from "@/hooks/use-currency";
 import { convertUsdCentsToCurrencyMinor, formatMoney, type SupportedCurrencyCode } from "@/lib/currency";
 import { useSettings } from "@/hooks/use-settings";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -257,64 +263,74 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="bg-card border-border/60 shadow-lg transition-all duration-300 group relative overflow-hidden hover:border-primary/50 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.25)]">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">VENDAS REALIZADAS</CardTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setShowSales(!showSales)}
-            >
-              {showSales ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-            </Button>
-          </CardHeader>
-          <CardContent className="pb-4">
-            <div className="text-xl font-bold text-foreground mb-0.5">
-              {showSales
-                ? formatCurrency(stats?.salesToday || 0)
-                : "••••••"}
-            </div>
-          </CardContent>
-        </Card>
+      <TooltipProvider>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="bg-card border-border/60 shadow-sm transition-all duration-300 group relative overflow-hidden hover:border-border">
+            <CardHeader className="pb-1 pt-4 px-5">
+              <div className="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
+                VENDAS REALIZADAS
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-3.5 h-3.5 opacity-60 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Valor total de vendas aprovadas no período selecionado.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </CardHeader>
+            <CardContent className="pb-4 px-5">
+              <div className="text-[26px] font-bold text-foreground leading-none tracking-tight">
+                {showSales
+                  ? formatCurrency(stats?.salesToday || 0)
+                  : "••••••"}
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-card border-border/60 shadow-lg transition-all duration-300 group relative overflow-hidden hover:border-primary/50 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.25)]">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">QUANTIDADE DE VENDAS</CardTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setShowQty(!showQty)}
-            >
-              {showQty ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-            </Button>
-          </CardHeader>
-          <CardContent className="pb-4">
-            <div className="text-xl font-bold text-foreground mb-0.5">{showQty ? stats?.salesApproved || 0 : "••••"}</div>
-          </CardContent>
-        </Card>
+          <Card className="bg-card border-border/60 shadow-sm transition-all duration-300 group relative overflow-hidden hover:border-border">
+            <CardHeader className="pb-1 pt-4 px-5">
+              <div className="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
+                QUANTIDADE DE VENDAS
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-3.5 h-3.5 opacity-60 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Número total de pedidos com pagamento confirmado.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </CardHeader>
+            <CardContent className="pb-4 px-5">
+              <div className="text-[26px] font-bold text-foreground leading-none tracking-tight">
+                {showQty ? stats?.salesApproved || 0 : "••••"}
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-card border-border/60 shadow-lg transition-all duration-300 group relative overflow-hidden hover:border-primary/50 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.25)]">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground tracking-wider">TAXA DE CONVERSÃO</CardTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setShowConversion(!showConversion)}
-            >
-              {showConversion ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-            </Button>
-          </CardHeader>
-          <CardContent className="pb-4">
-            <div className="text-xl font-bold text-foreground mb-0.5">
-              {showConversion ? `${(stats?.conversionRate || 0).toFixed(2)}%` : "••••"}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="bg-card border-border/60 shadow-sm transition-all duration-300 group relative overflow-hidden hover:border-border">
+            <CardHeader className="pb-1 pt-4 px-5">
+              <div className="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
+                TAXA DE CONVERSÃO
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-3.5 h-3.5 opacity-60 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Percentual de visitantes que finalizaram uma compra.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </CardHeader>
+            <CardContent className="pb-4 px-5">
+              <div className="text-[26px] font-bold text-foreground leading-none tracking-tight">
+                {showConversion ? `${(stats?.conversionRate || 0).toFixed(2)}%` : "••••"}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </TooltipProvider>
 
       <Card className="bg-card border-border/60 shadow-lg">
         <CardHeader className="border-b border-border/50 pb-4">
@@ -365,7 +381,7 @@ export default function Dashboard() {
                     }}
                     dx={-10}
                   />
-                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#a855f7", strokeWidth: 1 }} />
+                  <ChartTooltip content={<CustomTooltip />} cursor={{ stroke: "#a855f7", strokeWidth: 1 }} />
                   <Area
                     type="monotone"
                     dataKey="sales"

@@ -57,12 +57,12 @@ export function SalesBadges() {
                     />
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-zinc-900 border-zinc-700 text-xs">
-                  <span className={unlocked ? "text-white font-semibold" : "text-zinc-500"}>
+                <TooltipContent side="bottom" className="bg-muted border-border text-xs">
+                  <span className={unlocked ? "text-white font-semibold" : "text-muted-foreground"}>
                     {badge.label}
                   </span>
                   {!unlocked && (
-                    <span className="text-zinc-600 ml-1">— {badge.threshold - totalSales} em falta</span>
+                    <span className="text-muted-foreground ml-1">— {badge.threshold - totalSales} em falta</span>
                   )}
                   {unlocked && <span className="text-emerald-400 ml-1">✓ Desbloqueado</span>}
                 </TooltipContent>
@@ -70,7 +70,7 @@ export function SalesBadges() {
             );
           })}
         </div>
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-muted-foreground">
           {unlockedCount}/{BADGES.length} selos · {totalSales} venda{totalSales !== 1 ? "s" : ""}
         </p>
       </div>

@@ -128,7 +128,7 @@ export default function Help() {
                 </div>
               
                 <div className="flex flex-1 flex-col gap-1.5">
-                  <h2 className="text-base font-semibold text-white/80 transition-colors duration-200 group-hover:text-white">{topic.title}</h2>
+                  <h2 className="text-base font-semibold text-foreground/80 transition-colors duration-200 group-hover:text-foreground">{topic.title}</h2>
                   <p className="text-sm leading-relaxed text-white/40">{topic.description}</p>
                 </div>
               
@@ -145,8 +145,8 @@ export default function Help() {
         {/* Contact Section */}
         <section className="mt-20 border-t border-white/10 pt-12">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-2xl font-bold text-white mb-2">Não encontrou o que procurava?</h2>
-            <p className="text-sm text-white/50 md:text-base mb-8">
+            <h2 className="text-2xl font-bold text-foreground mb-2">Não encontrou o que procurava?</h2>
+            <p className="text-sm text-foreground/50 md:text-base mb-8">
               Fale direto com nosso time de suporte. Estamos aqui para ajudar!
             </p>
             
@@ -167,22 +167,22 @@ export default function Help() {
                 Enviar email
               </Button>
             </div>
-            <p className="mt-4 text-xs text-white/30">suporte@meteorfy.com</p>
+            <p className="mt-4 text-xs text-foreground/30">suporte@meteorfy.com</p>
           </div>
         </section>
 
         {/* Quick Contact Form */}
         <section className="mt-16 max-w-2xl mx-auto">
-          <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+          <Card className="bg-card border-border/60 shadow-lg">
             <div className="p-6">
-              <h3 className="text-lg font-bold text-white mb-2">Envie uma mensagem</h3>
-              <p className="text-sm text-zinc-500 mb-4">Descreva sua dúvida e nossa equipe entrará em contato.</p>
+              <h3 className="text-lg font-bold text-foreground mb-2">Envie uma mensagem</h3>
+              <p className="text-sm text-muted-foreground mb-4">Descreva sua dúvida e nossa equipe entrará em contato.</p>
               
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-zinc-200">Sua mensagem</label>
                   <textarea 
-                    className="w-full bg-black/40 border border-zinc-800 rounded-md p-3 min-h-[120px] text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-zinc-600 resize-none"
+                    className="w-full bg-black/40 border border-border rounded-md p-3 min-h-[120px] text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-muted-foreground resize-none"
                     placeholder="Descreva sua dúvida ou problema..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}

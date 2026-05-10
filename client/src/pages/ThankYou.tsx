@@ -70,7 +70,7 @@ export default function ThankYou() {
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Clock className="w-8 h-8 text-zinc-400" />
+              <Clock className="w-8 h-8 text-muted-foreground" />
             </div>
             <h2 className="text-2xl font-bold text-foreground mb-2">Compra em Processamento</h2>
             <p className="text-muted-foreground mb-6">

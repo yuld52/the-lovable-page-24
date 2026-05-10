@@ -128,7 +128,7 @@ export default function AdminRulesFees() {
                 variant="outline"
                 size="sm"
                 onClick={() => refetch()}
-                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 gap-1.5"
+                className="border-border text-foreground/80 hover:bg-accent gap-1.5"
               >
                 <RefreshCw className="w-3.5 h-3.5" /> Atualizar
               </Button>
@@ -149,7 +149,7 @@ export default function AdminRulesFees() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             {/* Taxa da plataforma */}
-            <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+            <Card className="bg-card border-border/60 shadow-lg">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center border border-red-500/20">
@@ -157,7 +157,7 @@ export default function AdminRulesFees() {
                   </div>
                   <div>
                     <CardTitle className="text-base text-white">Taxa da Plataforma</CardTitle>
-                    <CardDescription className="text-xs text-zinc-500">
+                    <CardDescription className="text-xs text-muted-foreground">
                       Percentual cobrado sobre cada venda
                     </CardDescription>
                   </div>
@@ -165,7 +165,7 @@ export default function AdminRulesFees() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     Taxa (%)
                   </label>
                   <div className="relative">
@@ -176,21 +176,21 @@ export default function AdminRulesFees() {
                       step="0.1"
                       value={form.platformFeePercent}
                       onChange={set("platformFeePercent")}
-                      className="bg-zinc-900/50 border-zinc-800 pr-10"
+                      className="bg-muted/50 border-border pr-10"
                       placeholder="Ex: 5"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm font-bold">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-bold">
                       %
                     </span>
                   </div>
-                  <p className="text-[11px] text-zinc-600">
+                  <p className="text-[11px] text-muted-foreground">
                     Ex: 5 = 5% de cada venda aprovada
                   </p>
                 </div>
 
-                <div className="bg-zinc-900/40 rounded-xl p-3 border border-zinc-800/50">
-                  <p className="text-xs text-zinc-400 flex items-start gap-2">
-                    <Info className="w-3.5 h-3.5 text-zinc-500 mt-0.5 shrink-0" />
+                <div className="bg-muted/40 rounded-xl p-3 border border-border/50">
+                  <p className="text-xs text-muted-foreground flex items-start gap-2">
+                    <Info className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
                     Esta taxa é exibida para os usuários na página de Regras & Taxas do financeiro. O desconto automático depende da implementação no fluxo de saque.
                   </p>
                 </div>
@@ -198,7 +198,7 @@ export default function AdminRulesFees() {
             </Card>
 
             {/* Saque mínimo */}
-            <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+            <Card className="bg-card border-border/60 shadow-lg">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
@@ -206,7 +206,7 @@ export default function AdminRulesFees() {
                   </div>
                   <div>
                     <CardTitle className="text-base text-white">Regras de Saque</CardTitle>
-                    <CardDescription className="text-xs text-zinc-500">
+                    <CardDescription className="text-xs text-muted-foreground">
                       Limites e prazos de saque
                     </CardDescription>
                   </div>
@@ -214,11 +214,11 @@ export default function AdminRulesFees() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     Valor Mínimo de Saque (USD)
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm font-bold">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-bold">
                       $
                     </span>
                     <Input
@@ -227,14 +227,14 @@ export default function AdminRulesFees() {
                       step="0.01"
                       value={form.minWithdrawalAmount}
                       onChange={set("minWithdrawalAmount")}
-                      className="bg-zinc-900/50 border-zinc-800 pl-7"
+                      className="bg-muted/50 border-border pl-7"
                       placeholder="Ex: 10.00"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                     <Clock className="w-3.5 h-3.5" />
                     Prazo de Processamento (dias úteis)
                   </label>
@@ -244,7 +244,7 @@ export default function AdminRulesFees() {
                     max="30"
                     value={form.withdrawalProcessingDays}
                     onChange={set("withdrawalProcessingDays")}
-                    className="bg-zinc-900/50 border-zinc-800"
+                    className="bg-muted/50 border-border"
                     placeholder="Ex: 3"
                   />
                 </div>
@@ -254,7 +254,7 @@ export default function AdminRulesFees() {
 
           <div className="grid grid-cols-1 gap-6">
             {/* Países permitidos */}
-            <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+            <Card className="bg-card border-border/60 shadow-lg">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
@@ -262,7 +262,7 @@ export default function AdminRulesFees() {
                   </div>
                   <div>
                     <CardTitle className="text-base text-white">Países Permitidos</CardTitle>
-                    <CardDescription className="text-xs text-zinc-500">
+                    <CardDescription className="text-xs text-muted-foreground">
                       Lista de países onde a plataforma opera
                     </CardDescription>
                   </div>
@@ -270,16 +270,16 @@ export default function AdminRulesFees() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     Países (separados por vírgula)
                   </label>
                   <Input
                     value={form.allowedCountries}
                     onChange={set("allowedCountries")}
-                    className="bg-zinc-900/50 border-zinc-800"
+                    className="bg-muted/50 border-border"
                     placeholder="Ex: Brasil, Moçambique, Portugal, Angola"
                   />
-                  <p className="text-[11px] text-zinc-600">
+                  <p className="text-[11px] text-muted-foreground">
                     Deixe em branco para permitir todos os países.
                   </p>
                 </div>
@@ -287,7 +287,7 @@ export default function AdminRulesFees() {
             </Card>
 
             {/* Observações sobre taxas */}
-            <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+            <Card className="bg-card border-border/60 shadow-lg">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
@@ -295,7 +295,7 @@ export default function AdminRulesFees() {
                   </div>
                   <div>
                     <CardTitle className="text-base text-white">Observações sobre Taxas</CardTitle>
-                    <CardDescription className="text-xs text-zinc-500">
+                    <CardDescription className="text-xs text-muted-foreground">
                       Texto exibido aos usuários na seção de taxas
                     </CardDescription>
                   </div>
@@ -305,14 +305,14 @@ export default function AdminRulesFees() {
                 <Textarea
                   value={form.feeNotes}
                   onChange={set("feeNotes")}
-                  className="bg-zinc-900/50 border-zinc-800 min-h-[100px] resize-none"
+                  className="bg-muted/50 border-border min-h-[100px] resize-none"
                   placeholder="Ex: As taxas do PayPal são descontadas automaticamente. A taxa da plataforma é de X% por venda aprovada..."
                 />
               </CardContent>
             </Card>
 
             {/* Termos de uso */}
-            <Card className="bg-[#18181b] border-zinc-800/60 shadow-lg">
+            <Card className="bg-card border-border/60 shadow-lg">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
@@ -320,7 +320,7 @@ export default function AdminRulesFees() {
                   </div>
                   <div>
                     <CardTitle className="text-base text-white">Termos de Uso</CardTitle>
-                    <CardDescription className="text-xs text-zinc-500">
+                    <CardDescription className="text-xs text-muted-foreground">
                       Regras gerais da plataforma exibidas aos usuários
                     </CardDescription>
                   </div>
@@ -330,7 +330,7 @@ export default function AdminRulesFees() {
                 <Textarea
                   value={form.termsOfService}
                   onChange={set("termsOfService")}
-                  className="bg-zinc-900/50 border-zinc-800 min-h-[180px] resize-none"
+                  className="bg-muted/50 border-border min-h-[180px] resize-none"
                   placeholder="Escreva aqui as regras e termos de uso da plataforma que serão exibidos aos usuários..."
                 />
               </CardContent>

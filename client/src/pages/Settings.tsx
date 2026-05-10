@@ -218,7 +218,7 @@ export default function Settings() {
               <button
                 key={integration.id}
                 onClick={() => openModal(integration)}
-                className="relative flex flex-col items-center gap-5 p-10 rounded-2xl bg-[#18181b] border border-zinc-800/60 hover:border-purple-500/50 hover:bg-[#1e1e24] transition-all duration-200 text-center group shadow-lg"
+                className="relative flex flex-col items-center gap-5 p-10 rounded-2xl bg-card border border-border/60 hover:border-purple-500/50 hover:bg-[#1e1e24] transition-all duration-200 text-center group shadow-lg"
               >
                 {isConfigured && (
                   <span className="absolute top-4 right-4">
@@ -227,8 +227,8 @@ export default function Settings() {
                 )}
                 <IntegrationIcon integration={integration} />
                 <div>
-                  <p className="font-semibold text-white text-base leading-tight">{integration.name}</p>
-                  <p className="text-sm text-zinc-400 mt-1.5 leading-tight">{integration.description}</p>
+                  <p className="font-semibold text-foreground text-base leading-tight">{integration.name}</p>
+                  <p className="text-sm text-muted-foreground mt-1.5 leading-tight">{integration.description}</p>
                 </div>
               </button>
             );
@@ -238,13 +238,13 @@ export default function Settings() {
 
       {activeIntegration && (
         <Dialog open={!!activeIntegration} onOpenChange={(open) => { if (!open) closeModal(); }}>
-          <DialogContent className="bg-[#18181b] border border-zinc-800 text-white max-w-md">
+          <DialogContent className="bg-card border border-border text-foreground max-w-md">
             <DialogHeader>
               <div className="flex items-center gap-3 mb-1">
                 <IntegrationIcon integration={activeIntegration} />
                 <div>
-                  <DialogTitle className="text-white text-lg">{activeIntegration.name}</DialogTitle>
-                  <p className="text-xs text-zinc-400">{activeIntegration.description}</p>
+                  <DialogTitle className="text-foreground text-lg">{activeIntegration.name}</DialogTitle>
+                  <p className="text-xs text-muted-foreground">{activeIntegration.description}</p>
                 </div>
               </div>
             </DialogHeader>
@@ -252,7 +252,7 @@ export default function Settings() {
             <div className="space-y-4 mt-2">
               {activeIntegration.fields.map((field) => (
                 <div key={field.key} className="space-y-1.5">
-                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     {field.label}
                   </label>
                   <Input
@@ -262,18 +262,18 @@ export default function Settings() {
                       setModalSettings((prev) => ({ ...prev, [field.key]: e.target.value }))
                     }
                     placeholder={field.placeholder}
-                    className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600 focus:border-purple-500"
+                    className="bg-muted border-border text-foreground placeholder:text-muted-foreground focus:border-purple-500"
                   />
                   {field.hint && (
-                    <p className="text-xs text-zinc-500">{field.hint}</p>
+                    <p className="text-xs text-muted-foreground">{field.hint}</p>
                   )}
                 </div>
               ))}
 
               {/* Webhook-specific: event selection */}
               {activeIntegration.id === "webhook" && (
-                <div className="border-t border-zinc-800 pt-3">
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
+                <div className="border-t border-border pt-3">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
                     Eventos a receber
                   </p>
                   <div className="space-y-1">
@@ -285,7 +285,7 @@ export default function Settings() {
                           className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md border cursor-pointer transition-colors ${
                             selected
                               ? "border-purple-500/40 bg-purple-500/5"
-                              : "border-zinc-800 hover:border-zinc-700"
+                              : "border-border hover:border-border"
                           }`}
                           onClick={() => toggleEvent(evt.id)}
                         >
@@ -294,8 +294,8 @@ export default function Settings() {
                             onCheckedChange={() => toggleEvent(evt.id)}
                             className="border-zinc-600 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600 shrink-0"
                           />
-                          <span className="text-sm text-white flex-1">{evt.label}</span>
-                          <code className="text-[10px] text-zinc-500 font-mono">{evt.id}</code>
+                          <span className="text-sm text-foreground flex-1">{evt.label}</span>
+                          <code className="text-[10px] text-muted-foreground font-mono">{evt.id}</code>
                         </label>
                       );
                     })}
@@ -312,13 +312,13 @@ export default function Settings() {
             <div className="flex gap-3 mt-4">
               <Button
                 variant="ghost"
-                className="flex-1 text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-600"
+                className="flex-1 text-muted-foreground hover:text-foreground border border-border hover:border-border"
                 onClick={closeModal}
               >
                 Cancelar
               </Button>
               <Button
-                className="flex-1 bg-purple-600 hover:bg-purple-500 text-white"
+                className="flex-1 bg-purple-600 hover:bg-purple-500 text-foreground"
                 onClick={handleModalSave}
                 disabled={updateSettings.isPending}
               >
