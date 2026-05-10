@@ -135,19 +135,28 @@ export async function sendWebhookNotification(
 
 // ─── UTMIFY ───────────────────────────────────────────────────────────────────
 
+// Currencies accepted by UTMify — anything else falls back to USD
+const UTMIFY_SUPPORTED_CURRENCIES = new Set(["BRL", "USD", "EUR", "GBP", "ARS", "CAD"]);
+
+// Payment methods accepted by UTMify
+const UTMIFY_PAYMENT_METHODS = new Set(["paypal", "credit_card", "pix", "boleto", "free_price"]);
+
 export type UtmifyOrderParams = {
   token: string;
   orderId: string;
   status: "waiting_payment" | "paid" | "refused" | "refunded" | "chargedback";
-  paymentMethod: "paypal" | "credit_card" | "pix" | "boleto" | "free_price";
+  paymentMethod: string; // will be normalised internally
   createdAt: Date;
   approvedAt?: Date | null;
   refundedAt?: Date | null;
   currency: string;
   totalAmountMinor: number;
-  customer: { name?: string | null; email?: string | null; phone?: string | null; document?: string | null };
+  totalUsdMinor?: number; // used as fallback when currency is not supported by UTMify
+  customer: { name?: string | null; email?: string | null; phone?: string | null; document?: string | null; country?: string | null; ip?: string | null };
   products: Array<{ id: string | number; name: string; priceInCents: number; quantity?: number }>;
   tracking: {
+    src?: string | null;
+    sck?: string | null;
     utmSource?: string | null;
     utmMedium?: string | null;
     utmCampaign?: string | null;
@@ -158,12 +167,24 @@ export type UtmifyOrderParams = {
 };
 
 export async function sendUtmifyOrder(params: UtmifyOrderParams): Promise<void> {
-  const { token, orderId, status, paymentMethod, createdAt, approvedAt, refundedAt,
-    currency, totalAmountMinor, customer, products, tracking, isTest } = params;
+  const { token, orderId, status, createdAt, approvedAt, refundedAt,
+    currency, totalAmountMinor, totalUsdMinor, customer, products, tracking, isTest } = params;
 
-  const gatewayFee = Math.round(totalAmountMinor * 0.039 + 30);
-  const userCommission = Math.max(1, totalAmountMinor - gatewayFee);
+  // Normalise payment method — mpesa/emola → pix (closest UTMify equivalent)
+  const rawMethod = (params.paymentMethod || "pix").toLowerCase();
+  const paymentMethod = UTMIFY_PAYMENT_METHODS.has(rawMethod)
+    ? rawMethod as "paypal" | "credit_card" | "pix" | "boleto" | "free_price"
+    : "pix";
+
+  // Normalise currency — fall back to USD if UTMify doesn't support it
   const cur = (currency || "USD").toUpperCase();
+  const utmifyCurrency = UTMIFY_SUPPORTED_CURRENCIES.has(cur) ? cur : "USD";
+  const utmifyAmount = UTMIFY_SUPPORTED_CURRENCIES.has(cur)
+    ? totalAmountMinor
+    : (totalUsdMinor ?? totalAmountMinor);
+
+  const gatewayFee = Math.round(utmifyAmount * 0.039 + 30);
+  const userCommission = Math.max(1, utmifyAmount - gatewayFee);
 
   const payload = {
     orderId: String(orderId),
@@ -178,6 +199,8 @@ export async function sendUtmifyOrder(params: UtmifyOrderParams): Promise<void> 
       email: customer.email || "",
       phone: customer.phone || null,
       document: customer.document || null,
+      ...(customer.country ? { country: customer.country } : {}),
+      ...(customer.ip ? { ip: customer.ip } : {}),
     },
     products: products.map(p => ({
       id: String(p.id),
@@ -185,11 +208,11 @@ export async function sendUtmifyOrder(params: UtmifyOrderParams): Promise<void> 
       planId: null,
       planName: null,
       quantity: p.quantity ?? 1,
-      priceInCents: p.priceInCents,
+      priceInCents: UTMIFY_SUPPORTED_CURRENCIES.has(cur) ? p.priceInCents : Math.round(p.priceInCents * (utmifyAmount / (totalAmountMinor || 1))),
     })),
     trackingParameters: {
-      src: null,
-      sck: null,
+      src: tracking.src || null,
+      sck: tracking.sck || null,
       utm_source: tracking.utmSource || null,
       utm_campaign: tracking.utmCampaign || null,
       utm_medium: tracking.utmMedium || null,
@@ -197,10 +220,10 @@ export async function sendUtmifyOrder(params: UtmifyOrderParams): Promise<void> 
       utm_term: tracking.utmTerm || null,
     },
     commission: {
-      totalPriceInCents: totalAmountMinor,
+      totalPriceInCents: utmifyAmount,
       gatewayFeeInCents: gatewayFee,
       userCommissionInCents: userCommission,
-      ...(cur !== "BRL" ? { currency: cur } : {}),
+      ...(utmifyCurrency !== "BRL" ? { currency: utmifyCurrency } : {}),
     },
     isTest: isTest === true,
   };

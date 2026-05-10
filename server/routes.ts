@@ -735,6 +735,33 @@ export async function registerRoutes(
                 metadata: { amount: ((row.amount || 0) / 100).toFixed(2), currency: "MZN", productName: row.product_name || "" },
               }).catch(() => {});
             }).catch(() => {});
+
+            // UTMify — paid (e2payments async callback)
+            storage.getSettings(String(row.owner_id)).then((s: any) => {
+              if (!s?.utmfyToken || s?.utmfyEnabled === false) return;
+              import("./tracking").then(({ sendUtmifyOrder }) => sendUtmifyOrder({
+                token: s.utmfyToken,
+                orderId: String(saleId),
+                status: "paid",
+                paymentMethod: row.payment_method || "mpesa",
+                createdAt: row.created_at ? new Date(row.created_at) : new Date(),
+                approvedAt: new Date(),
+                refundedAt: null,
+                currency: "MZN",
+                totalAmountMinor: row.amount || 0,
+                totalUsdMinor: row.amount || 0,
+                customer: { email: row.customer_email || null },
+                products: [{ id: row.product_id || saleId, name: row.product_name || "Produto", priceInCents: row.amount || 0 }],
+                tracking: {
+                  utmSource: row.utm_source || null,
+                  utmMedium: row.utm_medium || null,
+                  utmCampaign: row.utm_campaign || null,
+                  utmContent: row.utm_content || null,
+                  utmTerm: row.utm_term || null,
+                },
+                isTest: false,
+              })).catch((e: any) => console.error("[UTMIFY] callback paid error:", e));
+            }).catch(() => {});
           }
         }
       } finally { conn.release(); }
@@ -749,7 +776,8 @@ export async function registerRoutes(
   // Mobile payment (M-Pesa / e-Mola) — real STK push via e2payments if configured
   app.post("/api/sales/mobile", async (req, res) => {
     try {
-      const { checkoutId, productId, currency, totalUsdCents, totalMinor, paymentMethod, mobilePhone, customerData } = req.body;
+      const { checkoutId, productId, currency, totalUsdCents, totalMinor, paymentMethod, mobilePhone, customerData,
+        utmSource, utmMedium, utmCampaign, utmContent, utmTerm } = req.body;
       if (!checkoutId || !productId || !paymentMethod || !mobilePhone) {
         return res.status(400).json({ message: "Dados incompletos" });
       }
@@ -782,6 +810,11 @@ export async function registerRoutes(
           status: "pending",
           customerEmail: customerData?.email || null,
           paymentMethod,
+          utmSource: utmSource || null,
+          utmMedium: utmMedium || null,
+          utmCampaign: utmCampaign || null,
+          utmContent: utmContent || null,
+          utmTerm: utmTerm || null,
         });
 
         const reference = makeReference(sale.id);
@@ -816,6 +849,29 @@ export async function registerRoutes(
 
         const phoneLocal = normalizeMzPhone(mobilePhone);
 
+        const mobileTrackingCommon = { utmSource: utmSource || null, utmMedium: utmMedium || null, utmCampaign: utmCampaign || null, utmContent: utmContent || null, utmTerm: utmTerm || null };
+        const clientIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket?.remoteAddress || null;
+
+        // UTMify — waiting_payment (fire-and-forget)
+        if (sellerSettings?.utmfyToken && sellerSettings?.utmfyEnabled !== false) {
+          import("./tracking").then(({ sendUtmifyOrder }) => sendUtmifyOrder({
+            token: sellerSettings.utmfyToken,
+            orderId: String(sale.id),
+            status: "waiting_payment",
+            paymentMethod,
+            createdAt: new Date(),
+            approvedAt: null,
+            refundedAt: null,
+            currency: currency || "MZN",
+            totalAmountMinor: totalMinor || totalUsdCents || 0,
+            totalUsdMinor: totalUsdCents || 0,
+            customer: { name: customerData?.name || null, email: customerData?.email || null, phone: mobilePhone || null, ip: clientIp },
+            products: [{ id: product.id, name: product.name, priceInCents: totalMinor || totalUsdCents || 0 }],
+            tracking: mobileTrackingCommon,
+            isTest: false,
+          })).catch((e: any) => console.error("[UTMIFY] mobile waiting_payment error:", e));
+        }
+
         // Fire e2payments call asynchronously — respond to client immediately
         setImmediate(async () => {
           try {
@@ -840,6 +896,25 @@ export async function registerRoutes(
               const amtDisplay = `${methodLabel(paymentMethod)} ${(amountMznMajor).toFixed(2)} MZN`;
               sendSaleEmails({ ...sale, status: "paid" }, product, amtDisplay, methodLabel(paymentMethod))
                 .catch((e: any) => console.error("[EMAIL] e2pay sale emails:", e?.message));
+              // UTMify — paid
+              if (sellerSettings?.utmfyToken && sellerSettings?.utmfyEnabled !== false) {
+                import("./tracking").then(({ sendUtmifyOrder }) => sendUtmifyOrder({
+                  token: sellerSettings.utmfyToken,
+                  orderId: String(sale.id),
+                  status: "paid",
+                  paymentMethod,
+                  createdAt: sale.createdAt ? new Date(sale.createdAt) : new Date(),
+                  approvedAt: new Date(),
+                  refundedAt: null,
+                  currency: currency || "MZN",
+                  totalAmountMinor: totalMinor || totalUsdCents || 0,
+                  totalUsdMinor: totalUsdCents || 0,
+                  customer: { name: customerData?.name || null, email: customerData?.email || null, phone: mobilePhone || null, ip: clientIp },
+                  products: [{ id: product.id, name: product.name, priceInCents: totalMinor || totalUsdCents || 0 }],
+                  tracking: mobileTrackingCommon,
+                  isTest: false,
+                })).catch((e: any) => console.error("[UTMIFY] mobile paid error:", e));
+              }
               // Push notification to seller
               if (checkout.ownerId) {
                 import("./services/notification").then(({ sendNotification }) => {
@@ -880,6 +955,11 @@ export async function registerRoutes(
           status: "paid",
           customerEmail: customerData?.email || null,
           paymentMethod,
+          utmSource: utmSource || null,
+          utmMedium: utmMedium || null,
+          utmCampaign: utmCampaign || null,
+          utmContent: utmContent || null,
+          utmTerm: utmTerm || null,
         });
 
         console.log(`[MOBILE PAYMENT] ${paymentMethod.toUpperCase()} sale created (no e2payments) — id=${sale.id}, phone=${mobilePhone}, amount=${totalMinor} ${currency}`);
@@ -888,6 +968,27 @@ export async function registerRoutes(
         const fallbackAmt = `${methodLabel(paymentMethod)} ${(totalUsdCents / 100).toFixed(2)} MZN`;
         sendSaleEmails(sale, product, fallbackAmt, methodLabel(paymentMethod))
           .catch((e: any) => console.error("[EMAIL] fallback sale emails:", e?.message));
+
+        // UTMify — paid (fallback flow)
+        if (sellerSettings?.utmfyToken && sellerSettings?.utmfyEnabled !== false) {
+          const fallbackClientIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket?.remoteAddress || null;
+          import("./tracking").then(({ sendUtmifyOrder }) => sendUtmifyOrder({
+            token: sellerSettings.utmfyToken,
+            orderId: String(sale.id),
+            status: "paid",
+            paymentMethod,
+            createdAt: new Date(),
+            approvedAt: new Date(),
+            refundedAt: null,
+            currency: currency || "MZN",
+            totalAmountMinor: totalMinor || totalUsdCents || 0,
+            totalUsdMinor: totalUsdCents || 0,
+            customer: { name: customerData?.name || null, email: customerData?.email || null, phone: mobilePhone || null, ip: fallbackClientIp },
+            products: [{ id: product.id, name: product.name, priceInCents: totalMinor || totalUsdCents || 0 }],
+            tracking: { utmSource: utmSource || null, utmMedium: utmMedium || null, utmCampaign: utmCampaign || null, utmContent: utmContent || null, utmTerm: utmTerm || null },
+            isTest: false,
+          })).catch((e: any) => console.error("[UTMIFY] mobile fallback paid error:", e));
+        }
 
         if (checkout.ownerId) {
           import("./services/notification").then(({ sendNotification }) => {
