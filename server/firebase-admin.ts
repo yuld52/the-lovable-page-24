@@ -22,9 +22,11 @@ function parsePrivateKey(raw: string): string {
 }
 
 // Get credentials from environment - needed for Firestore operations
+// FIREBASE_SERVICE_ACCOUNT_EMAIL takes priority (Replit secret with real service account)
+// Fall back to FIREBASE_CLIENT_EMAIL if only that is set
 let credential: any = undefined;
 const privateKeyRaw = process.env.FIREBASE_PRIVATE_KEY;
-const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+const clientEmail = process.env.FIREBASE_SERVICE_ACCOUNT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL;
 
 if (privateKeyRaw && clientEmail) {
   try {
