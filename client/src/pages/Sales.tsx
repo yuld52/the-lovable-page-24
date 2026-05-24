@@ -149,9 +149,10 @@ export default function Sales() {
     const rows = filteredSales.map((sale) => {
       const product = products?.find((p) => p.id === sale.productId);
       const method = (sale as any).paymentMethod || (sale.paypalOrderId ? "paypal" : "—");
-      const pdfCurrency = (sale as any).paypalCurrency || product?.currency || "USD";
+      const pdfCurrency = sale.saleCurrency || (sale as any).paypalCurrency || product?.currency || "USD";
       const pdfLocale = pdfCurrency === "MZN" ? "pt-MZ" : pdfCurrency === "BRL" ? "pt-BR" : "en-US";
-      const pdfAmount = new Intl.NumberFormat(pdfLocale, { style: "currency", currency: pdfCurrency }).format((sale.amount || 0) / 100);
+      const pdfMinor = sale.saleAmountMinor ?? (sale as any).paypalAmountMinor ?? sale.amount;
+      const pdfAmount = new Intl.NumberFormat(pdfLocale, { style: "currency", currency: pdfCurrency }).format((pdfMinor || 0) / 100);
       return [
         sale.paypalOrderId ? `#${sale.paypalOrderId.slice(-8)}` : `#${String(sale.id).padStart(8, "0")}`,
         product?.name || "Produto Removido",
@@ -297,9 +298,10 @@ export default function Sales() {
                   const saleId = sale.paypalOrderId
                     ? `#${sale.paypalOrderId.slice(-8)}`
                     : `#${String(sale.id).padStart(8, "0")}`;
-                  const saleCurrency = (sale as any).paypalCurrency || product?.currency || "USD";
+                  const saleCurrency = sale.saleCurrency || (sale as any).paypalCurrency || product?.currency || "USD";
                   const saleLocale = saleCurrency === "MZN" ? "pt-MZ" : saleCurrency === "BRL" ? "pt-BR" : "en-US";
-                  const amountUsd = new Intl.NumberFormat(saleLocale, { style: "currency", currency: saleCurrency }).format((sale.amount || 0) / 100);
+                  const saleMinor = sale.saleAmountMinor ?? (sale as any).paypalAmountMinor ?? sale.amount;
+                  const amountDisplay = new Intl.NumberFormat(saleLocale, { style: "currency", currency: saleCurrency }).format((saleMinor || 0) / 100);
 
                   return (
                     <tr key={sale.id} className="hover:bg-accent/20 transition-colors group">
@@ -334,7 +336,7 @@ export default function Sales() {
 
                       {/* Valor */}
                       <td className="px-6 py-4">
-                        <span className="text-sm font-bold text-foreground">{amountUsd}</span>
+                        <span className="text-sm font-bold text-foreground">{amountDisplay}</span>
                       </td>
 
                       {/* Método */}

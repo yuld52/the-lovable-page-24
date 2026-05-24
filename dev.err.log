@@ -1,0 +1,287 @@
+(node:15312) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:24156) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+(node:20776) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+(node:22696) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+(node:16564) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+(node:22880) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:14996) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Error getting revenue ranking: error: invalid input syntax for type integer: "63.555117"
+    at bn.parseErrorMessage (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:955:41)
+    at bn.handlePacket (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:923:75)
+    at bn.parse (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:911:36)
+    at S.<anonymous> (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:962:16)
+    at S.emit (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:317:79)
+    at WebSocket.<anonymous> (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:403:19)
+    at callListener (E:\plataforma\bttffg\node_modules\ws\lib\event-target.js:290:14)
+    at WebSocket.onMessage (E:\plataforma\bttffg\node_modules\ws\lib\event-target.js:209:9)
+    at WebSocket.emit (node:events:508:28)
+    at Receiver.receiverOnMessage (E:\plataforma\bttffg\node_modules\ws\lib\websocket.js:1225:20)
+    at Receiver.emit (node:events:508:28)
+    at Receiver.dataMessage (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:569:14)
+    at Receiver.getData (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:496:10)
+    at Receiver.startLoop (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:167:16)
+    at Receiver._write (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:94:10)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.socketOnData (E:\plataforma\bttffg\node_modules\ws\lib\websocket.js:1360:35)
+    at TLSSocket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:189:23) {
+  length: 152,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $1 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numutils.c',
+  line: '616',
+  routine: 'pg_strtoint32_safe'
+}
+Error getting revenue ranking: error: invalid input syntax for type integer: "63.555117"
+    at bn.parseErrorMessage (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:955:41)
+    at bn.handlePacket (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:923:75)
+    at bn.parse (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:911:36)
+    at S.<anonymous> (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:962:16)
+    at S.emit (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:317:79)
+    at WebSocket.<anonymous> (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:403:19)
+    at callListener (E:\plataforma\bttffg\node_modules\ws\lib\event-target.js:290:14)
+    at WebSocket.onMessage (E:\plataforma\bttffg\node_modules\ws\lib\event-target.js:209:9)
+    at WebSocket.emit (node:events:508:28)
+    at Receiver.receiverOnMessage (E:\plataforma\bttffg\node_modules\ws\lib\websocket.js:1225:20)
+    at Receiver.emit (node:events:508:28)
+    at Receiver.dataMessage (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:569:14)
+    at Receiver.getData (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:496:10)
+    at Receiver.startLoop (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:167:16)
+    at Receiver._write (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:94:10)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.socketOnData (E:\plataforma\bttffg\node_modules\ws\lib\websocket.js:1360:35)
+    at TLSSocket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:189:23) {
+  length: 152,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $1 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numutils.c',
+  line: '616',
+  routine: 'pg_strtoint32_safe'
+}
+Error getting revenue ranking: error: invalid input syntax for type integer: "63.555117"
+    at bn.parseErrorMessage (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:955:41)
+    at bn.handlePacket (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:923:75)
+    at bn.parse (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:911:36)
+    at S.<anonymous> (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:962:16)
+    at S.emit (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:317:79)
+    at WebSocket.<anonymous> (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:403:19)
+    at callListener (E:\plataforma\bttffg\node_modules\ws\lib\event-target.js:290:14)
+    at WebSocket.onMessage (E:\plataforma\bttffg\node_modules\ws\lib\event-target.js:209:9)
+    at WebSocket.emit (node:events:508:28)
+    at Receiver.receiverOnMessage (E:\plataforma\bttffg\node_modules\ws\lib\websocket.js:1225:20)
+    at Receiver.emit (node:events:508:28)
+    at Receiver.dataMessage (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:569:14)
+    at Receiver.getData (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:496:10)
+    at Receiver.startLoop (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:167:16)
+    at Receiver._write (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:94:10)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.socketOnData (E:\plataforma\bttffg\node_modules\ws\lib\websocket.js:1360:35)
+    at TLSSocket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:189:23) {
+  length: 152,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $1 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numutils.c',
+  line: '616',
+  routine: 'pg_strtoint32_safe'
+}
+Error getting revenue ranking: error: invalid input syntax for type integer: "63.555117"
+    at bn.parseErrorMessage (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:955:41)
+    at bn.handlePacket (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:923:75)
+    at bn.parse (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:911:36)
+    at S.<anonymous> (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:962:16)
+    at S.emit (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:317:79)
+    at WebSocket.<anonymous> (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:403:19)
+    at callListener (E:\plataforma\bttffg\node_modules\ws\lib\event-target.js:290:14)
+    at WebSocket.onMessage (E:\plataforma\bttffg\node_modules\ws\lib\event-target.js:209:9)
+    at WebSocket.emit (node:events:508:28)
+    at Receiver.receiverOnMessage (E:\plataforma\bttffg\node_modules\ws\lib\websocket.js:1225:20)
+    at Receiver.emit (node:events:508:28)
+    at Receiver.dataMessage (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:569:14)
+    at Receiver.getData (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:496:10)
+    at Receiver.startLoop (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:167:16)
+    at Receiver._write (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:94:10)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.socketOnData (E:\plataforma\bttffg\node_modules\ws\lib\websocket.js:1360:35)
+    at TLSSocket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:189:23) {
+  length: 152,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $1 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numutils.c',
+  line: '616',
+  routine: 'pg_strtoint32_safe'
+}
+Error getting revenue ranking: error: invalid input syntax for type integer: "63.555117"
+    at bn.parseErrorMessage (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:955:41)
+    at bn.handlePacket (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:923:75)
+    at bn.parse (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:911:36)
+    at S.<anonymous> (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:962:16)
+    at S.emit (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:317:79)
+    at WebSocket.<anonymous> (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:403:19)
+    at callListener (E:\plataforma\bttffg\node_modules\ws\lib\event-target.js:290:14)
+    at WebSocket.onMessage (E:\plataforma\bttffg\node_modules\ws\lib\event-target.js:209:9)
+    at WebSocket.emit (node:events:508:28)
+    at Receiver.receiverOnMessage (E:\plataforma\bttffg\node_modules\ws\lib\websocket.js:1225:20)
+    at Receiver.emit (node:events:508:28)
+    at Receiver.dataMessage (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:569:14)
+    at Receiver.getData (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:496:10)
+    at Receiver.startLoop (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:167:16)
+    at Receiver._write (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:94:10)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.socketOnData (E:\plataforma\bttffg\node_modules\ws\lib\websocket.js:1360:35)
+    at TLSSocket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:189:23) {
+  length: 152,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $1 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numutils.c',
+  line: '616',
+  routine: 'pg_strtoint32_safe'
+}
+Error getting revenue ranking: error: invalid input syntax for type integer: "63.555117"
+    at bn.parseErrorMessage (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:955:41)
+    at bn.handlePacket (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:923:75)
+    at bn.parse (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:911:36)
+    at S.<anonymous> (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:962:16)
+    at S.emit (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:317:79)
+    at WebSocket.<anonymous> (file:///E:/plataforma/bttffg/node_modules/@neondatabase/serverless/index.mjs:403:19)
+    at callListener (E:\plataforma\bttffg\node_modules\ws\lib\event-target.js:290:14)
+    at WebSocket.onMessage (E:\plataforma\bttffg\node_modules\ws\lib\event-target.js:209:9)
+    at WebSocket.emit (node:events:508:28)
+    at Receiver.receiverOnMessage (E:\plataforma\bttffg\node_modules\ws\lib\websocket.js:1225:20)
+    at Receiver.emit (node:events:508:28)
+    at Receiver.dataMessage (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:569:14)
+    at Receiver.getData (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:496:10)
+    at Receiver.startLoop (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:167:16)
+    at Receiver._write (E:\plataforma\bttffg\node_modules\ws\lib\receiver.js:94:10)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.socketOnData (E:\plataforma\bttffg\node_modules\ws\lib\websocket.js:1360:35)
+    at TLSSocket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:189:23) {
+  length: 152,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $1 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numutils.c',
+  line: '616',
+  routine: 'pg_strtoint32_safe'
+}

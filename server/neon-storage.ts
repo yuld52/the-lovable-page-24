@@ -21,14 +21,30 @@ let pool: Pool | null = null;
 export function getPool(): Pool {
   if (!pool) {
     const url = getDatabaseUrl();
-    pool = new Pool({ connectionString: url });
-    
+    if (!url) {
+      // Return a dummy pool that fails gracefully
+      console.warn("[STORAGE] No database URL configured — using dummy pool");
+      return createDummyPool();
+    }
+    pool = new Pool({ connectionString: url, max: 2 });
+
     pool.on('error', (err: Error) => {
-      console.error('Unexpected error on idle client', err);
-      pool = null; // reset so next call recreates the pool
+      console.warn('[STORAGE] Pool error (will reconnect):', err.message);
+      pool = null;
     });
   }
   return pool;
+}
+
+function createDummyPool(): Pool {
+  return {
+    connect: async () => {
+      throw new Error("Database not configured");
+    },
+    query: async () => ({ rows: [], rowCount: 0 }),
+    end: async () => {},
+    on: () => {},
+  } as any;
 }
 
 // Helper to convert snake_case to camelCase
@@ -70,14 +86,14 @@ export class NeonStorage {
         let query = `SELECT * FROM products`;
         const params: any[] = [];
         const conditions: string[] = [];
-        
-        if (status) {
-          conditions.push(`status = $${params.length + 1}`);
-          params.push(status);
-        }
+
         if (userId) {
           conditions.push(`owner_id = $${params.length + 1}`);
           params.push(userId);
+        }
+        if (status) {
+          conditions.push(`status = $${params.length + 1}`);
+          params.push(status);
         }
 
         if (conditions.length > 0) {
@@ -762,10 +778,12 @@ export class NeonStorage {
         await client.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS utm_campaign TEXT`).catch(() => {});
         await client.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS utm_content TEXT`).catch(() => {});
         await client.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS utm_term TEXT`).catch(() => {});
+        await client.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS sale_currency TEXT`).catch(() => {});
+        await client.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS sale_amount_minor INTEGER`).catch(() => {});
 
         const result = await client.query(`
-          INSERT INTO sales (checkout_id, product_id, user_id, amount, status, customer_email, paypal_order_id, paypal_currency, paypal_amount_minor, payment_method, utm_source, utm_medium, utm_campaign, utm_content, utm_term, created_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
+          INSERT INTO sales (checkout_id, product_id, user_id, amount, status, customer_email, paypal_order_id, paypal_currency, paypal_amount_minor, payment_method, utm_source, utm_medium, utm_campaign, utm_content, utm_term, sale_currency, sale_amount_minor, created_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
           RETURNING *
         `, [
           saleData.checkout_id || null,
@@ -783,6 +801,8 @@ export class NeonStorage {
           saleData.utm_campaign || null,
           saleData.utm_content || null,
           saleData.utm_term || null,
+          saleData.sale_currency || null,
+          saleData.sale_amount_minor ?? null,
         ]);
         
         return toCamelCase(result.rows[0]);

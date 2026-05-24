@@ -84,7 +84,14 @@ export default function Admin() {
       if (!pid) continue;
       if (!map[pid]) map[pid] = { productId: pid, salesCount: 0, revenue: 0 };
       map[pid].salesCount += 1;
-      map[pid].revenue += sale.amount ?? 0;
+      // Use saleAmountMinor if available (already in original currency), otherwise fallback to amount in MZN cents
+      const saleAmountMinor = sale.saleAmountMinor ?? sale.sale_amount_minor;
+      if (saleAmountMinor != null) {
+        map[pid].revenue += saleAmountMinor;
+      } else {
+        // Fallback: assume amount is in USD cents, convert to MZN cents (64 MZN per USD)
+        map[pid].revenue += (sale.amount ?? 0) * 64;
+      }
     }
     return Object.values(map)
       .sort((a, b) => b.salesCount - a.salesCount)

@@ -100,6 +100,7 @@ async function sendSaleEmails(sale: any, product: any, amountDisplay: string, pa
     const rawDeliveryFiles: string[] = product?.noEmailDelivery ? [] : (product?.deliveryFiles as string[] ?? []);
     sendBuyerConfirmation({
       to: sale.customerEmail,
+      name: sale.customerName || null,
       productName: product?.name || "Produto",
       amount: amountDisplay,
       orderId,
@@ -117,8 +118,10 @@ async function sendSaleEmails(sale: any, product: any, amountDisplay: string, pa
         const allSales = await storage.getSales(String(sale.userId)).catch(() => []);
         const paidSales = allSales.filter((s: any) => s.status === "paid" || s.status === "captured");
         const isFirstSale = paidSales.length === 1;
+        const sellerName = u.displayName || null;
         const emailOpts = {
           to: u.email,
+          name: sellerName,
           productName: product?.name || "Produto",
           amount: amountDisplay,
           buyerEmail: sale.customerEmail || "—",
@@ -490,7 +493,7 @@ export async function registerRoutes(
 
       // Block checkout creation for unapproved products
       if (req.body.productId) {
-        const product = await storage.getProduct(parseInt(req.body.productId), userId);
+        const product = await storage.getProduct(parseInt(req.body.productId));
         if (!product) return res.status(404).json({ message: "Produto não encontrado" });
         if (product.status !== "approved") {
           return res.status(403).json({ message: "Apenas produtos aprovados podem ter checkout. Aguarde a aprovação do seu produto." });
@@ -732,6 +735,7 @@ export async function registerRoutes(
           if (row.customer_email) {
             sendBuyerConfirmation({
               to: row.customer_email,
+              name: row.customer_name || null,
               productName: row.product_name || "",
               amount: `${(row.amount / 100).toFixed(2)}`,
               orderId: String(saleId),
@@ -828,6 +832,8 @@ export async function registerRoutes(
           utmCampaign: utmCampaign || null,
           utmContent: utmContent || null,
           utmTerm: utmTerm || null,
+          saleCurrency: currency || "MZN",
+          saleAmountMinor: totalMinor || totalUsdCents || 0,
         });
 
         const reference = makeReference(sale.id);
@@ -973,6 +979,8 @@ export async function registerRoutes(
           utmCampaign: utmCampaign || null,
           utmContent: utmContent || null,
           utmTerm: utmTerm || null,
+          saleCurrency: currency || "MZN",
+          saleAmountMinor: totalMinor || totalUsdCents || 0,
         });
 
         console.log(`[MOBILE PAYMENT] ${paymentMethod.toUpperCase()} sale created (no e2payments) — id=${sale.id}, phone=${mobilePhone}, amount=${totalMinor} ${currency}`);
@@ -1073,6 +1081,8 @@ export async function registerRoutes(
         utmCampaign: body.utmCampaign || null,
         utmContent: body.utmContent || null,
         utmTerm: body.utmTerm || null,
+        saleCurrency: paypalCurrency,
+        saleAmountMinor: paypalAmountMinor,
       });
 
       const isTest = (settings.environment || "production") === "sandbox";
@@ -1168,6 +1178,7 @@ export async function registerRoutes(
       if (sale.customerEmail) {
         sendBuyerConfirmation({
           to: sale.customerEmail,
+          name: sale.customerName || null,
           productName: emailProduct,
           amount: emailAmount,
           orderId: emailOrderId,
@@ -1184,9 +1195,11 @@ export async function registerRoutes(
             const allSales = await storage.getSales(String(sale.userId)).catch(() => []);
             const paidSales = allSales.filter((s: any) => s.status === "paid" || s.status === "captured");
             const isFirstSale = paidSales.length === 1;
+            const sellerName = u.displayName || null;
             if (isFirstSale) {
               sendFirstSale({
                 to: u.email,
+                name: sellerName,
                 productName: emailProduct,
                 amount: emailAmount,
                 buyerEmail: sale.customerEmail || "—",
@@ -1196,6 +1209,7 @@ export async function registerRoutes(
             } else {
               sendSellerNewSale({
                 to: u.email,
+                name: sellerName,
                 productName: emailProduct,
                 amount: emailAmount,
                 buyerEmail: sale.customerEmail || "—",
@@ -1462,6 +1476,7 @@ export async function registerRoutes(
           if (u.email) {
             sendWithdrawalReceived({
               to: u.email,
+              name: u.displayName || null,
               amount: fmtMzn(withdrawal.amount),
               method: methodLabel(withdrawal.pixKeyType || pixKeyType || ""),
               pixKey: withdrawal.pixKey || pixKey,
@@ -1549,10 +1564,12 @@ export async function registerRoutes(
       res.json(withdrawal);
       // ── Email: withdrawal approved (fire-and-forget) ──
       if (withdrawal?.userId) {
-        resolveUserEmail(String(withdrawal.userId)).then((email) => {
+        adminAuth.getUser(String(withdrawal.userId)).then((u) => {
+          const email = u.email;
           if (!email) { console.warn("[EMAIL] withdrawal approved: no email found for uid", withdrawal.userId); return; }
           sendWithdrawalUpdate({
             to: email,
+            name: u.displayName || null,
             status: "approved",
             amount: fmtMzn(withdrawal.amount),
             method: methodLabel(withdrawal.pixKeyType || ""),
@@ -1562,7 +1579,7 @@ export async function registerRoutes(
           })
             .then(() => console.log("[EMAIL] withdrawal approved sent to", email))
             .catch((e: any) => console.error("[EMAIL] withdrawal approved:", e?.message));
-        }).catch((e: any) => console.error("[EMAIL] resolveUserEmail (approve):", e?.message));
+        }).catch((e: any) => console.error("[EMAIL] getUser (approve):", e?.message));
       }
       // ─────────────────────────────────────────────────
     } catch (err: any) {
@@ -1581,10 +1598,12 @@ export async function registerRoutes(
       res.json(withdrawal);
       // ── Email: withdrawal rejected (fire-and-forget) ──
       if (withdrawal?.userId) {
-        resolveUserEmail(String(withdrawal.userId)).then((email) => {
+        adminAuth.getUser(String(withdrawal.userId)).then((u) => {
+          const email = u.email;
           if (!email) { console.warn("[EMAIL] withdrawal rejected: no email found for uid", withdrawal.userId); return; }
           sendWithdrawalUpdate({
             to: email,
+            name: u.displayName || null,
             status: "rejected",
             amount: fmtMzn(withdrawal.amount),
             method: methodLabel(withdrawal.pixKeyType || ""),
@@ -1594,7 +1613,7 @@ export async function registerRoutes(
           })
             .then(() => console.log("[EMAIL] withdrawal rejected sent to", email))
             .catch((e: any) => console.error("[EMAIL] withdrawal rejected:", e?.message));
-        }).catch((e: any) => console.error("[EMAIL] resolveUserEmail (reject):", e?.message));
+        }).catch((e: any) => console.error("[EMAIL] getUser (reject):", e?.message));
       }
       // ─────────────────────────────────────────────────
     } catch (err: any) {
@@ -1708,6 +1727,24 @@ export async function registerRoutes(
       if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
       const id = parseInt(req.params.id as string);
       const product = await storage.approveProduct(id);
+
+      // Create checkout for approved product if it doesn't exist yet
+      const existingCheckout = await storage.getCheckoutByProductId(id);
+      if (!existingCheckout) {
+        const slug = `produto-${id}`;
+        const baseUrl = getBaseUrl(req);
+        await storage.createCheckout({
+          productId: id,
+          ownerId: product.ownerId || product.userId || "",
+          name: product.name || "",
+          slug,
+          publicUrl: `${baseUrl}/checkout/${slug}`,
+          active: true,
+          config: {},
+        });
+        console.log(`[APPROVE] Created checkout for product ${id}`);
+      }
+
       res.json(product);
       // ── Email: product approved (fire-and-forget) ──
       if (product?.userId) {
@@ -1716,6 +1753,7 @@ export async function registerRoutes(
             if (u.email) {
               sendProductApproved({
                 to: u.email,
+                name: u.displayName || null,
                 productName: product.name || "Produto",
                 productId: product.id,
               }).catch((e: any) => console.error("[EMAIL] product approved:", e?.message));
@@ -1744,6 +1782,7 @@ export async function registerRoutes(
             if (u.email) {
               sendProductRejected({
                 to: u.email,
+                name: u.displayName || null,
                 productName: product.name || "Produto",
                 productId: product.id,
               }).catch((e: any) => console.error("[EMAIL] product rejected:", e?.message));
@@ -1755,6 +1794,103 @@ export async function registerRoutes(
     } catch (err: any) {
       console.error("Error rejecting product:", err);
       res.status(500).json({ message: err.message || "Erro ao rejeitar produto" });
+    }
+  });
+
+  // --- PRODUTOS SEM VENDA HÁ +2 MESES ---
+  app.get("/api/admin/products/stale", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
+
+      const cutoffDate = new Date();
+      cutoffDate.setMonth(cutoffDate.getMonth() - 2);
+
+      const conn = await getPool().connect();
+      try {
+        const result = await conn.query(`
+          SELECT
+            p.id,
+            p.name,
+            p.status,
+            p.created_at,
+            p.owner_id,
+            COALESCE(Max(s.created_at), p.created_at) as last_sale_at,
+            COUNT(s.id) as sale_count,
+            MAX(s.created_at) as last_sale_date
+          FROM products p
+          LEFT JOIN sales s ON s.product_id = p.id
+          WHERE p.status = 'approved'
+          GROUP BY p.id
+          HAVING COALESCE(MAX(s.created_at), p.created_at) < $1::timestamptz
+          ORDER BY last_sale_at ASC
+          LIMIT 100
+        `, [cutoffDate]);
+
+        const products = result.rows.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          status: r.status,
+          createdAt: r.created_at,
+          ownerId: r.owner_id,
+          lastSaleAt: r.last_sale_at,
+          saleCount: parseInt(r.sale_count) || 0,
+        }));
+
+        res.json(products);
+      } finally {
+        conn.release();
+      }
+    } catch (err: any) {
+      console.error("Error getting stale products:", err);
+      res.status(500).json({ message: err.message || "Erro ao buscar produtos inativos" });
+    }
+  });
+
+  app.post("/api/admin/products/:id/delete-stale", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user?.email !== ADMIN_EMAIL) return res.status(403).json({ message: "Acesso negado" });
+
+      const id = parseInt(req.params.id as string);
+
+      // Verify it's actually stale before deleting
+      const cutoffDate = new Date();
+      cutoffDate.setMonth(cutoffDate.getMonth() - 2);
+
+      const conn = await getPool().connect();
+      try {
+        const check = await conn.query(`
+          SELECT p.id, COALESCE(MAX(s.created_at), p.created_at) as last_sale_at
+          FROM products p
+          LEFT JOIN sales s ON s.product_id = p.id
+          WHERE p.id = $1
+          GROUP BY p.id
+        `, [id]);
+
+        if (check.rows.length === 0) {
+          return res.status(404).json({ message: "Produto não encontrado" });
+        }
+
+        const lastSale = new Date(check.rows[0].last_sale_at);
+        if (lastSale >= cutoffDate) {
+          return res.status(400).json({ message: "Este produto ainda tem vendas recentes e não pode ser eliminado por inatividade." });
+        }
+
+        // Delete associated checkouts first
+        await conn.query(`DELETE FROM checkouts WHERE product_id = $1`, [id]);
+        // Nullify product reference in sales (preserve financial records)
+        await conn.query(`UPDATE sales SET product_id = NULL WHERE product_id = $1`, [id]).catch(() => {});
+        // Delete the product
+        await conn.query(`DELETE FROM products WHERE id = $1`, [id]);
+
+        res.json({ success: true, message: "Produto eliminado com sucesso" });
+      } finally {
+        conn.release();
+      }
+    } catch (err: any) {
+      console.error("Error deleting stale product:", err);
+      res.status(500).json({ message: err.message || "Erro ao eliminar produto" });
     }
   });
 
@@ -1784,9 +1920,10 @@ export async function registerRoutes(
           if (u.email) {
             sendNewBankAccount({
               to: u.email,
+              name: u.displayName || null,
               method: type === "mpesa" ? "M-Pesa" : type === "emola" ? "e-Mola" : type,
               phone,
-              name: name || "",
+              accountName: name || "",
             }).catch((e: any) => console.error("[EMAIL] new bank account:", e?.message));
           }
         })
@@ -1873,25 +2010,30 @@ export async function registerRoutes(
       const conn = await getPool().connect();
 
       try {
+        let usdToMznRate = 63.8;
+        try {
+          const rateRes = await fetch("https://open.er-api.com/v6/latest/USD").then(r => r.json());
+          if (typeof rateRes?.rates?.MZN === "number") usdToMznRate = rateRes.rates.MZN;
+        } catch (e) {
+          console.warn("[revenue-ranking] Failed to fetch live MZN rate, using fallback 63.8:", (e as any)?.message);
+        }
+
         const result = await conn.query(`
           SELECT
             c.owner_id,
-            COALESCE(SUM(
+            COALESCE(ROUND(SUM(
               CASE
-                -- Mobile payments (M-Pesa, e-Mola) are always MZN minor units
-                WHEN s.payment_method IN ('mpesa', 'emola', 'e2pay', 'mobile') THEN s.amount
-                -- PayPal is USD cents → convert to MZN minor (1 USD = 64 MZN, so cents*64 = MZN minor)
-                WHEN s.payment_method = 'paypal' THEN s.amount * 64
-                -- Fallback: use product currency, defaulting to MZN (not USD)
-                ELSE CASE COALESCE(p.currency, 'MZN')
-                  WHEN 'MZN' THEN s.amount
-                  WHEN 'USD' THEN s.amount * 64
-                  WHEN 'BRL' THEN s.amount * 11
-                  WHEN 'EUR' THEN s.amount * 71
-                  ELSE s.amount
+                -- sales.amount is normalized as USD cents, even when checkout display is MZN.
+                -- Convert only that normalized USD value to MZN for the ranking.
+                WHEN s.amount IS NOT NULL THEN s.amount * $1
+                -- Fallback for legacy rows missing normalized USD amount.
+                ELSE CASE COALESCE(s.sale_currency, s.paypal_currency, COALESCE(p.currency, 'MZN'))
+                  WHEN 'BRL' THEN COALESCE(s.paypal_amount_minor, s.sale_amount_minor, 0) * 11
+                  WHEN 'EUR' THEN COALESCE(s.paypal_amount_minor, s.sale_amount_minor, 0) * 71
+                  ELSE COALESCE(s.sale_amount_minor, s.amount, 0)
                 END
               END
-            ), 0)::bigint AS total_revenue,
+            )), 0)::bigint AS total_revenue,
             COUNT(s.id)::int AS total_sales,
             MAX(s.created_at) AS last_sale_at
           FROM checkouts c
@@ -1903,7 +2045,7 @@ export async function registerRoutes(
           HAVING COUNT(s.id) > 0
           ORDER BY total_revenue DESC
           LIMIT 100
-        `);
+        `, [usdToMznRate]);
 
         const rows = result.rows;
 

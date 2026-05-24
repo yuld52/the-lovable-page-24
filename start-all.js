@@ -13,7 +13,7 @@ const server = spawn(tsxBin, ['--watch', 'server/index.ts'], {
     stdio: 'inherit',
     shell: isWindows,
     cwd: __dirname,
-    env: { ...process.env, PORT: '5000' }
+    env: { ...process.env, PORT: '5000', NODE_OPTIONS: '--max-old-space-size=4096' }
 });
 
 server.on('error', (err) => {

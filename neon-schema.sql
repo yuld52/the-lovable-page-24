@@ -43,14 +43,14 @@ CREATE TABLE IF NOT EXISTS checkouts (
             {"icon": "zap", "title": "ACESSO IMEDIATO", "subtitle": "Seu produto disponível em instantes"},
             {"icon": "shield", "title": "PAGAMENTO SEGURO", "subtitle": "Dados protegidos e criptografados"}
         ],
-        "privacyText": "Your information is 100% secure",
-        "safeText": "Safe purchase",
-        "deliveryText": "Delivery via E-mail",
-        "approvedText": "Approved content",
+        "privacyText": "As suas informações estão 100% seguras",
+        "safeText": "Compra segura",
+        "deliveryText": "Entrega via E-mail",
+        "approvedText": "Conteúdo aprovado",
         "testimonials": [],
         "upsellProducts": [],
         "orderBumpProducts": [],
-        "payButtonText": "Buy now",
+        "payButtonText": "Comprar agora",
         "footerText": "Meteorfy © 2026. Todos os direitos reservados.",
         "primaryColor": "#22a559",
         "backgroundColor": "#f9fafb",
@@ -63,9 +63,9 @@ CREATE TABLE IF NOT EXISTS checkouts (
         "showSurname": false,
         "showCnpj": false,
         "showAddress": false,
-        "checkoutLanguage": "AUTO",
-        "checkoutCurrency": "AUTO",
-        "previewCurrency": "AUTO"
+        "checkoutLanguage": "pt",
+        "checkoutCurrency": "MZN",
+        "previewCurrency": "MZN"
     }'::jsonb
 );
 

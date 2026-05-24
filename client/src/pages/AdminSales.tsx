@@ -23,6 +23,14 @@ function statusBadge(status: string) {
   return <Badge className="bg-yellow-500 text-black">Pendente</Badge>;
 }
 
+function formatMT(cents: number) {
+  const value = new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
+  return `${value} MT`;
+}
+
 export default function AdminSales() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -96,7 +104,7 @@ export default function AdminSales() {
                           <th className="text-left py-2 pr-4">ID</th>
                           <th className="text-left py-2 pr-4">Cliente</th>
                           <th className="text-left py-2 pr-4">Método</th>
-                          <th className="text-left py-2 pr-4">Valor (USD¢)</th>
+                          <th className="text-left py-2 pr-4">Valor (MT)</th>
                           <th className="text-left py-2 pr-4">Data</th>
                           <th className="text-left py-2">Ações</th>
                         </tr>
@@ -109,7 +117,7 @@ export default function AdminSales() {
                             <td className="py-3 pr-4">
                               <Badge variant="outline">{METHOD_LABELS[s.paymentMethod] || s.paymentMethod || "—"}</Badge>
                             </td>
-                            <td className="py-3 pr-4 font-semibold">{((s.amount || 0) / 100).toFixed(2)}</td>
+                            <td className="py-3 pr-4 font-semibold">{formatMT(s.saleAmountMinor ?? (s.amount || 0))}</td>
                             <td className="py-3 pr-4 text-muted-foreground text-xs">
                               {s.createdAt ? format(new Date(s.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "—"}
                             </td>
@@ -157,7 +165,7 @@ export default function AdminSales() {
                           <th className="text-left py-2 pr-4">ID</th>
                           <th className="text-left py-2 pr-4">Cliente</th>
                           <th className="text-left py-2 pr-4">Método</th>
-                          <th className="text-left py-2 pr-4">Valor (USD¢)</th>
+                          <th className="text-left py-2 pr-4">Valor (MT)</th>
                           <th className="text-left py-2 pr-4">Estado</th>
                           <th className="text-left py-2">Data</th>
                         </tr>
@@ -170,7 +178,7 @@ export default function AdminSales() {
                             <td className="py-3 pr-4">
                               <Badge variant="outline">{METHOD_LABELS[s.paymentMethod] || s.paymentMethod || "—"}</Badge>
                             </td>
-                            <td className="py-3 pr-4 font-semibold">{((s.amount || 0) / 100).toFixed(2)}</td>
+                            <td className="py-3 pr-4 font-semibold">{formatMT(s.saleAmountMinor ?? (s.amount || 0))}</td>
                             <td className="py-3 pr-4">{statusBadge(s.status)}</td>
                             <td className="py-3 text-muted-foreground text-xs">
                               {s.createdAt ? format(new Date(s.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "—"}

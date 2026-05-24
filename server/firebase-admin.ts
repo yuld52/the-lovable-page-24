@@ -9,37 +9,16 @@ const firebaseConfig = {
 };
 
 function parsePrivateKey(raw: string): string {
-  // Step 1: strip surrounding quotes if any
+  // Strip surrounding quotes
   let key = raw.trim().replace(/^["']|["']$/g, "");
-
-  // Step 2: replace literal \n sequences with real newlines
+  // The .env file has literal \n sequences that need to become real newlines
   key = key.replace(/\\n/g, "\n");
-
-  // Step 3: if the entire key is still on one line (no real newlines inside),
-  // insert newlines after the header and before the footer
+  // If no newlines exist (e.g. single-line format), add them
   if (!key.includes("\n")) {
-    key = key
-      .replace("-----BEGIN PRIVATE KEY-----", "-----BEGIN PRIVATE KEY-----\n")
-      .replace("-----END PRIVATE KEY-----", "\n-----END PRIVATE KEY-----");
+    key = key.replace("-----BEGIN PRIVATE KEY-----", "-----BEGIN PRIVATE KEY-----\n")
+             .replace("-----END PRIVATE KEY-----", "\n-----END PRIVATE KEY-----");
   }
-
-  // Step 4: ensure the base64 body is properly line-wrapped (64 chars per line)
-  const headerMatch = key.match(/-----BEGIN PRIVATE KEY-----\n?/);
-  const footerMatch = key.match(/\n?-----END PRIVATE KEY-----/);
-  if (headerMatch && footerMatch) {
-    const header = "-----BEGIN PRIVATE KEY-----\n";
-    const footer = "\n-----END PRIVATE KEY-----";
-    const body = key
-      .replace(/-----BEGIN PRIVATE KEY-----\n?/, "")
-      .replace(/\n?-----END PRIVATE KEY-----/, "")
-      .replace(/\s+/g, ""); // remove all whitespace from body
-
-    // Wrap body at 64 characters
-    const wrapped = body.match(/.{1,64}/g)?.join("\n") ?? body;
-    key = header + wrapped + footer;
-  }
-
-  return key.trim();
+  return key;
 }
 
 let credential: any = undefined;
@@ -50,6 +29,12 @@ const clientEmail =
 if (privateKeyRaw && clientEmail) {
   try {
     const privateKey = parsePrivateKey(privateKeyRaw);
+    console.log("[FIREBASE] Key total length:", privateKey.length);
+    console.log("[FIREBASE] Raw env length:", privateKeyRaw.length);
+    if (privateKey.length < 500) {
+      console.error("[FIREBASE] Key is too short - likely truncated. Real RSA 2048-bit keys are ~1700 chars.");
+      throw new Error("Private key is too short - truncated in .env file");
+    }
     credential = cert({
       projectId: firebaseConfig.projectId,
       clientEmail,

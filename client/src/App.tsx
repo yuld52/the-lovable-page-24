@@ -18,6 +18,7 @@ import Settings from "@/pages/Settings";
 import CreateProduct from "@/pages/CreateProduct";
 import CheckoutEditor from "@/pages/CheckoutEditor";
 import PublicCheckout from "@/pages/PublicCheckout";
+import ThankYou from "@/pages/ThankYou";
 import Financeiro from "@/pages/Financeiro";
 import Admin from "@/pages/Admin";
 import AdminLogin from "@/pages/AdminLogin";
@@ -79,6 +80,7 @@ function Router() {
       <Route path="/checkouts/new" component={CheckoutEditor} />
       <Route path="/checkouts/edit/:id" component={CheckoutEditor} />
       <Route path="/checkout/:slug" component={PublicCheckout} />
+      <Route path="/thank-you/:saleId" component={ThankYou} />
       <Route path="/sales" component={Sales} />
       <Route path="/financeiro" component={Financeiro} />
       <Route path="/settings" component={Settings} />

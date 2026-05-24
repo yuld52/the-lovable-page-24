@@ -45,10 +45,10 @@ export const checkouts = pgTable("checkouts", {
       { icon: "zap", title: "ACESSO IMEDIATO", subtitle: "Seu produto disponível em instantes" },
       { icon: "shield", title: "PAGAMENTO SEGURO", subtitle: "Dados protegidos e criptografados" }
     ],
-    privacyText: "Your information is 100% secure",
-    safeText: "Safe purchase",
-    deliveryText: "Delivery via E-mail",
-    approvedText: "Approved content",
+    privacyText: "As suas informações estão 100% seguras",
+    safeText: "Compra segura",
+    deliveryText: "Entrega via E-mail",
+    approvedText: "Conteúdo aprovado",
     testimonials: [
       {
         id: "1",
@@ -60,7 +60,7 @@ export const checkouts = pgTable("checkouts", {
     ],
     upsellProducts: [],
     orderBumpProducts: [],
-    payButtonText: "Buy now",
+    payButtonText: "Comprar agora",
     footerText: "Meteorfy © 2026. Todos os direitos reservados.",
     primaryColor: "#22a559",
     backgroundColor: "#f9fafb",
@@ -73,9 +73,9 @@ export const checkouts = pgTable("checkouts", {
     showSurname: false,
     showCnpj: false,
     showAddress: false,
-    checkoutLanguage: "AUTO",
-    checkoutCurrency: "AUTO",
-    previewCurrency: "AUTO",
+    checkoutLanguage: "pt",
+    checkoutCurrency: "MZN",
+    previewCurrency: "MZN",
   }),
 });
 
@@ -180,6 +180,8 @@ export const sales = pgTable("sales", {
   paypalCaptureId: text("paypal_capture_id"),
   paypalCurrency: text("paypal_currency"),
   paypalAmountMinor: integer("paypal_amount_minor"),
+  saleCurrency: text("sale_currency"), // original currency of the sale (e.g. USD, MZN)
+  saleAmountMinor: integer("sale_amount_minor"), // original amount in currency minor units
   createdAt: timestamp("created_at").defaultNow(),
   utmSource: text("utm_source"),
   utmMedium: text("utm_medium"),

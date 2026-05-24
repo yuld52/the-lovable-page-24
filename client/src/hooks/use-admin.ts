@@ -53,7 +53,7 @@ export function useAdminCheckouts() {
   });
 }
 
-export function useAdminRevenueRanking() {
+export function useAdminRevenueRanking(enabled = true) {
   return useQuery({
     queryKey: ["admin", "revenue-ranking"],
     queryFn: async () => {
@@ -79,6 +79,7 @@ export function useAdminRevenueRanking() {
         lastSaleAt: string | null;
       }[]>;
     },
+    enabled,
     staleTime: 1000 * 60 * 2,
     refetchOnWindowFocus: false,
   });
@@ -106,6 +107,7 @@ export function useAdminApproveProduct() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "checkouts"] });
     }
   });
 }
@@ -131,6 +133,57 @@ export function useAdminRejectProduct() {
       return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
+    }
+  });
+}
+
+export function useAdminStaleProducts() {
+  return useQuery({
+    queryKey: ["admin", "stale-products"],
+    queryFn: async () => {
+      const user = auth.currentUser;
+      if (!user) return [];
+
+      const idToken = await getIdToken(user);
+      const response = await fetch("/api/admin/products/stale", {
+        headers: { "Authorization": `Bearer ${idToken}` }
+      });
+
+      if (!response.ok) {
+        console.error("Failed to fetch stale products:", response.status);
+        return [];
+      }
+
+      return response.json();
+    },
+    staleTime: 1000 * 60 * 2,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useAdminDeleteStaleProduct() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const user = auth.currentUser;
+      if (!user) throw new Error("Não autenticado");
+
+      const idToken = await getIdToken(user);
+      const response = await fetch(`/api/admin/products/${id}/delete-stale`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${idToken}` }
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || "Erro ao eliminar produto");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "stale-products"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
     }
   });

@@ -24,6 +24,7 @@ import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { useUsdRates } from "@/hooks/use-currency";
 import { convertUsdCentsToCurrencyMinor, formatMoney } from "@/lib/currency";
+import { useAdminRevenueRanking } from "@/hooks/use-admin";
 
 const ADMIN_EMAIL = "yuldchissico11@gmail.com";
 
@@ -61,13 +62,17 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
   const { data: stats } = useStats();
   const { data: usdRates } = useUsdRates();
+  const { data: adminRanking } = useAdminRevenueRanking(isAdmin);
   // revenuePaid is raw USD cents — convert to MZN for display
   const revenuePaidUsdCents = stats?.revenuePaid || 0;
   const mznRate = usdRates?.["MZN"] ?? 0;
+  const adminRevenueMznMinor = adminRanking?.reduce((sum, item) => sum + (item.totalRevenue || 0), 0) || 0;
   // MZN minor units (MTn cents), then whole MTn for goal comparison
-  const currentRevenueMznMinor = mznRate > 0
-    ? convertUsdCentsToCurrencyMinor(revenuePaidUsdCents, "MZN", mznRate)
-    : 0;
+  const currentRevenueMznMinor = isAdmin
+    ? adminRevenueMznMinor
+    : mznRate > 0
+      ? convertUsdCentsToCurrencyMinor(revenuePaidUsdCents, "MZN", mznRate)
+      : 0;
   const currentRevenueMtn = currentRevenueMznMinor / 100;
 
   const goals = [

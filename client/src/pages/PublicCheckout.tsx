@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Product, Checkout, CheckoutConfig, CheckoutLanguage } from "@shared/schema";
@@ -18,7 +18,7 @@ import { CheckCircle2, Lock, ShieldCheck, Star, Timer, CreditCard, Loader2 } fro
 import { PayPalVisual } from "@/components/payments/PayPalVisual";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { LoadingScreen } from "@/components/LoadingScreen";
+import { LoadingScreenCheckout } from "@/components/LoadingScreenCheckout";
 
 // ─── Meta Pixel helpers ───────────────────────────────────────────────────────
 declare global {
@@ -157,9 +157,11 @@ function getSoftBackgroundColor(color: string): string {
 
 export default function PublicCheckout() {
   const [, params] = useRoute("/checkout/:slug");
+  const [, setLocation] = useLocation();
   const slug = params?.slug;
   const [orderBumpSelected, setOrderBumpSelected] = useState<number[]>([]);
   const [isPaid, setIsPaid] = useState(false);
+  const [saleData, setSaleData] = useState<{ id: number } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const pixelInitialized = useRef(false);
@@ -173,6 +175,15 @@ export default function PublicCheckout() {
       if (!had) root.classList.remove("light");
     };
   }, []);
+
+  // Redirect to ThankYou page when payment is confirmed
+  useEffect(() => {
+    if (!isPaid || !saleData?.id) return;
+    const timer = setTimeout(() => {
+      setLocation(`/thank-you/${saleData.id}`);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [isPaid, saleData]);
 
   const { data: publicData, isLoading: isLoadingCheckout, error: checkoutError } = useQuery<{ checkout: any; product: any; extraProducts: any[] } | null>({
     queryKey: ["public-checkout", slug],
@@ -324,16 +335,33 @@ export default function PublicCheckout() {
     if (method === "mpesa" && prefix !== "84" && prefix !== "85") {
       return "⚠ Número inválido para M-Pesa. Deve começar com 84 ou 85.";
     }
-    if (method === "emola" && prefix !== "86" && prefix !== "87") {
-      return "⚠ Número e-Mola deve começar com 86 ou 87.";
+    if (method === "emola" && prefix !== "86" && prefix !== "87" && prefix !== "88") {
+      return "⚠ Número e-Mola deve começar com 86, 87 ou 88.";
     }
     return "";
   };
 
   // Set default payment method when product loads
+  const METHOD_META: Record<string, { label: string; badgeBg: string; letter: string; logoUrl?: string }> = {
+    paypal:    { label: "PayPal",      badgeBg: "#003087", letter: "P", logoUrl: "https://cdn.pixabay.com/photo/2018/05/08/21/29/paypal-3384015_640.png" },
+    mpesa:     { label: "M-Pesa",      badgeBg: "#e11d48", letter: "M", logoUrl: "https://yt3.googleusercontent.com/ytc/AIdro_k9S-mKWfmtSx85sbylUgINsr7-ErWacXBh0R39hZ_2rg=s900-c-k-c0x00ffffff-no-rj" },
+    emola:     { label: "e-Mola",      badgeBg: "#f97316", letter: "E", logoUrl: "https://play-lh.googleusercontent.com/2TGAhJ55tiyhCwW0ZM43deGv4lUTFTBMoq83mnAO6-bU5hi2NPyKX8BN8iKt13irK7Y" },
+    googlepay: { label: "Google Pay",  badgeBg: "#4285F4", letter: "G", logoUrl: "https://www.mastercard.com.au/content/dam/public/mastercardcom/au/en/consumers/icons/google-pay-logo_1280x531.png" },
+  };
+  const LIVE_METHODS = new Set(["mpesa", "emola"]);
+
   useEffect(() => {
     if (product?.paymentMethods?.length && !selectedPaymentMethod) {
-      setSelectedPaymentMethod(product.paymentMethods[0]);
+      // Find the first payment method that's actually shown in the UI (mpesa or emola)
+      const firstAvailable = product.paymentMethods.find(
+        (m: string) => METHOD_META[m] && LIVE_METHODS.has(m)
+      );
+      if (firstAvailable) {
+        setSelectedPaymentMethod(firstAvailable);
+      } else if (product.paymentMethods[0] && METHOD_META[product.paymentMethods[0]]) {
+        // Fallback to first method if it's one we know
+        setSelectedPaymentMethod(product.paymentMethods[0]);
+      }
     }
   }, [product]);
 
@@ -451,6 +479,7 @@ export default function PublicCheckout() {
       if (data.status === "pending") {
         // e2payments STK push initiated — wait for PIN confirmation
         setPendingSaleId(data.id);
+        setSaleData({ id: data.id });
         startPolling(data.id);
       } else {
         // Immediate confirmation (no e2payments configured)
@@ -607,6 +636,7 @@ export default function PublicCheckout() {
         }
 
         setIsPaid(true);
+        setSaleData({ id: data.saleId || data.id });
         toast({ title: "Pagamento confirmado!", description: "O seu pagamento foi processado com sucesso." });
       } else {
         toast({ title: "Atenção", description: `Estado do pagamento: ${data.status}`, variant: "destructive" });
@@ -618,7 +648,7 @@ export default function PublicCheckout() {
     }
   };
 
-  if (isLoadingCheckout || isLoadingProduct || isProcessing) return <LoadingScreen />;
+  if (isLoadingCheckout || isLoadingProduct || isProcessing) return <LoadingScreenCheckout />;
   if (checkoutError || !checkoutData || !product) return <div className="p-8 text-center">Checkout não encontrado</div>;
 
   // Fixed: use String comparison for safety
@@ -750,16 +780,7 @@ export default function PublicCheckout() {
             <div className="p-4 space-y-4">
               {/* Payment method selector */}
               {(() => {
-                const METHOD_META: Record<string, { label: string; badgeBg: string; letter: string; logoUrl?: string }> = {
-                  paypal:    { label: "PayPal",      badgeBg: "#003087", letter: "P", logoUrl: "https://cdn.pixabay.com/photo/2018/05/08/21/29/paypal-3384015_640.png" },
-                  mpesa:     { label: "M-Pesa",      badgeBg: "#e11d48", letter: "M", logoUrl: "https://yt3.googleusercontent.com/ytc/AIdro_k9S-mKWfmtSx85sbylUgINsr7-ErWacXBh0R39hZ_2rg=s900-c-k-c0x00ffffff-no-rj" },
-                  emola:     { label: "e-Mola",      badgeBg: "#f97316", letter: "E", logoUrl: "https://play-lh.googleusercontent.com/2TGAhJ55tiyhCwW0ZM43deGv4lUTFTBMoq83mnAO6-bU5hi2NPyKX8BN8iKt13irK7Y" },
-                  googlepay: { label: "Google Pay",  badgeBg: "#4285F4", letter: "G", logoUrl: "https://www.mastercard.com.au/content/dam/public/mastercardcom/au/en/consumers/icons/google-pay-logo_1280x531.png" },
-                };
-
                 const allMethods: string[] = product?.paymentMethods || ["paypal"];
-                // Methods that are live and functional — "em breve" ones are excluded
-                const LIVE_METHODS = new Set(["mpesa", "emola"]);
                 // Only show methods we know how to render AND that are live
                 const knownMethods = allMethods.filter(m => METHOD_META[m] && LIVE_METHODS.has(m));
                 const isMobile = (m: string) => m === "mpesa" || m === "emola";

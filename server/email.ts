@@ -70,6 +70,14 @@ function divider(): string {
   return `<tr><td style="padding:16px 0;"><hr style="border:none;border-top:1px solid ${BRAND.border};margin:0;"/></td></tr>`;
 }
 
+function getGreeting(name?: string | null): string {
+  return `<tr>
+    <td style="padding-bottom:20px;">
+      <p style="margin:0;font-size:15px;font-weight:600;color:${BRAND.text};">Olá${name ? `, ${name}` : ""}!</p>
+    </td>
+  </tr>`;
+}
+
 function row(label: string, value: string, valueColor = BRAND.text): string {
   return `<tr>
     <td style="padding:6px 0;">
@@ -88,6 +96,7 @@ function row(label: string, value: string, valueColor = BRAND.text): string {
 // ─────────────────────────────────────────────────────────────
 export async function sendBuyerConfirmation(opts: {
   to: string;
+  name?: string | null;
   productName: string;
   amount: string;
   orderId: string;
@@ -95,7 +104,7 @@ export async function sendBuyerConfirmation(opts: {
   deliveryUrl?: string | null;
   deliveryFiles?: string[];
 }) {
-  const { to, productName, amount, orderId, paymentMethod, deliveryUrl, deliveryFiles } = opts;
+  const { to, name, productName, amount, orderId, paymentMethod, deliveryUrl, deliveryFiles } = opts;
 
   const hasDelivery = deliveryUrl || (deliveryFiles && deliveryFiles.length > 0);
 
@@ -159,6 +168,7 @@ export async function sendBuyerConfirmation(opts: {
           <p style="margin:0;font-size:14px;color:${BRAND.muted};">O seu pedido foi aprovado com sucesso.</p>
         </td>
       </tr>
+      ${getGreeting(name)}
       ${divider()}
       <tr><td style="padding:16px 0;">
         <table width="100%" cellpadding="0" cellspacing="0">
@@ -190,13 +200,14 @@ export async function sendBuyerConfirmation(opts: {
 // ─────────────────────────────────────────────────────────────
 export async function sendSellerNewSale(opts: {
   to: string;
+  name?: string | null;
   productName: string;
   amount: string;
   buyerEmail: string;
   orderId: string;
   paymentMethod: string;
 }) {
-  const { to, productName, amount, buyerEmail, orderId, paymentMethod } = opts;
+  const { to, name, productName, amount, buyerEmail, orderId, paymentMethod } = opts;
   const body = `
     <table width="100%" cellpadding="0" cellspacing="0">
       <tr>
@@ -208,6 +219,7 @@ export async function sendSellerNewSale(opts: {
           <p style="margin:0;font-size:14px;color:${BRAND.muted};">Um novo cliente adquiriu o seu produto.</p>
         </td>
       </tr>
+      ${getGreeting(name)}
       ${divider()}
       <tr><td style="padding:16px 0;">
         <table width="100%" cellpadding="0" cellspacing="0">
@@ -242,6 +254,7 @@ export async function sendSellerNewSale(opts: {
 // ─────────────────────────────────────────────────────────────
 export async function sendWithdrawalUpdate(opts: {
   to: string;
+  name?: string | null;
   status: "approved" | "rejected";
   amount: string;
   method: string;
@@ -249,7 +262,7 @@ export async function sendWithdrawalUpdate(opts: {
   adminNote?: string;
   withdrawalId: number;
 }) {
-  const { to, status, amount, method, pixKey, adminNote, withdrawalId } = opts;
+  const { to, name, status, amount, method, pixKey, adminNote, withdrawalId } = opts;
   const approved = status === "approved";
 
   const iconBg = approved ? BRAND.green : BRAND.red;
@@ -272,6 +285,7 @@ export async function sendWithdrawalUpdate(opts: {
           <p style="margin:0;font-size:14px;color:${BRAND.muted};">${subtitle}</p>
         </td>
       </tr>
+      ${getGreeting(name)}
       ${divider()}
       <tr><td style="padding:16px 0;">
         <table width="100%" cellpadding="0" cellspacing="0">
@@ -310,12 +324,13 @@ export async function sendWithdrawalUpdate(opts: {
 // ─────────────────────────────────────────────────────────────
 export async function sendWithdrawalReceived(opts: {
   to: string;
+  name?: string | null;
   amount: string;
   method: string;
   pixKey: string;
   withdrawalId: number;
 }) {
-  const { to, amount, method, pixKey, withdrawalId } = opts;
+  const { to, name, amount, method, pixKey, withdrawalId } = opts;
   const body = `
     <table width="100%" cellpadding="0" cellspacing="0">
       <tr>
@@ -327,6 +342,7 @@ export async function sendWithdrawalReceived(opts: {
           <p style="margin:0;font-size:14px;color:${BRAND.muted};">O seu pedido está a ser analisado. Prazo: 1–2 dias úteis.</p>
         </td>
       </tr>
+      ${getGreeting(name)}
       ${divider()}
       <tr><td style="padding:16px 0;">
         <table width="100%" cellpadding="0" cellspacing="0">
@@ -358,10 +374,11 @@ export async function sendWithdrawalReceived(opts: {
 // ─────────────────────────────────────────────────────────────
 export async function sendProductApproved(opts: {
   to: string;
+  name?: string | null;
   productName: string;
   productId: number;
 }) {
-  const { to, productName, productId } = opts;
+  const { to, name, productName, productId } = opts;
   const dashUrl = `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "meteorfy.com"}/products`;
   const body = `
     <table width="100%" cellpadding="0" cellspacing="0">
@@ -374,6 +391,7 @@ export async function sendProductApproved(opts: {
           <p style="margin:0;font-size:14px;color:${BRAND.muted};">O seu produto foi analisado e está aprovado para venda.</p>
         </td>
       </tr>
+      ${getGreeting(name)}
       ${divider()}
       <tr><td style="padding:16px 0;">
         <table width="100%" cellpadding="0" cellspacing="0">
@@ -410,10 +428,11 @@ export async function sendProductApproved(opts: {
 // ─────────────────────────────────────────────────────────────
 export async function sendProductRejected(opts: {
   to: string;
+  name?: string | null;
   productName: string;
   productId: number;
 }) {
-  const { to, productName, productId } = opts;
+  const { to, name, productName, productId } = opts;
   const body = `
     <table width="100%" cellpadding="0" cellspacing="0">
       <tr>
@@ -425,6 +444,7 @@ export async function sendProductRejected(opts: {
           <p style="margin:0;font-size:14px;color:${BRAND.muted};">O seu produto foi recusado pela equipa da Meteorfy.</p>
         </td>
       </tr>
+      ${getGreeting(name)}
       ${divider()}
       <tr><td style="padding:16px 0;">
         <table width="100%" cellpadding="0" cellspacing="0">
@@ -454,11 +474,12 @@ export async function sendProductRejected(opts: {
 // ─────────────────────────────────────────────────────────────
 export async function sendNewBankAccount(opts: {
   to: string;
+  name?: string | null;
   method: string;
   phone: string;
-  name: string;
+  accountName: string;
 }) {
-  const { to, method, phone, name } = opts;
+  const { to, name, method, phone, accountName } = opts;
   const ismpesa = method.toLowerCase().includes("pesa");
   const iconBg = ismpesa ? "#e11d48" : "#f97316";
   const body = `
@@ -472,11 +493,12 @@ export async function sendNewBankAccount(opts: {
           <p style="margin:0;font-size:14px;color:${BRAND.muted};">Uma nova conta de saque foi registada na sua conta.</p>
         </td>
       </tr>
+      ${getGreeting(name)}
       ${divider()}
       <tr><td style="padding:16px 0;">
         <table width="100%" cellpadding="0" cellspacing="0">
           ${row("Método", method)}
-          ${row("Titular", name || "—")}
+          ${row("Titular", accountName || "—")}
           ${row("Número", phone)}
         </table>
       </td></tr>
@@ -645,13 +667,14 @@ export async function sendWelcomeEmail(opts: {
 // ─────────────────────────────────────────────────────────────
 export async function sendFirstSale(opts: {
   to: string;
+  name?: string | null;
   productName: string;
   amount: string;
   buyerEmail: string;
   orderId: string;
   paymentMethod: string;
 }) {
-  const { to, productName, amount, buyerEmail, orderId, paymentMethod } = opts;
+  const { to, name, productName, amount, buyerEmail, orderId, paymentMethod } = opts;
   const dashUrl = `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "meteorfy.com"}/sales`;
 
   const body = `
@@ -670,6 +693,7 @@ export async function sendFirstSale(opts: {
           <p style="margin:0;font-size:14px;color:${BRAND.muted};line-height:1.6;">Este é um momento histórico na sua jornada de vendas.<br/>A primeira de muitas que estão por vir! 🚀</p>
         </td>
       </tr>
+      ${getGreeting(name)}
       ${divider()}
       <tr><td style="padding:16px 0;">
         <table width="100%" cellpadding="0" cellspacing="0">

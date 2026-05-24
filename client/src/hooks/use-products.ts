@@ -139,7 +139,10 @@ export function useApproveProduct() {
 
       return response.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["checkouts"] });
+    },
   });
 }
 
