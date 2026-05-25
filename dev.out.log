@@ -185,3 +185,93 @@ Firebase Admin: credentials loaded successfully
 08:14:46 PM [express] GET /api/admin/revenue-ranking 500 in 3703ms :: {"message":"invalid input syntax for type integer: \"63.555117\""}
 08:14:51 PM [express] GET /api/checkouts 304 in 592ms :: [{"id":15,"ownerId":"7sYfGtVMzCP9bxF7a5KlhyvrAOu2","productId":12,"name":"sssssssss","slug":"produto-12","publicUrl":"http://localhost:5000/checkout/produto-12","views":8,"active":true,"createdAt":"2026-05-12T03:54:55.348Z","config":{"showCpf":false,"heroTitle":"Promoção por tempo limitado","showPhone":false,"showTimer":false,"timerText":"Oferta Especial por Tempo Limitado!","footerText":"Meteorfy © 2026. Todos os direitos reservados.","showSurname":false,"testimonials":[],"primaryColor":"#22a559","timerMinutes":10,"heroImageUrl":"/uploads/1778565393367-7817959bb81724c54847cb408fd4afe0.jpg","payButtonText":"Buy now","checkoutCurrency":"AUTO","checkoutLanguage":"pt","orderBumpProducts":[]}},{"id":14,"ownerId":"7sYfGtVMzCP9bxF7a5KlhyvrAOu2","productId":11,"name":"vxxxxxxx","slug":"produto-11","publicUrl":"http://localhost:5000/checkout/produto-11","views":10,"active":true,"createdAt":"2026-05-11T14:53:46.621Z","config":{}},{"id":13,"ownerId":"7sYfGtVMzCP9bxF7a5KlhyvrAOu2","productId":10,"name":"sss","slug":"produto-10","publicUrl":"http://localhost:5000/checkout/produto-10","views":2,"active":true,"createdAt":"2026-05-11T06:06:04.573Z","config":{}},{"id":10,"ownerId":"7sYfGtVMzCP9bxF7a5KlhyvrAOu2","productId":1,"name":"gg","slug":"produto-1","publicUrl":"http://localhost:3000/checkout/produto-1","views":0,"active":true,"createdAt":"2026-05-07T07:38:30.165Z","config":{}},{"id":8,"ownerId":"7sYfGtVMzCP9bxF7a5KlhyvrAOu2","productId":3,"name":"cura do cancer","slug":"produto-3","publicUrl":"http://localhost:3000/checkout/produto-3","views":0,"active":true,"createdAt":"2026-05-07T07:38:30.085Z","config":{}},{"id":6,"ownerId":"7sYfGtVMzCP9bxF7a5KlhyvrAOu2","productId":4,"name":"curso de pyton","slug":"produto-4","publicUrl":"http://localhost:3000/checkout/produto-4","views":0,"active":true,"createdAt":"2026-05-07T07:38:30.001Z","config":{}},{"id":5,"ownerId":"7sYfGtVMzCP9bxF7a5KlhyvrAOu2","productId":5,"name":"emola ap1","slug":"produto-5","publicUrl":"http://localhost:3000/checkout/produto-5","views":24,"active":true,"createdAt":"2026-05-07T07:38:29.903Z","config":{"showCpf":false,"heroTitle":"Promoção por tempo limitado","showPhone":false,"showTimer":false,"timerText":"Oferta Especial por Tempo Limitado!","footerText":"Meteorfy © 2026. Todos os direitos reservados.","showSurname":false,"testimonials":[],"primaryColor":"#22a559","timerMinutes":10,"heroImageUrl":"","payButtonText":"Buy now","checkoutCurrency":"USD","checkoutLanguage":"pt","orderBumpProducts":[]}},{"id":3,"ownerId":"7sYfGtVMzCP9bxF7a5KlhyvrAOu2","productId":7,"name":"curso","slug":"curso-kgi0s","publicUrl":"https://3072e2e7-9bdf-4919-b941-9401306565bc-00-1rkok94is19qk.worf.replit.dev/checkout/curso-kgi0s","views":135,"active":true,"createdAt":"2026-05-03T17:56:27.165Z","config":{"showCpf":false,"safeText":"Safe purchase","showCnpj":false,"heroTitle":"Promoção por tempo limitado","showPhone":true,"showTimer":true,"textColor":"#111827","timerText":"Oferta Especial por Tempo Limitado!","footerText":"Meteorfy © 2026. Todos os direitos reservados.","timerColor":"#dc2626","privacyText":"Your information is 100% secure","showAddress":false,"showSurname":false,"testimonials":[{"id":"1777838168003","name":"joao amorin","text":"melhor produto do ano","rating":4,"imageUrl":"/uploads/1777838177774-583687150_17949039147053179_2947488055948002863_n.jpg"}],"approvedText":"Approved content","benefitsList":[{"icon":"zap","title":"ACESSO IMEDIATO","subtitle":"Seu produto disponível em instantes"},{"icon":"shield","title":"PAGAMENTO SEGURO","subtitle":"Dados protegidos e criptografados"}],"deliveryText":"Delivery via E-mail","primaryColor":"rgb(1, 150, 63)","timerMinutes":10,"heroImageUrl":"/uploads/1778350740816-with_suish_the_fun_stays_on_our_skin-removebg-preview_3.png","heroBadgeText":"7 DIAS","highlightColor":"#f3f4f6","payButtonText":"Buy now","upsellProducts":[],"backgroundColor":"#f9fafb","checkoutCurrency":"MZN","checkoutLanguage":"pt","orderBumpProducts":[4],"showChangeCountry":true}},{"id":2,"ownerId":"7sYfGtVMzCP9bxF7a5KlhyvrAOu2","productId":2,"name":"vendas fg","slug":"vendas-fg-bdj7n","publicUrl":"https://b4b479ef-2b8c-4b63-9e8e-d7c808ad0185-00-2sx4xw3wrcap0.riker.replit.dev/checkout/vendas-fg-bdj7n","views":31,"active":true,"createdAt":"2026-05-03T04:50:40.696Z","config":{"showCpf":false,"safeText":"Safe purchase","showCnpj":false,"heroTitle":"Promoção por tempo limitado","showPhone":false,"showTimer":true,"textColor":"#111827","timerText":"Oferta Especial por Tempo Limitado!","footerText":"Meteorfy © 2026. Todos os direitos reservados.","timerColor":"#dc2626","privacyText":"Your information is 100% secure","showAddress":false,"showSurname":false,"testimonials":[{"id":"1777791022652","name":"Novo Depoimento","text":"Digite o depoimento aqui...","rating":5,"imageUrl":"/uploads/1777791029991-paypal-3384015_640.webp"}],"approvedText":"Approved content","benefitsList":[{"icon":"zap","title":"ACESSO IMEDIATO","subtitle":"Seu produto disponível em instantes"},{"icon":"shield","title":"PAGAMENTO SEGURO","subtitle":"Dados protegidos e criptografados"}],"deliveryText":"Delivery via E-mail","primaryColor":"#22a559","timerMinutes":10,"heroImageUrl":"","heroBadgeText":"7 DIAS","highlightColor":"#f3f4f6","payButtonText":"Buy now","upsellProducts":[],"backgroundColor":"#f9fafb","checkoutCurrency":"MZN","checkoutLanguage":"pt","orderBumpProducts":[],"showChangeCountry":true}},{"id":1,"ownerId":"7sYfGtVMzCP9bxF7a5KlhyvrAOu2","productId":6,"name":"suish","slug":"suish-wfrlx","publicUrl":"https://4de8bdf5-b079-48b1-88f3-5da223342698-00-2tx8q86povmkr.spock.replit.dev/checkout/suish-wfrlx","views":63,"active":true,"createdAt":"2026-05-02T08:46:03.526Z","config":{"showCpf":false,"safeText":"Safe purchase","showCnpj":false,"heroTitle":"Promoção por tempo limitado","showPhone":false,"showTimer":false,"textColor":"#111827","timerText":"Oferta Especial por Tempo Limitado!","footerText":"Meteorfy © 2026. Todos os direitos reservados.","timerColor":"#dc2626","privacyText":"Your information is 100% secure","showAddress":false,"showSurname":false,"testimonials":[{"id":"1777718750347","name":"Novo Depoimento","text":"Digite o depoimento aqui...","rating":5,"imageUrl":"/uploads/1777718757140-583687150_17949039147053179_2947488055948002863_n.jpg"}],"approvedText":"Approved content","benefitsList":[{"icon":"zap","title":"ACESSO IMEDIATO","subtitle":"Seu produto disponível em instantes"},{"icon":"shield","title":"PAGAMENTO SEGURO","subtitle":"Dados protegidos e criptografados"}],"deliveryText":"Delivery via E-mail","primaryColor":"#22a559","timerMinutes":10,"heroImageUrl":"","heroBadgeText":"7 DIAS","highlightColor":"#f3f4f6","payButtonText":"Buy now","upsellProducts":[],"backgroundColor":"#f9fafb","checkoutCurrency":"MZN","checkoutLanguage":"pt","orderBumpProducts":[2],"showChangeCountry":false}}]
 08:15:03 PM [express] POST /api/upload 200 in 133ms :: {"url":"/uploads/1779646503530-icon-192-removebg-preview.png","path":"/uploads/1779646503530-icon-192-removebg-preview.png","name":"icon-192-removebg-preview.png","size":129670,"type":"image/png"}
+Restarting 'server/index.ts'
+Restarting 'server/index.ts'
+Restarting 'server/index.ts'
+Restarting 'server/index.ts'
+Restarting 'server/index.ts'
+[FIREBASE] Key total length: 1706
+[FIREBASE] Raw env length: 1707
+Firebase Admin: credentials loaded successfully
+Restarting 'server/index.ts'
+[FIREBASE] Key total length: 1706
+[FIREBASE] Raw env length: 1707
+Firebase Admin: credentials loaded successfully
+Restarting 'server/index.ts'
+[FIREBASE] Key total length: 1706
+[FIREBASE] Raw env length: 1707
+Firebase Admin: credentials loaded successfully
+Restarting 'server/index.ts'
+[FIREBASE] Key total length: 1706
+[FIREBASE] Raw env length: 1707
+Firebase Admin: credentials loaded successfully
+Restarting 'server/index.ts'
+[FIREBASE] Key total length: 1706
+[FIREBASE] Raw env length: 1707
+Firebase Admin: credentials loaded successfully
+Restarting 'server/index.ts'
+[FIREBASE] Key total length: 1706
+[FIREBASE] Raw env length: 1707
+Firebase Admin: credentials loaded successfully
+Restarting 'server/index.ts'
+[FIREBASE] Key total length: 1706
+[FIREBASE] Raw env length: 1707
+Firebase Admin: credentials loaded successfully
+
+
+==================================================
+🚀 METEORFY SERVER RUNNING
+🔒 SECURITY: helmet + cors + rate-limiting active
+==================================================
+
+
+08:33:45 PM [express] serving on port 5000
+Restarting 'server/index.ts'
+[FIREBASE] Key total length: 1706
+[FIREBASE] Raw env length: 1707
+Firebase Admin: credentials loaded successfully
+
+
+==================================================
+🚀 METEORFY SERVER RUNNING
+🔒 SECURITY: helmet + cors + rate-limiting active
+==================================================
+
+
+08:34:02 PM [express] serving on port 5000
+Restarting 'server/index.ts'
+[FIREBASE] Key total length: 1706
+[FIREBASE] Raw env length: 1707
+Firebase Admin: credentials loaded successfully
+
+
+==================================================
+🚀 METEORFY SERVER RUNNING
+🔒 SECURITY: helmet + cors + rate-limiting active
+==================================================
+
+
+08:48:15 PM [express] serving on port 5000
+Restarting 'server/index.ts'
+[FIREBASE] Key total length: 1706
+[FIREBASE] Raw env length: 1707
+Firebase Admin: credentials loaded successfully
+
+
+==================================================
+🚀 METEORFY SERVER RUNNING
+🔒 SECURITY: helmet + cors + rate-limiting active
+==================================================
+
+
+09:02:23 PM [express] serving on port 5000
+Restarting 'server/index.ts'
+Waiting for graceful termination...
+Gracefully restarted 'server/index.ts'
+Restarting 'server/index.ts'
+Restarting 'server/index.ts'
+Restarting 'server/index.ts'
+Restarting 'server/index.ts'
+Restarting 'server/index.ts'
+Restarting 'server/index.ts'
+Restarting 'server/index.ts'
